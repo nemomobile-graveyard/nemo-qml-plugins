@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-CONFIG = ordered
+PLUGIN_IMPORT_PATH = org/nemomobile/qrencode
 
 SUBDIRS += \
     examples \
@@ -8,6 +8,6 @@ SUBDIRS += \
 OTHER_FILES = qmldir
 
 qmldir.files = qmldir
-qmldir.path = /usr/lib/qt4/imports/stage/rubyx/QREncode
+qmldir.path = $$[QT_INSTALL_IMPORTS]/$$PLUGIN_IMPORT_PATH
 
 INSTALLS += qmldir
