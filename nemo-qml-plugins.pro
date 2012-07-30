@@ -1,2 +1,2 @@
 TEMPLATE = subdirs
-SUBDIRS += thumbnailer contacts
+SUBDIRS += thumbnailer contacts qrencoder
