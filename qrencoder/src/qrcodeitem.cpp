@@ -24,28 +24,36 @@
 #include "qrcodeitem.h"
 
 #include <math.h>
+
+#ifdef HAVE_QRENCODE
 #include <qrencode.h>
+#endif
 
 #include <QPainter>
 
 class QRCodeItemPrivate
 {
 public:
-    QRCodeItemPrivate()
-        : encoder(NULL),
-          version(1),
-          level(QRCodeItem::ERROR_LEVEL_MEDIUM),
-          hint(QRCodeItem::ENCODE_MODE_8BIT),
-          padding(0),
-          color(Qt::black),
-          background(Qt::white)
+    QRCodeItemPrivate() :
+#ifdef HAVE_QRENCODE
+        encoder(NULL),
+#endif
+        version(1),
+        level(QRCodeItem::ERROR_LEVEL_MEDIUM),
+        hint(QRCodeItem::ENCODE_MODE_8BIT),
+        padding(0),
+        color(Qt::black),
+        background(Qt::white)
     { TRACE }
 
+#ifdef HAVE_QRENCODE
     QRcode *encoder;
+#endif
 
     int version;
     QRCodeItem::ErrorLevel level;
     QRCodeItem::EncodeMode hint;
+
     QString text;
     int padding;
 
@@ -63,7 +71,9 @@ QRCodeItem::QRCodeItem(QDeclarativeItem *parent)
 QRCodeItem::~QRCodeItem()
 {
     TRACE
+#ifdef HAVE_QRENCODE
     delete d->encoder;
+#endif
     delete this->d;
 }
 
@@ -114,11 +124,13 @@ void QRCodeItem::setVersion(int version)
     TRACE
     d->version = version;
 
+#ifdef HAVE_QRENCODE
     if(d->encoder)
     {
         delete d->encoder;
         d->encoder = NULL;
     }
+#endif
 
     this->update();
     emit this->versionChanged(version);
@@ -129,11 +141,13 @@ void QRCodeItem::setLevel(ErrorLevel level)
     TRACE
     d->level = level;
 
+#ifdef HAVE_QRENCODE
     if(d->encoder)
     {
         delete d->encoder;
         d->encoder = NULL;
     }
+#endif
 
     this->update();
     emit this->levelChanged(level);
@@ -144,11 +158,13 @@ void QRCodeItem::setHint(EncodeMode hint)
     TRACE
     d->hint = hint;
 
+#ifdef HAVE_QRENCODE
     if(d->encoder)
     {
         delete d->encoder;
         d->encoder = NULL;
     }
+#endif
 
     this->update();
     emit this->hintChanged(hint);
@@ -159,11 +175,13 @@ void QRCodeItem::setText(const QString &text)
     TRACE
     d->text = text;
 
+#ifdef HAVE_QRENCODE
     if(d->encoder)
     {
         delete d->encoder;
         d->encoder = NULL;
     }
+#endif
 
     this->update();
     emit this->textChanged(text);
@@ -198,6 +216,7 @@ void QRCodeItem::draw(QPainter *painter, int w, int h)
 {
     TRACE
 
+#ifdef HAVE_QRENCODE
     // Check to see if we need to generate the QRCode.
     if(!d->encoder && !d->text.isNull())
     {
@@ -207,11 +226,13 @@ void QRCodeItem::draw(QPainter *painter, int w, int h)
                                          static_cast<QRencodeMode>(d->hint),
                                          1);
     }
+#endif
 
     // Draw background.
     painter->setPen(QPen(d->background));
     painter->fillRect(0, 0, w, h, d->background);
 
+#ifdef HAVE_QRENCODER
     // If we don't have an encoded code, then don't render foreground.
     if(!d->encoder) return;
 
@@ -240,6 +261,7 @@ void QRCodeItem::draw(QPainter *painter, int w, int h)
                               d->color);
         }
     }
+#endif
 }
 
 void QRCodeItem::paint(QPainter *painter, const QStyleOptionGraphicsItem*, QWidget*)
@@ -251,7 +273,9 @@ void QRCodeItem::paint(QPainter *painter, const QStyleOptionGraphicsItem*, QWidg
 QImage QRCodeItem::image(int size)
 {
     TRACE
+#ifdef HAVE_QRENCODE
     if(d->encoder && size < d->encoder->width) size = d->encoder->width + d->padding;
+#endif
 
     QImage result(size, size, QImage::Format_ARGB32);
     QPainter painter(&result);

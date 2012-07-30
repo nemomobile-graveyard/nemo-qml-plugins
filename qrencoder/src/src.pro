@@ -7,6 +7,7 @@ CONFIG = qt plugin link_pkgconfig
 
 packagesExist(libqrencode) {
     PKGCONFIG += libqrencode
+    DEFINES += HAVE_QRENCODE
 } else {
     warning("Dependency libqrencode is missing.")
 }
