@@ -134,62 +134,38 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         return img;
     }
 
-    // cache couldn't satisfy us.
-    // step 1: read source image in
+    // image was not in cache thus we read it
     QImageReader ir(id);
-    img = ir.read();
+    QSize originalSize = ir.size();
 
-    // don't pollute the cache with false positives
-    if (img.isNull())
-        return QImage();
 
-    if (img.size() == requestedSize)
-        return img;
+    // scales arbitrary sized source image to requested size scaling either up or down
+    // keeping aspect ratio of the original image intact by maximizing either width or height
+    // and cropping the rest of the image away
+    if (originalSize != requestedSize && originalSize.isValid()) {
+        QSize scaledSize(requestedSize);
+        // now scale it filling the original rectangle by keeping aspect ratio
+        scaledSize.scale(originalSize, Qt::KeepAspectRatio);
 
-    // step 2: scale to target size
-    if (img.height() == img.width()) {
-        // in the case of a squared image, there's no need to crop
-        img = img.scaled(requestedSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    } else  if (img.height() >= requestedSize.height() && img.width() >= requestedSize.width()) {
-        // if the image is larger than the desired size (on both dimensions)
-        // then crop, and scale down
-        if (img.width() < img.height()) {
-            int cropPosition = (img.height() - img.width()) / 2;
-            img = img.copy(0, cropPosition, img.width(), img.width());
-            img = img.scaledToWidth(requestedSize.width(), Qt::SmoothTransformation);
-        } else {
-            int cropPosition = (img.width() - img.height()) / 2;
-            img = img.copy(cropPosition, 0, img.height(), img.height());
-            img = img.scaledToHeight(requestedSize.height(), Qt::SmoothTransformation);
-        }
-    } else if ((img.width() <= requestedSize.width() && img.height() >= requestedSize.height()) ||
-               (img.width() >= requestedSize.width() && img.height() <= requestedSize.height())) {
-        // if the image is smaller than the desired size on one dimension, scale it up,
-        // then crop down to thumbnail size.
-        if (img.width() <= requestedSize.width() && img.height() >= requestedSize.height()) {
-            img = img.scaledToWidth(requestedSize.width(), Qt::SmoothTransformation);
-            int cropPosition = (img.height() - img.width()) / 2;
-            img = img.copy(0, cropPosition, img.width(), img.width());
-        } else {
-            img = img.scaledToHeight(requestedSize.height(), Qt::SmoothTransformation);
-            int cropPosition = (img.width() - img.height()) / 2;
-            img = img.copy(cropPosition, 0, img.height(), img.height());
-        }
-    } else {
-        // if the image is smaller on both dimensions, scale it up, and use the requested
-        // size to do the cropping
-        if (img.width() < img.height()) {
-            img = img.scaledToWidth(requestedSize.width(), Qt::SmoothTransformation);
-            int cropPosition = (img.height() - requestedSize.height()) / 2;
-            img = img.copy(0, cropPosition, img.width(), img.width());
-        } else {
-            img = img.scaledToHeight(requestedSize.height(), Qt::SmoothTransformation);
-            int cropPosition = (img.width() - requestedSize.width()) / 2;
-            img = img.copy(cropPosition, 0, img.height(), img.height());
-        }
+        // set the adjusted clipping rectangle in the middle of the original image
+        QRect clipRect(0, 0, scaledSize.width(), scaledSize.height());
+        QPoint originalCenterPoint(originalSize.width() / 2, originalSize.height() / 2);
+        clipRect.moveCenter(originalCenterPoint);
+        ir.setClipRect(clipRect);
+
+        // set requested target size of a thumbnail
+        // as clipping rectangle is of same aspect ration as requestedSize no distortion should happen
+        ir.setScaledSize(requestedSize);
+        img = ir.read();
     }
 
-    // step 3: write to cache for next time
+    // In some cases the requested image is exactly the same size as the original or
+    // the size couldn't be read (e.g networked image). In both cases we return the original
+    // image as is.
+    else
+        return ir.read();
+
+    // write the scaled image to cache
     writeCacheFile(hashData, img);
     TDEBUG() << Q_FUNC_INFO << "Wrote " << id << " to cache";
     return img;
