@@ -37,9 +37,10 @@
 #include <QUuid>
 #include <QContactManagerEngine>
 
-QTM_USE_NAMESPACE
-class SeasidePeopleModelPriv;
 class SeasidePerson;
+class SeasidePeopleModelPriv;
+
+QTM_USE_NAMESPACE
 
 class SeasidePeopleModel: public QAbstractListModel
 {
@@ -70,6 +71,8 @@ public:
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE void removePerson(SeasidePerson *person);
     Q_INVOKABLE void importContacts(const QString &path);
+
+    QContactManager *manager() const;
 
 private:
     SeasidePeopleModelPriv *priv;

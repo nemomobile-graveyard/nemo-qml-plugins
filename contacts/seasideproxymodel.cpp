@@ -58,6 +58,13 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     //if (!QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent))
     //    return false;
 
+    // TODO: it may be better to filter this in SeasidePeopleModel, instead
+    // of constantly doing it on refilter.
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    SeasidePerson *person = model->personByRow(source_row);
+    if (person->id() == model->manager()->selfContactId())
+        return false;
+
     if (priv->filterType == FilterAll) {
         // TODO: this should not be here
         qDebug("fastscroll: emitting countChanged");
@@ -65,10 +72,7 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
         return true;
     }
 
-    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-
     if (priv->filterType == FilterFavorites) {
-        SeasidePerson *person = model->personByRow(source_row);
         if (person->favorite()) {
             // TODO: this should not be here
             qDebug("fastscroll: emitting countChanged");

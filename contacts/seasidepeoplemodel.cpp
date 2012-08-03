@@ -205,3 +205,8 @@ void SeasidePeopleModel::importContacts(const QString &path)
     qDebug() << Q_FUNC_INFO << "Imported " << newContacts.size() << " contacts " << " from " << path;
 }
 
+QContactManager *SeasidePeopleModel::manager() const
+{
+    return priv->manager;
+}
+
