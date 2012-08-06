@@ -189,8 +189,23 @@ void SeasidePeopleModelPriv::contactsAdded(const QList<QContactLocalId>& contact
     if (contactIds.size() == 0)
         return;
 
+    // if we saved the contact, then we'll already have them in the model, and don't
+    // need to fetch them again. In fact, doing so is not only a waste, it'll cause
+    // a crash when processing the fetch, as we'll beginInsertRows, and then not really
+    // insert that many rows.
+    QList<QContactLocalId> filteredLocalIds;
+    filteredLocalIds.reserve(contactIds.size());
+
+    foreach (const QContactLocalId &id, contactIds) {
+        if (!q->personById(id))
+            filteredLocalIds.append(id);
+    }
+
+    if (!filteredLocalIds.count())
+        return; // no sense fetching nothing
+
     QContactLocalIdFilter filter;
-    filter.setIds(contactIds);
+    filter.setIds(filteredLocalIds);
 
     QContactFetchRequest *fetchRequest = new QContactFetchRequest(this);
     fetchRequest->setManager(manager);
@@ -198,7 +213,7 @@ void SeasidePeopleModelPriv::contactsAdded(const QList<QContactLocalId>& contact
             SIGNAL(stateChanged(QContactAbstractRequest::State)),
             SLOT(onAddedFetchChanged(QContactAbstractRequest::State)));
     fetchRequest->setFilter(filter);
-    qDebug() << Q_FUNC_INFO << "Fetching new contacts " << contactIds;
+    qDebug() << Q_FUNC_INFO << "Fetching new contacts " << filteredLocalIds;
 
     if (!fetchRequest->start()) {
         qWarning() << Q_FUNC_INFO << "Fetch request failed";
