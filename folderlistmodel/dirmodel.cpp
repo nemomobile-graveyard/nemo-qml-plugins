@@ -99,6 +99,9 @@ DirModel::DirModel(QObject *parent) : QAbstractListModel(parent)
     roles.insert(FilePathRole, QByteArray("filePath"));
     roles.insert(IsDirRole, QByteArray("isDir"));
     roles.insert(IsFileRole, QByteArray("isFile"));
+    roles.insert(IsReadableRole, QByteArray("isReadable"));
+    roles.insert(IsWritableRole, QByteArray("isWritable"));
+    roles.insert(IsExecutableRole, QByteArray("isExecutable"));
     setRoleNames(roles);
 
     // populate reverse mapping
@@ -122,7 +125,7 @@ QVariant DirModel::data(int row, const QByteArray &stringRole) const
 
 QVariant DirModel::data(const QModelIndex &index, int role) const
 {
-    if (role < FileNameRole || role > IsFileRole) {
+    if (role < FileNameRole || role > IsExecutableRole) {
         qWarning() << Q_FUNC_INFO << "Got an out of range role: " << role;
         return QVariant();
     }
@@ -173,6 +176,12 @@ QVariant DirModel::data(const QModelIndex &index, int role) const
             return fi.isDir();
         case IsFileRole:
             return !fi.isDir();
+        case IsReadableRole:
+            return fi.isReadable();
+        case IsWritableRole:
+            return fi.isWritable();
+        case IsExecutableRole:
+            return fi.isExecutable();
         default:
             // this should not happen, ever
             Q_ASSERT(false);
