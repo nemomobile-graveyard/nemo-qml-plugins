@@ -51,6 +51,9 @@ class DirModel : public QAbstractListModel
         FilePathRole,
         IsDirRole,
         IsFileRole,
+        IsReadableRole,
+        IsWritableRole,
+        IsExecutableRole
     };
 
 public:
