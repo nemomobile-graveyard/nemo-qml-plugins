@@ -15,3 +15,6 @@ current plugins:
 - contacts: offers an API similar to QtMobility.contacts, except without the
   fail
 
+- qrencode: QR encoder API, using qrencode library.
+
+- folderlistmodel: threaded (and faster) version of Qt.labs.folderlistmodel
