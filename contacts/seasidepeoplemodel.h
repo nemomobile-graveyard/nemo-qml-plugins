@@ -69,6 +69,7 @@ public:
     Q_INVOKABLE bool savePerson(SeasidePerson *person);
     Q_INVOKABLE SeasidePerson *personByRow(int row) const;
     Q_INVOKABLE SeasidePerson *personById(int id) const;
+    Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const;
     Q_INVOKABLE void removePerson(SeasidePerson *person);
     Q_INVOKABLE void importContacts(const QString &path);
 

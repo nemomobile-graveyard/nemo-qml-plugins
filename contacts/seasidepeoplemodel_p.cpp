@@ -67,9 +67,18 @@ SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     dataReset();
 }
 
+QString SeasidePeopleModelPriv::normalizePhoneNumber(const QString &msisdn)
+{
+    // TODO:Possibly be more efficient here.
+    QString normalized = msisdn;
+    normalized.replace(QRegExp("[^0-9]"), "");
+    return normalized.right(7);
+}
+
 void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int size)
 {
     foreach (const QContact &contact, contactsList) {
+        SeasidePerson *person = new SeasidePerson(contact);
         //qDebug() << Q_FUNC_INFO << "Adding contact " << contact.id() << " local " << contact.localId();
         QContactLocalId id = contact.localId();
 
@@ -78,7 +87,15 @@ void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int
           contactIds.push_back(id);
           idToIndex.insert(id, size++);
         }
-        idToContact.insert(id, new SeasidePerson(contact));
+        idToContact.insert(id, person);
+
+        // Create normalized numbers -> contact id map.
+        foreach(const QString &sourcePhoneNumber, person->phoneNumbers()) {
+            QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(sourcePhoneNumber);
+            if(phoneNumbersToContactIds.contains(normalizedPhoneNumber)) continue; // Ignore duplicates, first-come-first-serve.
+
+            phoneNumbersToContactIds.insert(normalizedPhoneNumber, contact.localId());
+        }
     }
 }
 
@@ -283,6 +300,7 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
 
     foreach (const QContact &changedContact, changedContactsList) {
         qDebug() << Q_FUNC_INFO << "Fetched changed contact " << changedContact.id();
+        QContactLocalId id = changedContact.localId();
         int index =idToIndex.value(changedContact.localId());
 
         if (index < min)
@@ -293,7 +311,31 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
 
         // FIXME: this looks like it may be wrong,
         // could lead to multiple entries
-       idToContact[changedContact.localId()]->setContact(changedContact);
+        idToContact[id]->setContact(changedContact);
+
+        // TODO: use normalized number from qtcontacts-tracker/mobility
+        SeasidePerson *person = idToContact[id];
+        foreach(const QString &msisdn, person->phoneNumbers()) {
+            QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+
+            if(!phoneNumbersToContactIds.contains(normalizedPhoneNumber)) {
+                phoneNumbersToContactIds.insert(normalizedPhoneNumber, id);
+            }
+        }
+
+        foreach(const QString &phoneNumber, phoneNumbersToContactIds.keys()) {
+           bool remove = true;
+           foreach(const QString &msisdn, person->phoneNumbers()) {
+               QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+               if(phoneNumber == normalizedPhoneNumber) {
+                   remove = false;
+                   break;
+               }
+           }
+           if(remove) {
+               phoneNumbersToContactIds.remove(phoneNumber);
+           }
+        }
     }
 
     // FIXME: unfortunate that we can't easily identify what changed
@@ -326,6 +368,12 @@ void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& conta
 
         delete idToContact.take(id);
         idToIndex.remove(id);
+
+        foreach(const QString &phoneNumber, phoneNumbersToContactIds.keys()) {
+            QContactLocalId cId = phoneNumbersToContactIds.value(phoneNumber);
+            if(cId = id) phoneNumbersToContactIds.remove(phoneNumber);
+        }
+
         q->endRemoveRows();
     }
     fixIndexMap();
@@ -364,6 +412,7 @@ void SeasidePeopleModelPriv::onDataResetFetchChanged(QContactAbstractRequest::St
     qDeleteAll(idToContact);
     idToContact.clear();
     idToIndex.clear();
+    phoneNumbersToContactIds.clear();
 
     addContacts(contactsList, size);
 
