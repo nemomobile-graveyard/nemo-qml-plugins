@@ -35,6 +35,7 @@
 #include <QAbstractListModel>
 #include <QFileInfo>
 #include <QVector>
+#include <QStringList>
 
 #include "iorequest.h"
 
@@ -93,15 +94,21 @@ public:
     bool showDirectories() const;
     void setShowDirectories(bool showDirectories);
 
+    Q_PROPERTY(QStringList nameFilters READ nameFilters WRITE setNameFilters NOTIFY nameFiltersChanged)
+    QStringList nameFilters() const;
+    void setNameFilters(const QStringList &nameFilters);
+
 public slots:
     void onItemsAdded(const QVector<QFileInfo> &newFiles);
 
 signals:
+    void nameFiltersChanged();
     void showDirectoriesChanged();
     void pathChanged();
     void error(const QString &errorTitle, const QString &errorMessage);
 
 private:
+    QStringList mNameFilters;
     bool mShowDirectories;
     QString mCurrentDir;
     QVector<QFileInfo> mDirectoryContents;
