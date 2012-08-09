@@ -37,12 +37,14 @@ public:
     QList<QContactLocalId> contactIds;
     QMap<QContactLocalId, int> idToIndex;
     QMap<QContactLocalId, SeasidePerson *> idToContact;
+    QMap<QString, QContactLocalId> phoneNumbersToContactIds;
     QVector<QStringList> data;
     QStringList headers;
     LocaleUtils *localeHelper;
     QContactGuid currentGuid;
     QList<QContact> contactsPendingSave;
 
+    static QString normalizePhoneNumber(const QString &msisdn);
 
     void addContacts(const QList<QContact> contactsList, int size);
     void fixIndexMap();

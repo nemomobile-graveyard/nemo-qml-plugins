@@ -58,6 +58,11 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         return model->personById(id);
     }
+    Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const
+    {
+        SeasidePeopleModel *model = static_cast<SeasidePeopleModel*>(sourceModel());
+        return model->personByPhoneNumber(msisdn);
+    }
     Q_INVOKABLE void removePerson(SeasidePerson *person)
     {
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());

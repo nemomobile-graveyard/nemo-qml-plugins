@@ -138,6 +138,16 @@ SeasidePerson *SeasidePeopleModel::personById(int id) const
     return person;
 }
 
+SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) const
+{
+    QString normalizedNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+
+    if(normalizedNumber.isEmpty() || !priv->phoneNumbersToContactIds.contains(normalizedNumber)) return NULL;
+
+    QContactLocalId localId = priv->phoneNumbersToContactIds.value(normalizedNumber);
+    return priv->idToContact.value(localId);
+}
+
 void SeasidePeopleModel::removePerson(SeasidePerson *person)
 {
     qDebug() << Q_FUNC_INFO << "Removing " << person;
