@@ -224,6 +224,9 @@ void DirModel::onItemsAdded(const QVector<QFileInfo> &newFiles)
     qDebug() << Q_FUNC_INFO << "Got new files: " << newFiles.count();
 
     foreach (const QFileInfo &fi, newFiles) {
+        if (!mShowDirectories && fi.isDir())
+            continue;
+
         QVector<QFileInfo>::Iterator it = qLowerBound(mDirectoryContents.begin(),
                                                       mDirectoryContents.end(),
                                                       fi,
@@ -312,6 +315,18 @@ void DirModel::mkdir(const QString &newDir)
     } else {
         refresh();
     }
+}
+
+bool DirModel::showDirectories() const
+{
+    return mShowDirectories;
+}
+
+void DirModel::setShowDirectories(bool showDirectories)
+{
+    mShowDirectories = showDirectories;
+    refresh();
+    emit showDirectoriesChanged();
 }
 
 // for dirlistworker

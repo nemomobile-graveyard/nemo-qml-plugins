@@ -89,14 +89,20 @@ public:
 
     Q_INVOKABLE void mkdir(const QString &newdir);
 
+    Q_PROPERTY(bool showDirectories READ showDirectories WRITE setShowDirectories NOTIFY showDirectoriesChanged)
+    bool showDirectories() const;
+    void setShowDirectories(bool showDirectories);
+
 public slots:
     void onItemsAdded(const QVector<QFileInfo> &newFiles);
 
 signals:
+    void showDirectoriesChanged();
     void pathChanged();
     void error(const QString &errorTitle, const QString &errorMessage);
 
 private:
+    bool mShowDirectories;
     QString mCurrentDir;
     QVector<QFileInfo> mDirectoryContents;
     QHash<QByteArray, int> mRoleMapping;
