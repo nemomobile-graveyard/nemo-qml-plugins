@@ -194,6 +194,15 @@ QVariant DirModel::data(const QModelIndex &index, int role) const
 
 void DirModel::setPath(const QString &pathName)
 {
+    if (mAwaitingResults) {
+        // TODO: handle the case where pathName != our current path, cancel old
+        // request, start a new one
+        qDebug() << Q_FUNC_INFO << "Ignoring path change request, request already running";
+        return;
+    }
+
+    mAwaitingResults = true;
+    emit awaitingResultsChanged();
     qDebug() << Q_FUNC_INFO << "Changing to " << pathName << " on " << QThread::currentThreadId();
 
     beginResetModel();
@@ -222,8 +231,13 @@ static bool fileCompare(const QFileInfo &a, const QFileInfo &b)
 
 void DirModel::onItemsAdded(const QVector<QFileInfo> &newFiles)
 {
-    // TODO: we need to perform a sorted insert
     qDebug() << Q_FUNC_INFO << "Got new files: " << newFiles.count();
+
+    if (mAwaitingResults) {
+        qDebug() << Q_FUNC_INFO << "No longer awaiting results";
+        mAwaitingResults = false;
+        emit awaitingResultsChanged();
+    }
 
     foreach (const QFileInfo &fi, newFiles) {
         if (!mShowDirectories && fi.isDir())
@@ -354,6 +368,11 @@ void DirModel::setNameFilters(const QStringList &nameFilters)
     mNameFilters = nameFilters;
     refresh();
     emit nameFiltersChanged();
+}
+
+bool DirModel::awaitingResults() const
+{
+    return mAwaitingResults;
 }
 
 // for dirlistworker

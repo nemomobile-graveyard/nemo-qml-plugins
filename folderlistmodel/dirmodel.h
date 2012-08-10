@@ -82,6 +82,9 @@ public:
     Q_PROPERTY(QString path READ path WRITE setPath NOTIFY pathChanged);
     inline QString path() const { return mCurrentDir; }
 
+    Q_PROPERTY(bool awaitingResults READ awaitingResults NOTIFY awaitingResultsChanged);
+    bool awaitingResults() const;
+
     void setPath(const QString &pathName);
 
     Q_INVOKABLE void rm(const QStringList &paths);
@@ -102,6 +105,7 @@ public slots:
     void onItemsAdded(const QVector<QFileInfo> &newFiles);
 
 signals:
+    void awaitingResultsChanged();
     void nameFiltersChanged();
     void showDirectoriesChanged();
     void pathChanged();
@@ -110,6 +114,7 @@ signals:
 private:
     QStringList mNameFilters;
     bool mShowDirectories;
+    bool mAwaitingResults;
     QString mCurrentDir;
     QVector<QFileInfo> mDirectoryContents;
     QHash<QByteArray, int> mRoleMapping;
