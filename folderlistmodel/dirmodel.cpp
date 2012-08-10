@@ -194,6 +194,9 @@ QVariant DirModel::data(const QModelIndex &index, int role) const
 
 void DirModel::setPath(const QString &pathName)
 {
+    if (pathName.isEmpty())
+        return;
+
     if (mAwaitingResults) {
         // TODO: handle the case where pathName != our current path, cancel old
         // request, start a new one
