@@ -73,6 +73,11 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         model->importContacts(path);
     }
+    Q_INVOKABLE QString exportContacts()
+    {
+        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+        return model->exportContacts();
+    }
 
 signals:
     void countChanged();

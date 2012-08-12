@@ -33,6 +33,8 @@
 #include <QFile>
 #include <QVector>
 
+#include <QDesktopServices>
+
 #include <QContactAddress>
 #include <QContactAvatar>
 #include <QContactThumbnail>
@@ -55,7 +57,9 @@
 #include <QContactManagerEngine>
 
 #include <QVersitReader>
+#include <QVersitWriter>
 #include <QVersitContactImporter>
+#include <QVersitContactExporter>
 
 #include "seasideperson.h"
 #include "seasidepeoplemodel.h"
@@ -199,6 +203,7 @@ void SeasidePeopleModel::importContacts(const QString &path)
         return;
     }
 
+    // TODO: thread
     QVersitReader reader(&vcf);
     reader.startReading();
     reader.waitForFinished();
@@ -213,6 +218,45 @@ void SeasidePeopleModel::importContacts(const QString &path)
 
     priv->savePendingContacts();
     qDebug() << Q_FUNC_INFO << "Imported " << newContacts.size() << " contacts " << " from " << path;
+}
+
+QString SeasidePeopleModel::exportContacts() const
+{
+    QVersitContactExporter exporter;
+
+    QList<QContact> contacts;
+    contacts.reserve(priv->contactIds.size());
+
+    foreach (const QContactLocalId &contactId, priv->contactIds) {
+        SeasidePerson *p = personById(contactId);
+        contacts.append(p->contact());
+    }
+
+    if (!exporter.exportContacts(contacts)) {
+        qWarning() << Q_FUNC_INFO << "Failed to export contacts: " << exporter.errorMap();
+        return QString();
+    }
+
+    QFile
+        vcard(QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation)
+              + QDir::separator()
+              + QDateTime::currentDateTime().toString("ss_mm_hh_dd_mm_yyyy")
+              + ".vcf");
+
+    if (!vcard.open(QIODevice::WriteOnly)) {
+        qWarning() << "Cannot open " << vcard.fileName();
+        return QString();
+    }
+
+    QVersitWriter writer(&vcard);
+    if (!writer.startWriting(exporter.documents())) {
+        qWarning() << Q_FUNC_INFO << "Can't start writing vcards " << writer.error();
+        return QString();
+    }
+
+    // TODO: thread
+    writer.waitForFinished();
+    return vcard.fileName();
 }
 
 QContactManager *SeasidePeopleModel::manager() const
