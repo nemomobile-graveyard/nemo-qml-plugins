@@ -36,6 +36,7 @@
 #include <QDir>
 #include <QImageReader>
 #include <QDateTime>
+#include <QtEndian>
 
 #undef THUMBNAILER_DEBUG
 
@@ -45,6 +46,7 @@
 #define TDEBUG if(false)qDebug
 #endif
 
+#include "nemoimagemetadata.h"
 #include "nemothumbnailprovider.h"
 
 static inline QString cachePath()
@@ -106,6 +108,60 @@ static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
     fi.close();
 }
 
+static QImage rotate(const QImage &src,
+		     NemoImageMetadata::Orientation orientation)
+{
+    QTransform trans;
+    QImage dst, tmp;
+
+    /* For square images 90-degree rotations of the pixel could be
+       done in-place, and flips could be done in-place for any image
+       instead of using the QImage routines which make copies of the
+       data. */
+
+    switch (orientation) {
+    case NemoImageMetadata::TopRight:
+        /* horizontal flip */
+        dst = src.mirrored(true, false);
+        break;
+    case NemoImageMetadata::BottomRight:
+        /* horizontal flip, vertical flip */
+        dst = src.mirrored(true, true);
+        break;
+    case NemoImageMetadata::BottomLeft:
+        /* vertical flip */
+        dst = src.mirrored(false, true);
+        break;
+    case NemoImageMetadata::LeftTop:
+        /* rotate 90 deg clockwise and flip horizontally */
+        trans.rotate(90.0);
+        tmp = src.transformed(trans);
+        dst = tmp.mirrored(true, false);
+        break;
+    case NemoImageMetadata::RightTop:
+        /* rotate 90 deg anticlockwise */
+        trans.rotate(90.0);
+        dst = src.transformed(trans);
+        break;
+    case NemoImageMetadata::RightBottom:
+        /* rotate 90 deg anticlockwise and flip horizontally */
+        trans.rotate(-90.0);
+        tmp = src.transformed(trans);
+        dst = tmp.mirrored(true, false);
+        break;
+    case NemoImageMetadata::LeftBottom:
+        /* rotate 90 deg clockwise */
+        trans.rotate(-90.0);
+        dst = src.transformed(trans);
+        break;
+    default:
+        dst = src;
+        break;
+    }
+
+    return dst;
+}
+
 QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const QSize &requestedSize)
 {
     setupCache();
@@ -158,10 +214,18 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         img = ir.read();
     }
     else
-        return ir.read();
+        img = ir.read();
+
+    NemoImageMetadata meta(id);
+    if (meta.orientation() != NemoImageMetadata::TopLeft) {
+        img = rotate(img, meta.orientation());
+    }
 
     // write the scaled image to cache
-    writeCacheFile(hashData, img);
+    if (meta.orientation() != NemoImageMetadata::TopLeft ||
+	(originalSize != requestedSize && originalSize.isValid())) {
+        writeCacheFile(hashData, img);
+    }
     TDEBUG() << Q_FUNC_INFO << "Wrote " << id << " to cache";
     return img;
 }
