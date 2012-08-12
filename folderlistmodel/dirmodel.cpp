@@ -88,7 +88,10 @@ private:
     QString mPathName;
 };
 
-DirModel::DirModel(QObject *parent) : QAbstractListModel(parent)
+DirModel::DirModel(QObject *parent)
+    : QAbstractListModel(parent)
+    , mAwaitingResults(false)
+    , mShowDirectories(true)
 {
     mNameFilters = QStringList() << "*";
 
