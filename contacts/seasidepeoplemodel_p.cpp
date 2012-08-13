@@ -352,7 +352,7 @@ void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& conta
     QList<int> removed;
     foreach (const QContactLocalId& id, contactIds)
         removed.push_front(idToIndex.value(id));
-    qSort(removed);
+    std::sort(removed.begin(), removed.end());
 
     // NOTE: this could check for adjacent rows being removed and send fewer signals
     int size = removed.size();
