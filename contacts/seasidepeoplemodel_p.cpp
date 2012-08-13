@@ -381,7 +381,7 @@ void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& conta
 
         foreach(const QString &phoneNumber, phoneNumbersToContactIds.keys()) {
             QContactLocalId cId = phoneNumbersToContactIds.value(phoneNumber);
-            if(cId = id) phoneNumbersToContactIds.remove(phoneNumber);
+            if(cId == id) phoneNumbersToContactIds.remove(phoneNumber);
         }
 
         q->endRemoveRows();
