@@ -71,7 +71,7 @@ public:
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const;
     Q_INVOKABLE void removePerson(SeasidePerson *person);
-    Q_INVOKABLE void importContacts(const QString &path);
+    Q_INVOKABLE int importContacts(const QString &path);
     Q_INVOKABLE QString exportContacts() const;
 
     QContactManager *manager() const;

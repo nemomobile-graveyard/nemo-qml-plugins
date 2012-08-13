@@ -194,13 +194,13 @@ QVariant SeasidePeopleModel::data(const QModelIndex& index, int role) const
 
 #include <QDir>
 
-void SeasidePeopleModel::importContacts(const QString &path)
+int SeasidePeopleModel::importContacts(const QString &path)
 {
     qDebug() << QDir::currentPath();
     QFile vcf(path);
     if (!vcf.open(QIODevice::ReadOnly)) {
         qWarning() << Q_FUNC_INFO << "Cannot open " << path;
-        return;
+        return 0;
     }
 
     // TODO: thread
@@ -218,6 +218,7 @@ void SeasidePeopleModel::importContacts(const QString &path)
 
     priv->savePendingContacts();
     qDebug() << Q_FUNC_INFO << "Imported " << newContacts.size() << " contacts " << " from " << path;
+    return newContacts.size();
 }
 
 QString SeasidePeopleModel::exportContacts() const

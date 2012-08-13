@@ -68,10 +68,10 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         model->removePerson(person);
     }
-    Q_INVOKABLE void importContacts(const QString &path)
+    Q_INVOKABLE int importContacts(const QString &path)
     {
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        model->importContacts(path);
+        return model->importContacts(path);
     }
     Q_INVOKABLE QString exportContacts()
     {
