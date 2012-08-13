@@ -229,6 +229,10 @@ QString SeasidePeopleModel::exportContacts() const
 
     foreach (const QContactLocalId &contactId, priv->contactIds) {
         SeasidePerson *p = personById(contactId);
+
+        if (p->id() == manager()->selfContactId())
+            continue;
+
         contacts.append(p->contact());
     }
 
