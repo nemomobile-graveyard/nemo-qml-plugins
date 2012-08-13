@@ -155,7 +155,7 @@ SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) co
 void SeasidePeopleModel::removePerson(SeasidePerson *person)
 {
     qDebug() << Q_FUNC_INFO << "Removing " << person;
-    // TODO: fake remove the contact, so it appears to happen faster
+
     QContactRemoveRequest *removeRequest = new QContactRemoveRequest(this);
     removeRequest->setManager(priv->manager);
     connect(removeRequest,
@@ -168,6 +168,9 @@ void SeasidePeopleModel::removePerson(SeasidePerson *person)
         qWarning() << Q_FUNC_INFO << "Remove request failed";
         delete removeRequest;
     }
+
+    // fake removal for slow managers
+    priv->contactsRemoved(QList<QContactLocalId>() << person->id());
 }
 
 QVariant SeasidePeopleModel::data(const QModelIndex& index, int role) const

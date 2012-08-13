@@ -52,6 +52,7 @@ public:
 public slots:
     void dataReset();
     void savePendingContacts();
+    void contactsRemoved(const QList<QContactLocalId>& contactIds);
 
 private slots:
     void onSaveStateChanged(QContactAbstractRequest::State requestState);
@@ -62,9 +63,6 @@ private slots:
 
     void contactsAdded(const QList<QContactLocalId>& contactIds);
     void contactsChanged(const QList<QContactLocalId>& contactIds);
-    void contactsRemoved(const QList<QContactLocalId>& contactIds);
-
-
 
 private:
     Q_DISABLE_COPY(SeasidePeopleModelPriv);

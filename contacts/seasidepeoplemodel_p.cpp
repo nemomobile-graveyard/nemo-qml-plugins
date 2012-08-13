@@ -301,7 +301,12 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
     foreach (const QContact &changedContact, changedContactsList) {
         qDebug() << Q_FUNC_INFO << "Fetched changed contact " << changedContact.id();
         QContactLocalId id = changedContact.localId();
-        int index =idToIndex.value(changedContact.localId());
+
+        QMap<QContactLocalId, int>::ConstIterator it = idToIndex.find(changedContact.localId());
+        if (it == idToIndex.constEnd())
+            continue;
+
+        int index = *it;
 
         if (index < min)
             min = index;
@@ -309,8 +314,6 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
         if (index > max)
             max = index;
 
-        // FIXME: this looks like it may be wrong,
-        // could lead to multiple entries
         idToContact[id]->setContact(changedContact);
 
         // TODO: use normalized number from qtcontacts-tracker/mobility
@@ -349,9 +352,17 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
 void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& contactIds)
 {
     qDebug() << Q_FUNC_INFO << "contacts removed:" << contactIds;
+
     QList<int> removed;
-    foreach (const QContactLocalId& id, contactIds)
-        removed.push_front(idToIndex.value(id));
+    removed.reserve(contactIds.size());
+
+    foreach (const QContactLocalId& id, contactIds) {
+        QMap<QContactLocalId, int>::ConstIterator it = idToIndex.find(id);
+        if (it == idToIndex.end())
+            continue;
+
+        removed.push_front(*it);
+    }
     std::sort(removed.begin(), removed.end());
 
     // NOTE: this could check for adjacent rows being removed and send fewer signals
@@ -362,7 +373,11 @@ void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& conta
         q->beginRemoveRows(QModelIndex(), index, index);
         QContactLocalId id = this->contactIds.takeAt(index);
 
-        delete idToContact.take(id);
+        // don't use delete here, otherwise it'll break the fake removal of
+        // contacts in the case of the memory manager (remove request -> instant
+        // non-queued contactsRemoved -> gets us back here again, so we delete
+        // the contact before we've had a chance to fake the removal)
+        idToContact.take(id)->deleteLater();
         idToIndex.remove(id);
 
         foreach(const QString &phoneNumber, phoneNumbersToContactIds.keys()) {
