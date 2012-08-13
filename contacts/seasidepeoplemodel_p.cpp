@@ -195,9 +195,8 @@ void SeasidePeopleModelPriv::onRemoveStateChanged(QContactAbstractRequest::State
         return;
 
     qDebug() << Q_FUNC_INFO << "Removed" << removeRequest->contactIds();
-    // TODO: where is our actual removal?
-
     removeRequest->deleteLater();
+    // actual removal done on contactsRemoved signal
 }
 
 // helper function to check validity of sender and stuff.
