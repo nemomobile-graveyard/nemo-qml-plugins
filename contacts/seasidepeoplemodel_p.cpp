@@ -349,10 +349,6 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
 void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& contactIds)
 {
     qDebug() << Q_FUNC_INFO << "contacts removed:" << contactIds;
-    // FIXME: the fact that we're only notified after removal may mean that we must
-    //   store the full contact in the model, because the data could be invalid
-    //   when the view goes to access it
-
     QList<int> removed;
     foreach (const QContactLocalId& id, contactIds)
         removed.push_front(idToIndex.value(id));
