@@ -45,11 +45,21 @@
 #define TDEBUG if(false)qDebug
 #endif
 
+const int THUMBNAILER_MAX_SUBFOLDERS = 100;
+const int THUMBNAILER_MAX_CACHED_ITEMS = 100000;
+const int THUMBNAILER_MAX_CACHED_ITEMS_SIZE = 50*1024*1024;
+const QString THUMBNAILER_COUNT_FILE_NAME(".count");
+
 #include "nemothumbnailprovider.h"
 
 static inline QString cachePath()
 {
     return QDesktopServices::storageLocation(QDesktopServices::CacheLocation) + ".nemothumbs";
+}
+
+static inline QString rawCachePath()
+{
+    return cachePath() + QDir::separator() + "raw";
 }
 
 static void setupCache()
@@ -78,9 +88,31 @@ static QByteArray cacheKey(const QString &id, const QSize &requestedSize)
            QString::number(requestedSize.height()).toLatin1();
 }
 
+static QString cacheSubfolder(const QByteArray &hashKey)
+{
+    qint16 checksum = qChecksum(hashKey.data(), hashKey.length());
+    return QString::number(qAbs(checksum) % THUMBNAILER_MAX_SUBFOLDERS);
+}
+
+static QString cacheFileName(const QByteArray &hashKey, bool makePath = false)
+{
+    QString subfolder = cacheSubfolder(hashKey);
+    if (makePath) {
+        QDir d(rawCachePath());
+        if (!d.exists(subfolder))
+            d.mkdir(subfolder);
+    }
+
+    return rawCachePath() +
+           QDir::separator() +
+           subfolder +
+           QDir::separator() +
+           hashKey;
+}
+
 static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
 {
-    QFile fi(cachePath() + QDir::separator() + "raw" + QDir::separator() + hashKey);
+    QFile fi(cacheFileName(hashKey));
     QFileInfo info(fi);
     if (info.exists() && info.lastModified() >= QFileInfo(id).lastModified()) {
         if (fi.open(QIODevice::ReadOnly)) {
@@ -94,16 +126,69 @@ static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
     return QImage();
 }
 
+static void initBookKeepingData(int &count, qint64 &size)
+{
+    count = 0;
+    size = 0;
+
+    // count number of cached files and their combined size.
+    QDir cacheDir(rawCachePath());
+    QFileInfoList fileInfoList = cacheDir.entryInfoList();
+    foreach (const QFileInfo fileInfo, fileInfoList) {
+        if (fileInfo.isDir() && (fileInfo.fileName() != "..") && (fileInfo.fileName() != ".")) {
+            QDir subdir(rawCachePath() + QDir::separator() + fileInfo.fileName());
+            QFileInfoList entries = subdir.entryInfoList();
+            foreach (const QFileInfo entry, entries) {
+                if (entry.fileName() != ".." && entry.fileName() != ".") {
+                    count++;
+                    size += entry.size();
+                }
+            }
+        }
+    }
+}
+
 static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
 {
-    QFile fi(cachePath() + QDir::separator() + "raw" + QDir::separator() + hashKey);
-    if (!fi.open(QIODevice::WriteOnly)) {
-        qWarning() << "Couldn't cache to " << fi.fileName();
+    QFile countFile(rawCachePath() + QDir::separator() + THUMBNAILER_COUNT_FILE_NAME);
+    if (!countFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        qWarning() << "Couldn't open thumbnailer count file ";
         return;
     }
+
+    QTextStream countStream(&countFile);
+    bool countOk, sizeOk;
+    int count = countStream.readLine().toInt(&countOk);
+    qint64 size = countStream.readLine().toLong(&sizeOk);
+
+    // initialize book keeping file if proper data is not available.
+    if (!countOk || !sizeOk)
+        initBookKeepingData(count, size);
+
+    // check that we don't exceed limits.
+    if (count >= THUMBNAILER_MAX_CACHED_ITEMS || size >= THUMBNAILER_MAX_CACHED_ITEMS_SIZE) {
+        countFile.close();
+        return;
+    }
+
+    // good to go, try to cache
+    QFile fi(cacheFileName(hashKey, true));
+    if (!fi.open(QIODevice::WriteOnly)) {
+        qWarning() << "Couldn't cache to " << fi.fileName();
+        countFile.close();
+        return;
+    }
+
     img.save(&fi, "JPG");
-    fi.flush();
+    count++;
+    size += fi.size();
     fi.close();
+
+    // update book keeping file.
+    countStream.seek(0);
+    countStream << QString::number(count) << "\n";
+    countStream << QString::number(size) << "\n";
+    countFile.close();
 }
 
 QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const QSize &requestedSize)
