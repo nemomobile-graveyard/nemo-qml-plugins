@@ -109,7 +109,7 @@ static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
 }
 
 static QImage rotate(const QImage &src,
-		     NemoImageMetadata::Orientation orientation)
+                     NemoImageMetadata::Orientation orientation)
 {
     QTransform trans;
     QImage dst, tmp;
@@ -120,43 +120,43 @@ static QImage rotate(const QImage &src,
        data. */
 
     switch (orientation) {
-    case NemoImageMetadata::TopRight:
-        /* horizontal flip */
-        dst = src.mirrored(true, false);
-        break;
-    case NemoImageMetadata::BottomRight:
-        /* horizontal flip, vertical flip */
-        dst = src.mirrored(true, true);
-        break;
-    case NemoImageMetadata::BottomLeft:
-        /* vertical flip */
-        dst = src.mirrored(false, true);
-        break;
-    case NemoImageMetadata::LeftTop:
-        /* rotate 90 deg clockwise and flip horizontally */
-        trans.rotate(90.0);
-        tmp = src.transformed(trans);
-        dst = tmp.mirrored(true, false);
-        break;
-    case NemoImageMetadata::RightTop:
-        /* rotate 90 deg anticlockwise */
-        trans.rotate(90.0);
-        dst = src.transformed(trans);
-        break;
-    case NemoImageMetadata::RightBottom:
-        /* rotate 90 deg anticlockwise and flip horizontally */
-        trans.rotate(-90.0);
-        tmp = src.transformed(trans);
-        dst = tmp.mirrored(true, false);
-        break;
-    case NemoImageMetadata::LeftBottom:
-        /* rotate 90 deg clockwise */
-        trans.rotate(-90.0);
-        dst = src.transformed(trans);
-        break;
-    default:
-        dst = src;
-        break;
+        case NemoImageMetadata::TopRight:
+            /* horizontal flip */
+            dst = src.mirrored(true, false);
+            break;
+        case NemoImageMetadata::BottomRight:
+            /* horizontal flip, vertical flip */
+            dst = src.mirrored(true, true);
+            break;
+        case NemoImageMetadata::BottomLeft:
+            /* vertical flip */
+            dst = src.mirrored(false, true);
+            break;
+        case NemoImageMetadata::LeftTop:
+            /* rotate 90 deg clockwise and flip horizontally */
+            trans.rotate(90.0);
+            tmp = src.transformed(trans);
+            dst = tmp.mirrored(true, false);
+            break;
+        case NemoImageMetadata::RightTop:
+            /* rotate 90 deg anticlockwise */
+            trans.rotate(90.0);
+            dst = src.transformed(trans);
+            break;
+        case NemoImageMetadata::RightBottom:
+            /* rotate 90 deg anticlockwise and flip horizontally */
+            trans.rotate(-90.0);
+            tmp = src.transformed(trans);
+            dst = tmp.mirrored(true, false);
+            break;
+        case NemoImageMetadata::LeftBottom:
+            /* rotate 90 deg clockwise */
+            trans.rotate(-90.0);
+            dst = src.transformed(trans);
+            break;
+        default:
+            dst = src;
+            break;
     }
 
     return dst;
@@ -193,6 +193,7 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
     // image was not in cache thus we read it
     QImageReader ir(id);
     QSize originalSize = ir.size();
+    QByteArray format = ir.format();
 
     // scales arbitrary sized source image to requested size scaling either up or down
     // keeping aspect ratio of the original image intact by maximizing either width or height
@@ -216,14 +217,13 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
     else
         img = ir.read();
 
-    NemoImageMetadata meta(id);
-    if (meta.orientation() != NemoImageMetadata::TopLeft) {
+    NemoImageMetadata meta(id, format);
+    if (meta.orientation() != NemoImageMetadata::TopLeft)
         img = rotate(img, meta.orientation());
-    }
 
     // write the scaled image to cache
     if (meta.orientation() != NemoImageMetadata::TopLeft ||
-	(originalSize != requestedSize && originalSize.isValid())) {
+        (originalSize != requestedSize && originalSize.isValid())) {
         writeCacheFile(hashData, img);
     }
     TDEBUG() << Q_FUNC_INFO << "Wrote " << id << " to cache";

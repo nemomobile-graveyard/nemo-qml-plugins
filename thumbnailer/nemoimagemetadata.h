@@ -33,6 +33,7 @@
 #define NEMOIMAGEMETADATA_H
 
 class QString;
+class QByteArray;
 
 #include <QMetaType>
 
@@ -53,7 +54,7 @@ public:
 
     NemoImageMetadata();
 
-    NemoImageMetadata(const QString &filename);
+    NemoImageMetadata(const QString &filename, const QByteArray &format);
 
     NemoImageMetadata(const NemoImageMetadata &other);
 
