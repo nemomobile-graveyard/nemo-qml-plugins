@@ -90,21 +90,13 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     }
 
     if (priv->filterType == FilterSearch) {
-        // TODO: this should not be here
         qDebug("fastscroll: FilterSearch emitting countChanged");
-
         if (person->displayLabel().contains(filterRegExp())) {
-
-
             emit const_cast<SeasideProxyModel*>(this)->countChanged();
             return true;
         }
         return false;
     }
-
-
-
-
 
     if (priv->filterType == FilterFavorites) {
         if (person->favorite()) {
