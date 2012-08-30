@@ -1,6 +1,5 @@
 /*
  * Copyright 2011 Intel Corporation.
- * Copyright 2012 Nicola De Filippo.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -27,7 +26,6 @@ public:
     enum FilterType {
         FilterAll,
         FilterFavorites,
-        FilterSearch,
     };
 
     enum StringType {
@@ -36,9 +34,6 @@ public:
     };
 
     Q_INVOKABLE virtual void setFilter(FilterType filter);
-
-    Q_INVOKABLE virtual void search(const QString & pattern);
-
     Q_INVOKABLE int getSourceRow(int row) const;
 
     // for fastscroll support
