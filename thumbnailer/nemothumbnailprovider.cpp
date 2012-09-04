@@ -59,19 +59,13 @@ static inline QString rawCachePath()
     return cachePath() + QDir::separator() + "raw";
 }
 
-static inline QString cacheSubfolder(const QByteArray &hashKey)
-{
-    return QString(hashKey).left(2);
-}
-
 static void setupCache()
 {
     // the syscalls make baby jesus cry; but this protects us against sins like users
     QDir d(cachePath());
     if (!d.exists())
         d.mkpath(cachePath());
-    if (!d.exists("raw"))
-        d.mkdir("raw");
+    d.mkdir("raw");
 
     // in the future, we might store a nicer UI version which can blend in with our UI better, but
     // we'll always want the raw version.
@@ -79,11 +73,10 @@ static void setupCache()
 
 static QString cacheFileName(const QByteArray &hashKey, bool makePath = false)
 {
-    QString subfolder = cacheSubfolder(hashKey);
+    QString subfolder = QString(hashKey.left(2));
     if (makePath) {
         QDir d(rawCachePath());
-        if (!d.exists(subfolder))
-            d.mkdir(subfolder);
+        d.mkdir(subfolder);
     }
 
     return rawCachePath() +
