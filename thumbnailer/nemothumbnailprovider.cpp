@@ -54,17 +54,36 @@ static inline QString cachePath()
     return QDesktopServices::storageLocation(QDesktopServices::CacheLocation) + ".nemothumbs";
 }
 
+static inline QString rawCachePath()
+{
+    return cachePath() + QDir::separator() + "raw";
+}
+
 static void setupCache()
 {
     // the syscalls make baby jesus cry; but this protects us against sins like users
     QDir d(cachePath());
     if (!d.exists())
         d.mkpath(cachePath());
-    if (!d.exists("raw"))
-        d.mkdir("raw");
+    d.mkdir("raw");
 
     // in the future, we might store a nicer UI version which can blend in with our UI better, but
     // we'll always want the raw version.
+}
+
+static QString cacheFileName(const QByteArray &hashKey, bool makePath = false)
+{
+    QString subfolder = QString(hashKey.left(2));
+    if (makePath) {
+        QDir d(rawCachePath());
+        d.mkdir(subfolder);
+    }
+
+    return rawCachePath() +
+           QDir::separator() +
+           subfolder +
+           QDir::separator() +
+           hashKey;
 }
 
 static QByteArray cacheKey(const QString &id, const QSize &requestedSize)
@@ -82,7 +101,7 @@ static QByteArray cacheKey(const QString &id, const QSize &requestedSize)
 
 static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
 {
-    QFile fi(cachePath() + QDir::separator() + "raw" + QDir::separator() + hashKey);
+    QFile fi(cacheFileName(hashKey));
     QFileInfo info(fi);
     if (info.exists() && info.lastModified() >= QFileInfo(id).lastModified()) {
         if (fi.open(QIODevice::ReadOnly)) {
@@ -98,7 +117,7 @@ static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
 
 static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
 {
-    QFile fi(cachePath() + QDir::separator() + "raw" + QDir::separator() + hashKey);
+    QFile fi(cacheFileName(hashKey, true));
     if (!fi.open(QIODevice::WriteOnly)) {
         qWarning() << "Couldn't cache to " << fi.fileName();
         return;
