@@ -49,17 +49,12 @@ void SeasideProxyModel::setFilter(FilterType filter)
 
 void SeasideProxyModel::search(const QString & pattern)
 {
-    if (pattern.length() == 0) {
+    if (pattern.length() == 0)
         setFilter(FilterAll);
-    } else {
+    else
         setFilter(FilterSearch);
-    }
 
-    QRegExp rx("*"+ pattern + "*");
-    rx.setPatternSyntax(QRegExp::Wildcard);
-
-    setFilterRegExp(rx);
-    qDebug() << Q_FUNC_INFO << filterRegExp();
+    this->pattern = pattern;
 }
 
 
@@ -90,10 +85,12 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     }
 
     if (priv->filterType == FilterSearch) {
-        qDebug("fastscroll: FilterSearch emitting countChanged");
-        if (person->displayLabel().contains(filterRegExp())) {
-            emit const_cast<SeasideProxyModel*>(this)->countChanged();
-            return true;
+        QStringList listDisplayLabel = person->displayLabel().split(" ");
+        for (int i = 0; i < listDisplayLabel.count(); i++) {
+            if(listDisplayLabel.at(i).startsWith(pattern,Qt::CaseInsensitive)) {
+                emit const_cast<SeasideProxyModel*>(this)->countChanged();
+                return true;
+            }
         }
         return false;
     }

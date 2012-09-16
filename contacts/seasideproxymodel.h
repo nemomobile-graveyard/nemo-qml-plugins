@@ -94,6 +94,7 @@ protected:
 private:
     SeasideProxyModelPriv *priv;
     Q_DISABLE_COPY(SeasideProxyModel);
+    QString pattern;
 };
 
 #endif // SEASIDEPROXYMODEL_H
