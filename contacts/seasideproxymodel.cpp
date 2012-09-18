@@ -1,6 +1,7 @@
 /*
  * Copyright 2011 Intel Corporation.
  * Copyright 2011 Robin Burchell
+ * Copyright 2012 Nicola De Filippo
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -46,6 +47,12 @@ void SeasideProxyModel::setFilter(FilterType filter)
     invalidateFilter();
 }
 
+void SeasideProxyModel::search(const QString & pattern)
+{
+    this->pattern = pattern;
+}
+
+
 int SeasideProxyModel::getSourceRow(int row) const
 {
     return mapToSource(index(row, 0)).row();
@@ -70,6 +77,17 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
         qDebug("fastscroll: emitting countChanged");
         emit const_cast<SeasideProxyModel*>(this)->countChanged();
         return true;
+    }
+
+    if (priv->filterType == FilterSearch) {
+        QStringList listDisplayLabel = person->displayLabel().split(" ");
+        for (int i = 0; i < listDisplayLabel.count(); i++) {
+            if(listDisplayLabel.at(i).startsWith(pattern,Qt::CaseInsensitive)) {
+                emit const_cast<SeasideProxyModel*>(this)->countChanged();
+                return true;
+            }
+        }
+        return false;
     }
 
     if (priv->filterType == FilterFavorites) {
