@@ -49,11 +49,6 @@ void SeasideProxyModel::setFilter(FilterType filter)
 
 void SeasideProxyModel::search(const QString & pattern)
 {
-    if (pattern.length() == 0)
-        setFilter(FilterAll);
-    else
-        setFilter(FilterSearch);
-
     this->pattern = pattern;
 }
 
