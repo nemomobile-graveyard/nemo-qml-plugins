@@ -21,6 +21,7 @@ class SeasideProxyModelPriv
 public:
     SeasideProxyModel::FilterType filterType;
     LocaleUtils *localeHelper;
+    QString searchPattern;
 };
 
 SeasideProxyModel::SeasideProxyModel(QObject *parent)
@@ -47,9 +48,10 @@ void SeasideProxyModel::setFilter(FilterType filter)
     invalidateFilter();
 }
 
-void SeasideProxyModel::search(const QString & pattern)
+void SeasideProxyModel::search(const QString &pattern)
 {
-    this->pattern = pattern;
+    priv->searchPattern = pattern;
+    invalidateFilter();
 }
 
 
@@ -72,22 +74,14 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     if (person->id() == model->manager()->selfContactId())
         return false;
 
+    if (priv->searchPattern.length() > 0 && person->displayLabel().split(priv->searchPattern).count() == 1)
+        return false;
+
     if (priv->filterType == FilterAll) {
         // TODO: this should not be here
         qDebug("fastscroll: emitting countChanged");
         emit const_cast<SeasideProxyModel*>(this)->countChanged();
         return true;
-    }
-
-    if (priv->filterType == FilterSearch) {
-        QStringList listDisplayLabel = person->displayLabel().split(" ");
-        for (int i = 0; i < listDisplayLabel.count(); i++) {
-            if(listDisplayLabel.at(i).startsWith(pattern,Qt::CaseInsensitive)) {
-                emit const_cast<SeasideProxyModel*>(this)->countChanged();
-                return true;
-            }
-        }
-        return false;
     }
 
     if (priv->filterType == FilterFavorites) {
@@ -97,7 +91,6 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
             emit const_cast<SeasideProxyModel*>(this)->countChanged();
             return true;
         }
-
         return false;
     } else {
         qWarning() << "[SeasideProxyModel] invalid filter type";
