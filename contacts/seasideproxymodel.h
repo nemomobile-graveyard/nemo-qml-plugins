@@ -27,7 +27,6 @@ public:
     enum FilterType {
         FilterAll,
         FilterFavorites,
-        FilterSearch,
     };
 
     enum StringType {
@@ -37,7 +36,7 @@ public:
 
     Q_INVOKABLE virtual void setFilter(FilterType filter);
 
-    Q_INVOKABLE virtual void search(const QString & pattern);
+    Q_INVOKABLE virtual void search(const QString &pattern);
 
     Q_INVOKABLE int getSourceRow(int row) const;
 
@@ -94,7 +93,7 @@ protected:
 private:
     SeasideProxyModelPriv *priv;
     Q_DISABLE_COPY(SeasideProxyModel);
-    QString pattern;
+
 };
 
 #endif // SEASIDEPROXYMODEL_H
