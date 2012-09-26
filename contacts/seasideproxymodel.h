@@ -34,6 +34,9 @@ public:
     };
 
     Q_INVOKABLE virtual void setFilter(FilterType filter);
+
+    Q_INVOKABLE virtual void search(const QString &pattern);
+
     Q_INVOKABLE int getSourceRow(int row) const;
 
     // for fastscroll support
