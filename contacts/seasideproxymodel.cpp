@@ -1,7 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
  * Copyright 2011 Robin Burchell
- * Copyright 2012 Nicola De Filippo
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -21,7 +20,6 @@ class SeasideProxyModelPriv
 public:
     SeasideProxyModel::FilterType filterType;
     LocaleUtils *localeHelper;
-    QString searchPattern;
 };
 
 SeasideProxyModel::SeasideProxyModel(QObject *parent)
@@ -48,13 +46,6 @@ void SeasideProxyModel::setFilter(FilterType filter)
     invalidateFilter();
 }
 
-void SeasideProxyModel::search(const QString &pattern)
-{
-    priv->searchPattern = pattern;
-    invalidateFilter();
-}
-
-
 int SeasideProxyModel::getSourceRow(int row) const
 {
     return mapToSource(index(row, 0)).row();
@@ -74,27 +65,6 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     if (person->id() == model->manager()->selfContactId())
         return false;
 
-    if (priv->searchPattern.length() > 0 ) {
-        bool result = true;
-        bool found = false;
-        QStringList labelList = person->displayLabel().split(" ");
-        QStringList filterList = priv->searchPattern.split(" ");
-
-        for (int i = 0; i < filterList.size() && result != false; i++) {
-            found = false;
-            for (int j = 0; j < labelList.size(); j++) {
-                if (labelList.at(j).startsWith(filterList.at(i), Qt::CaseInsensitive)) {
-                    found = true;
-                    break;
-                }
-            }
-            result = result && found;
-        }
-
-        if (result == false)
-            return false;
-    }
-
     if (priv->filterType == FilterAll) {
         // TODO: this should not be here
         qDebug("fastscroll: emitting countChanged");
@@ -109,6 +79,7 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
             emit const_cast<SeasideProxyModel*>(this)->countChanged();
             return true;
         }
+
         return false;
     } else {
         qWarning() << "[SeasideProxyModel] invalid filter type";
