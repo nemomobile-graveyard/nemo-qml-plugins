@@ -79,12 +79,13 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
         bool found = false;
         QStringList labelList = person->displayLabel().split(" ");
         QStringList filterList = priv->searchPattern.split(" ");
-
+        int j = 0;
         for (int i = 0; i < filterList.size() && result != false; i++) {
             found = false;
-            for (int j = 0; j < labelList.size(); j++) {
+            for (; j < labelList.size(); j++) {
                 if (labelList.at(j).startsWith(filterList.at(i), Qt::CaseInsensitive)) {
                     found = true;
+                    j++;
                     break;
                 }
             }
