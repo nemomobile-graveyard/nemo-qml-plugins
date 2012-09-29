@@ -120,44 +120,8 @@ private:
     QString mDisplayLabel;
 
     friend class SeasidePeopleModelPriv;
-    /*
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    void Changed();
-    */
 };
 
 Q_DECLARE_METATYPE(SeasidePerson *);
-
-// uuid, presence, self contact
-
-/*
-        BirthdayRole,
-        OnlineAccountUriRole,
-        OnlineServiceProviderRole,
-        EmailAddressRole,
-        EmailContextRole,
-        PhoneNumberRole,
-        PhoneContextRole,
-        AddressRole,
-        AddressStreetRole,
-        AddressLocaleRole,
-        AddressRegionRole,
-        AddressCountryRole,
-        AddressPostcodeRole,
-        AddressContextRole,
-        WebUrlRole,
-        WebContextRole,
-        NotesRole,
-        FirstCharacterRole,
-        DisplayLabelRole
-*/
 
 #endif // SEASIDEPERSON_H
