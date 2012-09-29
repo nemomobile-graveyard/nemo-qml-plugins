@@ -545,6 +545,25 @@ void SeasidePerson::setEmailAddresses(const QStringList &emailAddresses)
     emit emailAddressesChanged();
 }
 
+// TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD
+#define LIST_PROPERTY_FROM_FIELD_NAME(detailType, fieldName) \
+    QStringList list; \
+    \
+    foreach (const detailType &detail, mContact.details<detailType>()) { \
+        if (detail.hasValue(fieldName)) \
+            list << detail.value(fieldName); \
+    } \
+    return list;
+
+QStringList SeasidePerson::accountUris() const
+{
+    LIST_PROPERTY_FROM_FIELD_NAME(QContactOnlineAccount, QContactOnlineAccount::FieldAccountUri)
+}
+
+QStringList SeasidePerson::accountPaths() const
+{
+    LIST_PROPERTY_FROM_FIELD_NAME(QContactOnlineAccount, "AccountPath") // QContactOnlineAccount__FieldAccountPath
+}
 
 QContact SeasidePerson::contact() const
 {

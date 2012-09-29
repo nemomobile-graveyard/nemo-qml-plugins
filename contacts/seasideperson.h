@@ -88,6 +88,12 @@ public:
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
 
+    Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
+    QStringList accountUris() const;
+
+    Q_PROPERTY(QStringList accountPaths READ accountPaths NOTIFY accountPathsChanged)
+    QStringList accountPaths() const;
+
     QContact contact() const;
     void setContact(const QContact &contact);
 
@@ -104,6 +110,8 @@ signals:
     void birthdayChanged();
     void phoneNumbersChanged();
     void emailAddressesChanged();
+    void accountUrisChanged();
+    void accountPathsChanged();
 
 private:
     // TODO: private class
