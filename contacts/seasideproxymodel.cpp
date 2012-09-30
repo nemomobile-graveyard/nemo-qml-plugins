@@ -73,26 +73,39 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     if (person->id() == model->manager()->selfContactId())
         return false;
 
-    if (priv->searchPattern.length() > 0 ) {
-        bool result = true;
-        bool found = false;
+    if (!priv->searchPattern.isEmpty()) {
+        // split the display label and filter into words. search forwards
+        // over the display label components for each filter word, making
+        // sure to find all filter words before considering it a match.
+        //
+        // TODO: i18n will require different splitting for thai and possibly
+        // other locales, see MBreakIterator
+        //
+        // TODO: for performance, we may want to consider keeping a cached
+        // version of the parts comprising a display label -
+        // QStringList SeasidePerson::displayLabelParts?
         QStringList labelList = person->displayLabel().split(" ");
         QStringList filterList = priv->searchPattern.split(" ");
         int j = 0;
-        for (int i = 0; i < filterList.size() && result != false; i++) {
-            found = false;
+        for (int i = 0; i < filterList.size(); i++) {
+            bool found = false;
             for (; j < labelList.size(); j++) {
+                // TODO: for good i18n, we need to search insensitively taking
+                // diacritics into account, QString's functions alone aren't good
+                // enough
                 if (labelList.at(j).startsWith(filterList.at(i), Qt::CaseInsensitive)) {
                     found = true;
                     j++;
                     break;
                 }
             }
-            result = result && found;
-        }
 
-        if (result == false)
-            return false;
+            // if the current filter word wasn't found in the search
+            // string, then it wasn't a match. we require all words
+            // to match.
+            if (!found)
+                return false;
+        }
     }
 
     if (priv->filterType == FilterAll) {
