@@ -572,8 +572,21 @@ QContact SeasidePerson::contact() const
 
 void SeasidePerson::setContact(const QContact &contact)
 {
+    mContact = contact;
+
     // TODO: this should difference the two contacts, and emit the proper
     // signals
-    mContact = contact;
+    emit firstNameChanged();
+    emit lastNameChanged();
+    emit companyNameChanged();
+    emit favoriteChanged();
+    emit avatarPathChanged();
+    emit birthdayChanged();
+    emit phoneNumbersChanged();
+    emit emailAddressesChanged();
+    emit accountUrisChanged();
+    emit accountPathsChanged();
+
+    recalculateDisplayLabel();
 }
 
