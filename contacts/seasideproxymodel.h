@@ -39,10 +39,7 @@ public:
 
     Q_INVOKABLE int getSourceRow(int row) const;
 
-    // for fastscroll support
-    Q_PROPERTY(int count READ count NOTIFY countChanged)
-    Q_PROPERTY(int length READ count NOTIFY countChanged)
-    int count() const { return rowCount(QModelIndex()); }
+    // for SectionScroller support
     Q_INVOKABLE QVariantMap get(int row) const;
 
     // API
@@ -81,9 +78,6 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         return model->exportContacts();
     }
-
-signals:
-    void countChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;

@@ -108,26 +108,14 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
         }
     }
 
-    if (priv->filterType == FilterAll) {
-        // TODO: this should not be here
-        qDebug("fastscroll: emitting countChanged");
-        emit const_cast<SeasideProxyModel*>(this)->countChanged();
-        return true;
-    }
-
-    if (priv->filterType == FilterFavorites) {
-        if (person->favorite()) {
-            // TODO: this should not be here
-            qDebug("fastscroll: emitting countChanged");
-            emit const_cast<SeasideProxyModel*>(this)->countChanged();
+    switch (priv->filterType) {
+        case FilterAll:
             return true;
-        }
-
-        return false;
-    } else {
-        qWarning() << "[SeasideProxyModel] invalid filter type";
-        return false;
+        case FilterFavorites:
+            return person->favorite();
     }
+
+    return false;
 }
 
 bool SeasideProxyModel::lessThan(const QModelIndex& left,
