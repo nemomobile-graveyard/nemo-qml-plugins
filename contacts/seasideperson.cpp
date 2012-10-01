@@ -119,26 +119,24 @@ static QString generateDisplayLabel(QContact mContact)
     if (!displayLabel.isEmpty())
         return displayLabel;
 
-    foreach (const QContactPhoneNumber& phone, mContact.details<QContactPhoneNumber>()) {
-        if(!phone.number().isNull())
-            return phone.number();
-    }
-
-    foreach (const QContactOnlineAccount& account,
-             mContact.details<QContactOnlineAccount>()){
-        if(!account.accountUri().isNull())
+    foreach (const QContactOnlineAccount& account, mContact.details<QContactOnlineAccount>()) {
+        if (!account.accountUri().isNull())
             return account.accountUri();
     }
 
-    foreach (const QContactEmailAddress& email,
-             mContact.details<QContactEmailAddress>()){
-        if(!email.emailAddress().isNull())
+    foreach (const QContactEmailAddress& email, mContact.details<QContactEmailAddress>()) {
+        if (!email.emailAddress().isNull())
             return email.emailAddress();
     }
 
     QContactOrganization company = mContact.detail<QContactOrganization>();
     if (!company.name().isNull())
         return company.name();
+
+    foreach (const QContactPhoneNumber& phone, mContact.details<QContactPhoneNumber>()) {
+        if (!phone.number().isNull())
+            return phone.number();
+    }
 
     return "(unnamed)"; // TODO: localisation
 }
