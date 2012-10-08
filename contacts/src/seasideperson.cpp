@@ -162,6 +162,9 @@ QString SeasidePerson::displayLabel() const
 
 QString SeasidePerson::sectionBucket() const
 {
+    if (displayLabel().isEmpty())
+        return QString();
+
 //    return priv->localeHelper->getBinForString(data(row,
 //                DisplayLabelRole).toString());
     // TODO: won't be at all correct for localisation
