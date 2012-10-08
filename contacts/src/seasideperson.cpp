@@ -174,12 +174,15 @@ QString SeasidePerson::sectionBucket() const
 
 QString SeasidePerson::companyName() const
 {
-    qDebug() << Q_FUNC_INFO << "STUB";
-    return QString();
+    QContactOrganization company = mContact.detail<QContactOrganization>();
+    return company.name();
 }
 
 void SeasidePerson::setCompanyName(const QString &name)
 {
+    QContactOrganization companyNameDetail = mContact.detail<QContactOrganization>();
+    companyNameDetail.setName(name);
+    mContact.saveDetail(&companyNameDetail);
     emit companyNameChanged();
 }
 
