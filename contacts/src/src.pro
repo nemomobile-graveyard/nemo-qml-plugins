@@ -8,20 +8,21 @@ packagesExist(icu-i18n) {
     warning("ICU not detected. This may cause problems with i18n.")
 }
 
-SOURCES += plugin.cpp \
-           localeutils.cpp \
-           seasidepeoplemodel.cpp \
-           seasidepeoplemodel_p.cpp \
-           seasideperson.cpp \
-           seasideproxymodel.cpp
+SOURCES += $$PWD/plugin.cpp \
+           $$PWD/localeutils.cpp \
+           $$PWD/seasidepeoplemodel.cpp \
+           $$PWD/seasidepeoplemodel_p.cpp \
+           $$PWD/seasideperson.cpp \
+           $$PWD/seasideproxymodel.cpp
 
-HEADERS += localeutils_p.h \
-           seasidepeoplemodel.h \
-           seasidepeoplemodel_p.h \
-           seasideperson.h \
-           seasideproxymodel.h
+HEADERS += $$PWD/localeutils_p.h \
+           $$PWD/seasidepeoplemodel.h \
+           $$PWD/seasidepeoplemodel_p.h \
+           $$PWD/seasideperson.h \
+           $$PWD/seasideproxymodel.h
 
-
+MOC_DIR = $$PWD/../.moc
+OBJECTS_DIR = $$PWD/../.obj
 
 # do not edit below here, move this to a shared .pri?
 TEMPLATE = lib

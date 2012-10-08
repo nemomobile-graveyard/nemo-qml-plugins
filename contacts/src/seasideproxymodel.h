@@ -84,6 +84,9 @@ protected:
     virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
 
 private:
+    static bool personMatchesFilter(SeasidePerson *person, const QString &filter);
+
+    friend class tst_SeasideProxyModel;
     SeasideProxyModelPriv *priv;
     Q_DISABLE_COPY(SeasideProxyModel);
 };
