@@ -76,10 +76,6 @@ public:
     QUrl avatarPath() const;
     void setAvatarPath(QUrl avatarPath);
 
-    Q_PROPERTY(QString birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)
-    QString birthday() const;
-    void setBirthday(const QString &birthday);
-
     Q_PROPERTY(QStringList phoneNumbers READ phoneNumbers WRITE setPhoneNumbers NOTIFY phoneNumbersChanged)
     QStringList phoneNumbers() const;
     void setPhoneNumbers(const QStringList &phoneNumbers);

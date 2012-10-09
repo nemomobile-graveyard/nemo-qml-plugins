@@ -220,22 +220,6 @@ void SeasidePerson::setAvatarPath(QUrl avatarPath)
     emit avatarPathChanged();
 }
 
-QString SeasidePerson::birthday() const
-{
-    QContactBirthday day = mContact.detail<QContactBirthday>();
-    if(!day.date().isNull())
-        return day.date().toString(Qt::SystemLocaleDate);
-    return QString();
-}
-
-void SeasidePerson::setBirthday(const QString &birthday)
-{
-    QContactBirthday day = mContact.detail<QContactBirthday>();
-    day.setDate(QDate::fromString(birthday, Qt::SystemLocaleDate));
-    mContact.saveDetail(&day);
-    emit birthdayChanged();
-}
-
 #define LIST_PROPERTY_FROM_DETAIL_FIELD(detailType, fieldName) \
     QStringList list; \
     \

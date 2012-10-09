@@ -138,7 +138,6 @@ void tst_SeasidePerson::avatarPath()
 }
 
 // TODO:
-// - birthday
 // - phone numbers
 // - email addresses
 // - account URIs/paths (or let contactsd do that?)
