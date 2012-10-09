@@ -37,8 +37,6 @@ public:
 
     Q_INVOKABLE virtual void search(const QString &pattern);
 
-    Q_INVOKABLE int getSourceRow(int row) const;
-
     // for SectionScroller support
     Q_INVOKABLE QVariantMap get(int row) const;
 
@@ -51,7 +49,8 @@ public:
     Q_INVOKABLE SeasidePerson *personByRow(int row) const
     {
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->personByRow(getSourceRow(row));
+        int sourceRow = mapToSource(index(row, 0)).row();
+        return model->personByRow(sourceRow);
     }
     Q_INVOKABLE SeasidePerson *personById(int id) const
     {

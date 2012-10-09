@@ -53,12 +53,6 @@ void SeasideProxyModel::search(const QString &pattern)
     invalidateFilter();
 }
 
-
-int SeasideProxyModel::getSourceRow(int row) const
-{
-    return mapToSource(index(row, 0)).row();
-}
-
 bool SeasideProxyModel::personMatchesFilter(SeasidePerson *person, const QString &filter)
 {
     // split the display label and filter into words.
