@@ -46,6 +46,8 @@ private slots:
     void companyName();
     void favorite();
     void avatarPath();
+    void phoneNumbers();
+    void emailAddresses();
 };
 
 void tst_SeasidePerson::firstName()
@@ -137,9 +139,28 @@ void tst_SeasidePerson::avatarPath()
     QCOMPARE(person->avatarPath(), QUrl("http://test.com"));
 }
 
+void tst_SeasidePerson::phoneNumbers()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->phoneNumbers(), QStringList());
+    QSignalSpy spy(person.data(), SIGNAL(phoneNumbersChanged()));
+    person->setPhoneNumbers(QStringList() << "1234" << "5678" << "9101112");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
+}
+
+void tst_SeasidePerson::emailAddresses()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->emailAddresses(), QStringList());
+    QSignalSpy spy(person.data(), SIGNAL(emailAddressesChanged()));
+    person->setEmailAddresses(QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->emailAddresses(), QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+}
+
+
 // TODO:
-// - phone numbers
-// - email addresses
 // - account URIs/paths (or let contactsd do that?)
 // - test QContact creation (and creation from a QContact)
 
