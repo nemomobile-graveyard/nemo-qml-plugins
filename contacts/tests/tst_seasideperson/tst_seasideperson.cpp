@@ -54,6 +54,7 @@ private slots:
     void phoneNumbers();
     void emailAddresses();
     void marshalling();
+    void setContact();
 };
 
 void tst_SeasidePerson::firstName()
@@ -189,6 +190,36 @@ void tst_SeasidePerson::marshalling()
     QVERIFY(person->favorite());
 
     QCOMPARE(person->contact(), contact);
+}
+
+void tst_SeasidePerson::setContact()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+
+    QContact contact;
+
+    {
+        QContactName nameDetail;
+        nameDetail.setFirstName("Hello");
+        nameDetail.setLastName("World");
+        contact.saveDetail(&nameDetail);
+    }
+
+    {
+        QSignalSpy spy(person.data(), SIGNAL(firstNameChanged()));
+        QSignalSpy spyTwo(person.data(), SIGNAL(lastNameChanged()));
+        QSignalSpy spyThree(person.data(), SIGNAL(displayLabelChanged()));
+        person->setContact(contact);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spyTwo.count(), 1);
+        QCOMPARE(spyThree.count(), 1);
+
+        // change them again, nothing should emit
+        person->setContact(contact);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spyTwo.count(), 1);
+        QCOMPARE(spyThree.count(), 1);
+    }
 }
 
 

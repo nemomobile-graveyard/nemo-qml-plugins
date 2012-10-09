@@ -297,16 +297,37 @@ QContact SeasidePerson::contact() const
 
 void SeasidePerson::setContact(const QContact &contact)
 {
+    QContact oldContact = mContact;
     mContact = contact;
 
-    // TODO: this should difference the two contacts, and emit the proper
-    // signals
-    emit firstNameChanged();
-    emit lastNameChanged();
-    emit companyNameChanged();
-    emit favoriteChanged();
-    emit avatarPathChanged();
-    emit birthdayChanged();
+    QContactName oldName = oldContact.detail<QContactName>();
+    QContactName newName = mContact.detail<QContactName>();
+
+    if (oldName.firstName() != newName.firstName())
+        emit firstNameChanged();
+
+    if (oldName.lastName() != newName.lastName())
+        emit lastNameChanged();
+
+    QContactOrganization oldCompany = oldContact.detail<QContactOrganization>();
+    QContactOrganization newCompany = mContact.detail<QContactOrganization>();
+
+    if (oldCompany.name() != newCompany.name())
+        emit companyNameChanged();
+
+    QContactFavorite oldFavorite = oldContact.detail<QContactFavorite>();
+    QContactFavorite newFavorite = mContact.detail<QContactFavorite>();
+
+    if (oldFavorite.isFavorite() != newFavorite.isFavorite())
+        emit favoriteChanged();
+
+    QContactAvatar oldAvatar = oldContact.detail<QContactAvatar>();
+    QContactAvatar newAvatar = mContact.detail<QContactAvatar>();
+
+    if (oldAvatar.imageUrl() != newAvatar.imageUrl())
+        emit avatarPathChanged();
+
+    // TODO: differencing of list type details
     emit phoneNumbersChanged();
     emit emailAddressesChanged();
     emit accountUrisChanged();
