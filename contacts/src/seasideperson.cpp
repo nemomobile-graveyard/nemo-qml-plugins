@@ -74,7 +74,6 @@ QString SeasidePerson::firstName() const
 
 void SeasidePerson::setFirstName(const QString &name)
 {
-    qDebug() << Q_FUNC_INFO << "Setting to " << name;
     QContactName nameDetail = mContact.detail<QContactName>();
     nameDetail.setFirstName(name);
     mContact.saveDetail(&nameDetail);
@@ -90,7 +89,6 @@ QString SeasidePerson::lastName() const
 
 void SeasidePerson::setLastName(const QString &name)
 {
-    qDebug() << Q_FUNC_INFO << "Setting to " << name;
     QContactName nameDetail = mContact.detail<QContactName>();
     nameDetail.setLastName(name);
     mContact.saveDetail(&nameDetail);
@@ -148,8 +146,6 @@ void SeasidePerson::recalculateDisplayLabel()
 
     // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
-        qDebug() << Q_FUNC_INFO << "Recalculated display label to " <<
-            newDisplayLabel;
         mDisplayLabel = newDisplayLabel;
         emit displayLabelChanged();
     }
