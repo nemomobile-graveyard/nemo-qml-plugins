@@ -194,7 +194,6 @@ void tst_SeasidePerson::marshalling()
 
 // TODO:
 // - account URIs/paths (or let contactsd do that?)
-// - test QContact creation (and creation from a QContact)
 
 #include "tst_seasideperson.moc"
 QTEST_APPLESS_MAIN(tst_SeasidePerson)
