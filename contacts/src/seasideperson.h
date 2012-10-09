@@ -115,6 +115,7 @@ private:
     QContact mContact;
     QString mDisplayLabel;
 
+    friend class tst_SeasidePerson;
     friend class SeasidePeopleModelPriv;
 };
 

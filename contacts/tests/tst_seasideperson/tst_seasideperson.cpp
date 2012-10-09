@@ -32,7 +32,12 @@
 #include <QObject>
 #include <QtTest>
 
+#include <QContactFavorite>
+#include <QContactName>
+
 #include "seasideperson.h"
+
+QTM_USE_NAMESPACE
 
 class tst_SeasidePerson : public QObject
 {
@@ -48,6 +53,7 @@ private slots:
     void avatarPath();
     void phoneNumbers();
     void emailAddresses();
+    void marshalling();
 };
 
 void tst_SeasidePerson::firstName()
@@ -157,6 +163,32 @@ void tst_SeasidePerson::emailAddresses()
     person->setEmailAddresses(QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->emailAddresses(), QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+}
+
+void tst_SeasidePerson::marshalling()
+{
+    QContact contact;
+
+    {
+        QContactName nameDetail;
+        nameDetail.setFirstName("Hello");
+        nameDetail.setLastName("World");
+        contact.saveDetail(&nameDetail);
+    }
+
+    {
+        QContactFavorite favorite;
+        favorite.setFavorite(true);
+        contact.saveDetail(&favorite);
+    }
+
+    QScopedPointer<SeasidePerson> person(new SeasidePerson(contact));
+    QCOMPARE(person->firstName(), QString::fromLatin1("Hello"));
+    QCOMPARE(person->lastName(), QString::fromLatin1("World"));
+    QCOMPARE(person->displayLabel(), QString::fromLatin1("Hello World"));
+    QVERIFY(person->favorite());
+
+    QCOMPARE(person->contact(), contact);
 }
 
 
