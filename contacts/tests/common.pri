@@ -6,5 +6,5 @@ QT += testlib
 TEMPLATE = app
 CONFIG -= app_bundle
 
-target.path = /opt/tests/nemo-qml-plugins
+target.path = /opt/tests/nemo-qml-plugins/contacts
 INSTALLS += target
