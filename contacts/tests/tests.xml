@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testdefinition version="1.0">
+   <suite name="contacts-tests" domain="mw">
+       <description>Contacts QML plugin automatic tests</description>
+       <set name="unit-tests" feature="QML Contacts">
+           <description>Contacts QML plugin automatic tests</description>
+           <case manual="false" name="seasideperson">
+               <step>/opt/tests/nemo-qml-plugins/contacts/tst_seasideperson</step>
+           </case>
+           <case manual="false" name="seasideproxymodel">
+               <step>/opt/tests/nemo-qml-plugins/contacts/tst_seasideproxymodel</step>
+           </case>
+       </set>
+   </suite>
+</testdefinition>
