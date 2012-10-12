@@ -18,3 +18,5 @@ current plugins:
 - qrencode: QR encoder API, using qrencode library.
 
 - folderlistmodel: threaded (and faster) version of Qt.labs.folderlistmodel
+
+- configuration: offers ConfigurationValue, a QML object interacting with dconf.
