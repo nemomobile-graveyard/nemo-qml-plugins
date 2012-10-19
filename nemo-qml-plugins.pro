@@ -3,4 +3,5 @@ SUBDIRS += thumbnailer \
            contacts \
            qrencoder \
            folderlistmodel \
-           configuration
+           configuration \
+           email
