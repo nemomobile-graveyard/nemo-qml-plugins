@@ -20,3 +20,5 @@ current plugins:
 - folderlistmodel: threaded (and faster) version of Qt.labs.folderlistmodel
 
 - configuration: offers ConfigurationValue, a QML object interacting with dconf.
+
+- email: offers a QML-friendly email API using Qt Messaging Framework as a backend.
