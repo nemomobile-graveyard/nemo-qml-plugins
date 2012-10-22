@@ -52,6 +52,7 @@ private slots:
     void favorite();
     void avatarPath();
     void phoneNumbers();
+    void phoneContexts();
     void emailAddresses();
     void marshalling();
     void setContact();
@@ -154,6 +155,29 @@ void tst_SeasidePerson::phoneNumbers()
     person->setPhoneNumbers(QStringList() << "1234" << "5678" << "9101112");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
+}
+
+void tst_SeasidePerson::phoneContexts() {
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+
+    QCOMPARE(person->phoneContexts(), QStringList());
+    QCOMPARE(person->phoneNumbers(), QStringList());
+
+    person->setPhoneNumbers(QStringList() << "111" << "222"<< "333"<< "444"<< "555");
+
+    QSignalSpy spy(person.data(), SIGNAL(phoneContextsChanged()));
+    person->setPhoneContexts(QStringList() << SeasidePerson::SP_CONTEXT_PHONE_HOME
+                                           << SeasidePerson::SP_CONTEXT_PHONE_WORK
+                                           << SeasidePerson::SP_CONTEXT_PHONE_MOBILE
+                                           << SeasidePerson::SP_CONTEXT_PHONE_FAX
+                                           << SeasidePerson::SP_CONTEXT_PHONE_PAGER);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->phoneContexts(), QStringList() << SeasidePerson::SP_CONTEXT_PHONE_HOME
+                                                    << SeasidePerson::SP_CONTEXT_PHONE_WORK
+                                                    << SeasidePerson::SP_CONTEXT_PHONE_MOBILE
+                                                    << SeasidePerson::SP_CONTEXT_PHONE_FAX
+                                                    << SeasidePerson::SP_CONTEXT_PHONE_PAGER);
+    QCOMPARE(person->phoneNumbers().count(), 5);
 }
 
 void tst_SeasidePerson::emailAddresses()

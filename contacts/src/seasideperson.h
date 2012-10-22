@@ -45,6 +45,22 @@ class SeasidePerson : public QObject
 {
     Q_OBJECT
 public:
+    /**
+     * String identifying the contact detail from the UI.
+     */
+    static const char *SP_CONTEXT_PHONE_HOME;
+    static const char *SP_CONTEXT_PHONE_WORK;
+    static const char *SP_CONTEXT_PHONE_MOBILE;
+    static const char *SP_CONTEXT_PHONE_FAX;
+    static const char *SP_CONTEXT_PHONE_PAGER;
+
+    /**
+     * String identifying the context when saving the contact.
+     */
+    static const char *QTCONTACTS_CONTEXT_HOME;
+    static const char *QTCONTACTS_CONTEXT_WORK;
+
+
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
 
@@ -80,6 +96,10 @@ public:
     QStringList phoneNumbers() const;
     void setPhoneNumbers(const QStringList &phoneNumbers);
 
+    Q_PROPERTY(QStringList phoneContexts READ phoneContexts WRITE setPhoneContexts NOTIFY phoneContextsChanged)
+    QStringList phoneContexts() const;
+    void setPhoneContexts(const QStringList &phoneContexts);
+
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
@@ -105,6 +125,7 @@ signals:
     void avatarPathChanged();
     void birthdayChanged();
     void phoneNumbersChanged();
+    void phoneContextsChanged();
     void emailAddressesChanged();
     void accountUrisChanged();
     void accountPathsChanged();
