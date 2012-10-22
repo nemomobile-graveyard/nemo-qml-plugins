@@ -4,6 +4,7 @@ PLUGIN_IMPORT_PATH = org/nemomobile/contacts
 CONFIG += link_pkgconfig
 packagesExist(icu-i18n) {
     DEFINES += HAS_ICU
+    PKGCONFIG += icu-i18n
 } else {
     warning("ICU not detected. This may cause problems with i18n.")
 }
