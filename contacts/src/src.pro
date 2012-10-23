@@ -9,6 +9,9 @@ packagesExist(icu-i18n) {
     warning("ICU not detected. This may cause problems with i18n.")
 }
 
+CONFIG += mobility
+MOBILITY += contacts versit
+
 SOURCES += $$PWD/plugin.cpp \
            $$PWD/localeutils.cpp \
            $$PWD/seasidepeoplemodel.cpp \
