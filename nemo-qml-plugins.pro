@@ -4,4 +4,5 @@ SUBDIRS += thumbnailer \
            qrencoder \
            folderlistmodel \
            configuration \
-           email
+           email \
+           messages
