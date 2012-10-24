@@ -58,13 +58,6 @@ public:
     static const char *SP_TYPE_EMAIL_WORK;
     static const char *SP_TYPE_EMAIL_OTHER;
 
-    /**
-     * String identifying the context when saving the contact.
-     */
-    static const char *QTCONTACTS_CONTEXT_HOME;
-    static const char *QTCONTACTS_CONTEXT_WORK;
-
-
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
 
