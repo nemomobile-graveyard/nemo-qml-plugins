@@ -52,8 +52,9 @@ private slots:
     void favorite();
     void avatarPath();
     void phoneNumbers();
-    void phoneContexts();
+    void phoneTypes();
     void emailAddresses();
+    void emailTypes();
     void marshalling();
     void setContact();
 };
@@ -157,27 +158,47 @@ void tst_SeasidePerson::phoneNumbers()
     QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
 }
 
-void tst_SeasidePerson::phoneContexts() {
+void tst_SeasidePerson::phoneTypes() {
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
 
-    QCOMPARE(person->phoneContexts(), QStringList());
+    QCOMPARE(person->phoneNumberTypes(), QStringList());
     QCOMPARE(person->phoneNumbers(), QStringList());
 
     person->setPhoneNumbers(QStringList() << "111" << "222"<< "333"<< "444"<< "555");
 
-    QSignalSpy spy(person.data(), SIGNAL(phoneContextsChanged()));
-    person->setPhoneContexts(QStringList() << SeasidePerson::SP_CONTEXT_PHONE_HOME
-                                           << SeasidePerson::SP_CONTEXT_PHONE_WORK
-                                           << SeasidePerson::SP_CONTEXT_PHONE_MOBILE
-                                           << SeasidePerson::SP_CONTEXT_PHONE_FAX
-                                           << SeasidePerson::SP_CONTEXT_PHONE_PAGER);
+    QSignalSpy spy(person.data(), SIGNAL(phoneNumberTypesChanged()));
+    person->setPhoneNumberTypes(QStringList() << SeasidePerson::SP_TYPE_PHONE_HOME
+                                              << SeasidePerson::SP_TYPE_PHONE_WORK
+                                              << SeasidePerson::SP_TYPE_PHONE_MOBILE
+                                              << SeasidePerson::SP_TYPE_PHONE_FAX
+                                              << SeasidePerson::SP_TYPE_PHONE_PAGER);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(person->phoneContexts(), QStringList() << SeasidePerson::SP_CONTEXT_PHONE_HOME
-                                                    << SeasidePerson::SP_CONTEXT_PHONE_WORK
-                                                    << SeasidePerson::SP_CONTEXT_PHONE_MOBILE
-                                                    << SeasidePerson::SP_CONTEXT_PHONE_FAX
-                                                    << SeasidePerson::SP_CONTEXT_PHONE_PAGER);
+    QCOMPARE(person->phoneNumberTypes(), QStringList() << SeasidePerson::SP_TYPE_PHONE_HOME
+                                                    << SeasidePerson::SP_TYPE_PHONE_WORK
+                                                    << SeasidePerson::SP_TYPE_PHONE_MOBILE
+                                                    << SeasidePerson::SP_TYPE_PHONE_FAX
+                                                    << SeasidePerson::SP_TYPE_PHONE_PAGER);
     QCOMPARE(person->phoneNumbers().count(), 5);
+}
+
+void tst_SeasidePerson::emailTypes() {
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+
+    QCOMPARE(person->emailAddressTypes(), QStringList());
+    QCOMPARE(person->emailAddresses(), QStringList());
+
+    person->setEmailAddresses(QStringList() << "foo@bar" << "bar@foo"<< "foo@baz");
+
+    QSignalSpy spy(person.data(), SIGNAL(emailAddressTypesChanged()));
+    person->setEmailAddressTypes(QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
+                                               << SeasidePerson::SP_TYPE_EMAIL_WORK
+                                               << SeasidePerson::SP_TYPE_EMAIL_OTHER);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->emailAddressTypes(), QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
+                                                        << SeasidePerson::SP_TYPE_EMAIL_WORK
+                                                        << SeasidePerson::SP_TYPE_EMAIL_OTHER);
+
+    QCOMPARE(person->emailAddressTypes().count(), 3);
 }
 
 void tst_SeasidePerson::emailAddresses()
