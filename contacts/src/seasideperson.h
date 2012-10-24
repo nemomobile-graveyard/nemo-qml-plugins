@@ -54,6 +54,10 @@ public:
     static const char *SP_TYPE_PHONE_FAX;
     static const char *SP_TYPE_PHONE_PAGER;
 
+    static const char *SP_TYPE_EMAIL_HOME;
+    static const char *SP_TYPE_EMAIL_WORK;
+    static const char *SP_TYPE_EMAIL_OTHER;
+
     /**
      * String identifying the context when saving the contact.
      */
@@ -104,6 +108,10 @@ public:
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
 
+    Q_PROPERTY(QStringList emailAddressTypes READ emailAddressTypes WRITE setEmailAddressTypes NOTIFY emailAddressTypesChanged)
+    QStringList emailAddressTypes() const;
+    void setEmailAddressTypes(const QStringList &emailAddressTypes);
+
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
 
@@ -127,6 +135,7 @@ signals:
     void phoneNumbersChanged();
     void phoneNumberTypesChanged();
     void emailAddressesChanged();
+    void emailAddressTypesChanged();
     void accountUrisChanged();
     void accountPathsChanged();
 
