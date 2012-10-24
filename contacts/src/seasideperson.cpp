@@ -51,13 +51,6 @@ const char *SeasidePerson::SP_TYPE_PHONE_MOBILE = "phone_mobile";
 const char *SeasidePerson::SP_TYPE_PHONE_FAX    = "phone_fax";
 const char *SeasidePerson::SP_TYPE_PHONE_PAGER  = "phone_pager";
 
-/**
- * String identifying the context when saving the contact.
- */
-const char *SeasidePerson::QTCONTACTS_CONTEXT_HOME = "Home";
-const char *SeasidePerson::QTCONTACTS_CONTEXT_WORK = "Work";
-
-
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
 {
@@ -291,19 +284,19 @@ void SeasidePerson::setPhoneNumberTypes(const QStringList &phoneNumberTypes)
 
         if (type == SeasidePerson::SP_TYPE_PHONE_HOME) {
             number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
-            number.setContexts(SeasidePerson::QTCONTACTS_CONTEXT_HOME);
+            number.setContexts(QContactDetail::ContextHome);
         }  else if (type == SeasidePerson::SP_TYPE_PHONE_WORK) {
-            number.setSubTypes(QContactPhoneNumber::SubTypeVoice);
-            number.setContexts(SeasidePerson::QTCONTACTS_CONTEXT_WORK);
+            number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
+            number.setContexts(QContactDetail::ContextWork);
         } else if (type == SeasidePerson::SP_TYPE_PHONE_MOBILE) {
             number.setSubTypes(QContactPhoneNumber::SubTypeMobile);
-            number.setContexts(SeasidePerson::QTCONTACTS_CONTEXT_HOME);
+            number.setContexts(QContactDetail::ContextHome);
         } else if (type == SeasidePerson::SP_TYPE_PHONE_FAX) {
             number.setSubTypes(QContactPhoneNumber::SubTypeFax);
-            number.setContexts(SeasidePerson::QTCONTACTS_CONTEXT_HOME);
+            number.setContexts(QContactDetail::ContextHome);
         } else if (type == SeasidePerson::SP_TYPE_PHONE_PAGER) {
             number.setSubTypes(QContactPhoneNumber::SubTypePager);
-            number.setContexts(SeasidePerson::QTCONTACTS_CONTEXT_HOME);
+            number.setContexts(QContactDetail::ContextHome);
         } else {
             qWarning() << "Warning: Could not save phone type '" << type << "'";
         }
@@ -322,19 +315,19 @@ QStringList SeasidePerson::phoneNumberTypes() const
     types.reserve((numbers.length()));
 
     foreach(const QContactPhoneNumber number, numbers) {
-        if (number.contexts().contains(QTCONTACTS_CONTEXT_HOME)
+        if (number.contexts().contains(QContactDetail::ContextHome)
             && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
             types.push_back(SP_TYPE_PHONE_HOME);
-        } else if (number.contexts().contains(QTCONTACTS_CONTEXT_WORK)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypeVoice)) {
+        } else if (number.contexts().contains(QContactDetail::ContextWork)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
             types.push_back(SP_TYPE_PHONE_WORK);
-        } else if (number.contexts().contains(QTCONTACTS_CONTEXT_HOME)
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
             && number.subTypes().contains(QContactPhoneNumber::SubTypeMobile)) {
             types.push_back(SP_TYPE_PHONE_MOBILE);
-        } else if (number.contexts().contains(QTCONTACTS_CONTEXT_HOME)
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
             && number.subTypes().contains(QContactPhoneNumber::SubTypeFax)) {
             types.push_back(SP_TYPE_PHONE_FAX);
-        } else if (number.contexts().contains(QTCONTACTS_CONTEXT_HOME)
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
             && number.subTypes().contains(QContactPhoneNumber::SubTypePager)) {
             types.push_back(SP_TYPE_PHONE_PAGER);
         } else {
@@ -355,6 +348,14 @@ void SeasidePerson::setEmailAddresses(const QStringList &emailAddresses)
 {
     SET_PROPERTY_FIELD_FROM_LIST(QContactEmailAddress, emailAddress, setEmailAddress, emailAddresses)
     emit emailAddressesChanged();
+}
+
+QStringList SeasidePerson::emailAddressTypes() const {
+
+}
+
+void SeasidePerson::setEmailAddressTypes(const QStringList &emailAddressTypes) {
+
 }
 
 // TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD
