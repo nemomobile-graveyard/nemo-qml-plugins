@@ -51,6 +51,11 @@ const char *SeasidePerson::SP_TYPE_PHONE_MOBILE = "phone_mobile";
 const char *SeasidePerson::SP_TYPE_PHONE_FAX    = "phone_fax";
 const char *SeasidePerson::SP_TYPE_PHONE_PAGER  = "phone_pager";
 
+const char *SeasidePerson::SP_TYPE_EMAIL_HOME   = "email_personal";
+const char *SeasidePerson::SP_TYPE_EMAIL_WORK   = "email_work";
+const char *SeasidePerson::SP_TYPE_EMAIL_OTHER  = "email_other";
+
+
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
 {
@@ -268,6 +273,36 @@ void SeasidePerson::setPhoneNumbers(const QStringList &phoneNumbers)
     emit phoneNumbersChanged();
 }
 
+QStringList SeasidePerson::phoneNumberTypes() const
+{
+    const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
+    QStringList types;
+    types.reserve((numbers.length()));
+
+    foreach(const QContactPhoneNumber &number, numbers) {
+        if (number.contexts().contains(QContactDetail::ContextHome)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
+            types.push_back(SP_TYPE_PHONE_HOME);
+        } else if (number.contexts().contains(QContactDetail::ContextWork)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
+            types.push_back(SP_TYPE_PHONE_WORK);
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypeMobile)) {
+            types.push_back(SP_TYPE_PHONE_MOBILE);
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypeFax)) {
+            types.push_back(SP_TYPE_PHONE_FAX);
+        } else if (number.contexts().contains(QContactDetail::ContextHome)
+            && number.subTypes().contains(QContactPhoneNumber::SubTypePager)) {
+            types.push_back(SP_TYPE_PHONE_PAGER);
+        } else {
+            qWarning() << "Warning: Could not get phone context '" << number.contexts() << "'";
+        }
+    }
+
+    return types;
+}
+
 void SeasidePerson::setPhoneNumberTypes(const QStringList &phoneNumberTypes)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
@@ -308,37 +343,6 @@ void SeasidePerson::setPhoneNumberTypes(const QStringList &phoneNumberTypes)
     emit phoneNumberTypesChanged();
 }
 
-QStringList SeasidePerson::phoneNumberTypes() const
-{
-    const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
-    QStringList types;
-    types.reserve((numbers.length()));
-
-    foreach(const QContactPhoneNumber number, numbers) {
-        if (number.contexts().contains(QContactDetail::ContextHome)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
-            types.push_back(SP_TYPE_PHONE_HOME);
-        } else if (number.contexts().contains(QContactDetail::ContextWork)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypeLandline)) {
-            types.push_back(SP_TYPE_PHONE_WORK);
-        } else if (number.contexts().contains(QContactDetail::ContextHome)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypeMobile)) {
-            types.push_back(SP_TYPE_PHONE_MOBILE);
-        } else if (number.contexts().contains(QContactDetail::ContextHome)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypeFax)) {
-            types.push_back(SP_TYPE_PHONE_FAX);
-        } else if (number.contexts().contains(QContactDetail::ContextHome)
-            && number.subTypes().contains(QContactPhoneNumber::SubTypePager)) {
-            types.push_back(SP_TYPE_PHONE_PAGER);
-        } else {
-            qWarning() << "Warning: Could not get phone context '" << number.contexts() << "'";
-        }
-    }
-
-    return types;
-}
-
-
 QStringList SeasidePerson::emailAddresses() const
 {
     LIST_PROPERTY_FROM_DETAIL_FIELD(QContactEmailAddress, emailAddress);
@@ -350,12 +354,56 @@ void SeasidePerson::setEmailAddresses(const QStringList &emailAddresses)
     emit emailAddressesChanged();
 }
 
-QStringList SeasidePerson::emailAddressTypes() const {
+QStringList SeasidePerson::emailAddressTypes() const
+{
+    const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
+    QStringList types;
+    types.reserve((emails.length()));
 
+    foreach(const QContactEmailAddress &email, emails) {
+        if (email.contexts().contains(QContactDetail::ContextHome)) {
+            types.push_back(SP_TYPE_EMAIL_HOME);
+        } else if (email.contexts().contains(QContactDetail::ContextWork)) {
+            types.push_back(SP_TYPE_EMAIL_WORK);
+        } else if (email.contexts().contains(QContactDetail::ContextOther)) {
+            types.push_back(SP_TYPE_EMAIL_OTHER);
+        } else {
+            qWarning() << "Warning: Could not get email context '" << email.contexts() << "'";
+        }
+    }
+
+    return types;
 }
 
-void SeasidePerson::setEmailAddressTypes(const QStringList &emailAddressTypes) {
+void SeasidePerson::setEmailAddressTypes(const QStringList &emailAddressTypes)
+{
+    const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
+    int i=0;
+    QContactEmailAddress email;
 
+    if (emailAddressTypes.length() != emails.length()) {
+        qWarning() << "Number of email addresses does not match the number of contexts being stored. Aborting.";
+        return;
+    }
+
+    foreach(const QString &type, emailAddressTypes) {
+        email = emails.at(i);
+
+        if (type == SP_TYPE_EMAIL_HOME) {
+            email.setContexts(QContactDetail::ContextHome);
+        }  else if (type == SP_TYPE_EMAIL_WORK) {
+            email.setContexts(QContactDetail::ContextWork);
+        } else if (type == SP_TYPE_EMAIL_OTHER) {
+            email.setContexts(QContactDetail::ContextOther);
+        } else {
+            qWarning() << "Warning: Could not save email type '" << type << "'";
+        }
+
+        mContact.saveDetail(&email);
+        i++;
+    }
+
+    emit emailAddressTypesChanged();
 }
 
 // TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD

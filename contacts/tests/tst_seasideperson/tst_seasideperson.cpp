@@ -54,6 +54,7 @@ private slots:
     void phoneNumbers();
     void phoneTypes();
     void emailAddresses();
+    void emailTypes();
     void marshalling();
     void setContact();
 };
@@ -178,6 +179,26 @@ void tst_SeasidePerson::phoneTypes() {
                                                     << SeasidePerson::SP_TYPE_PHONE_FAX
                                                     << SeasidePerson::SP_TYPE_PHONE_PAGER);
     QCOMPARE(person->phoneNumbers().count(), 5);
+}
+
+void tst_SeasidePerson::emailTypes() {
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+
+    QCOMPARE(person->emailAddressTypes(), QStringList());
+    QCOMPARE(person->emailAddresses(), QStringList());
+
+    person->setEmailAddresses(QStringList() << "foo@bar" << "bar@foo"<< "foo@baz");
+
+    QSignalSpy spy(person.data(), SIGNAL(emailAddressTypesChanged()));
+    person->setEmailAddressTypes(QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
+                                               << SeasidePerson::SP_TYPE_EMAIL_WORK
+                                               << SeasidePerson::SP_TYPE_EMAIL_OTHER);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->emailAddressTypes(), QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
+                                                        << SeasidePerson::SP_TYPE_EMAIL_WORK
+                                                        << SeasidePerson::SP_TYPE_EMAIL_OTHER);
+
+    QCOMPARE(person->emailAddressTypes().count(), 3);
 }
 
 void tst_SeasidePerson::emailAddresses()
