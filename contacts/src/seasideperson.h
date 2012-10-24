@@ -44,19 +44,33 @@ QTM_USE_NAMESPACE
 class SeasidePerson : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(DetailTypes)
+
 public:
     /**
-     * String identifying the contact detail from the UI.
+     * Identifiers of contact details for the UI.
      */
-    static const char *SP_TYPE_PHONE_HOME;
+    enum DetailTypes {
+        PhoneHomeType,
+        PhoneWorkType,
+        PhoneMobileType,
+        PhoneFaxType,
+        PhonePagerType,
+        EmailHomeType,
+        EmailWorkType,
+        EmailOtherType
+    };
+
+/*    static const char *SP_TYPE_PHONE_HOME;
     static const char *SP_TYPE_PHONE_WORK;
     static const char *SP_TYPE_PHONE_MOBILE;
     static const char *SP_TYPE_PHONE_FAX;
     static const char *SP_TYPE_PHONE_PAGER;
-
+*/
     static const char *SP_TYPE_EMAIL_HOME;
     static const char *SP_TYPE_EMAIL_WORK;
     static const char *SP_TYPE_EMAIL_OTHER;
+
 
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
@@ -93,9 +107,9 @@ public:
     QStringList phoneNumbers() const;
     void setPhoneNumbers(const QStringList &phoneNumbers);
 
-    Q_PROPERTY(QStringList phoneNumberTypes READ phoneNumberTypes WRITE setPhoneNumberTypes NOTIFY phoneNumberTypesChanged)
-    QStringList phoneNumberTypes() const;
-    void setPhoneNumberTypes(const QStringList &phoneNumberTypes);
+    Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes WRITE setPhoneNumberTypes NOTIFY phoneNumberTypesChanged)
+    QList<int> phoneNumberTypes() const;
+    void setPhoneNumberTypes(const  QList<int> &phoneNumberTypes);
 
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
