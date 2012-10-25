@@ -289,7 +289,7 @@ QList<int> SeasidePerson::phoneNumberTypes() const
     return types;
 }
 
-void SeasidePerson::setTypeForPhoneNumber(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailTypes type)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
     if (which >= numbers.length()) {
@@ -353,7 +353,7 @@ QList<int> SeasidePerson::emailAddressTypes() const
     return types;
 }
 
-void SeasidePerson::setTypeForEmailAddress(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes type)
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
 

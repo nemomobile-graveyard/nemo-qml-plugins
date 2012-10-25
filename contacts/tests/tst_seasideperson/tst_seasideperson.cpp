@@ -158,47 +158,69 @@ void tst_SeasidePerson::phoneNumbers()
     QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
 }
 
-void tst_SeasidePerson::phoneTypes() {
+void tst_SeasidePerson::phoneTypes()
+{
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
 
-    QCOMPARE(person->phoneNumberTypes(), QStringList());
+    QCOMPARE(person->phoneNumberTypes(), QList<int>());
     QCOMPARE(person->phoneNumbers(), QStringList());
 
     person->setPhoneNumbers(QStringList() << "111" << "222"<< "333"<< "444"<< "555");
 
     QSignalSpy spy(person.data(), SIGNAL(phoneNumberTypesChanged()));
-    person->setPhoneNumberTypes(QStringList() << SeasidePerson::SP_TYPE_PHONE_HOME
-                                              << SeasidePerson::SP_TYPE_PHONE_WORK
-                                              << SeasidePerson::SP_TYPE_PHONE_MOBILE
-                                              << SeasidePerson::SP_TYPE_PHONE_FAX
-                                              << SeasidePerson::SP_TYPE_PHONE_PAGER);
-    QCOMPARE(spy.count(), 1);
-    QCOMPARE(person->phoneNumberTypes(), QStringList() << SeasidePerson::SP_TYPE_PHONE_HOME
-                                                    << SeasidePerson::SP_TYPE_PHONE_WORK
-                                                    << SeasidePerson::SP_TYPE_PHONE_MOBILE
-                                                    << SeasidePerson::SP_TYPE_PHONE_FAX
-                                                    << SeasidePerson::SP_TYPE_PHONE_PAGER);
+
+    QList<SeasidePerson::DetailTypes> phoneTypes;
+    phoneTypes.append(SeasidePerson::PhoneHomeType);
+    phoneTypes.append(SeasidePerson::PhoneWorkType);
+    phoneTypes.append(SeasidePerson::PhoneMobileType);
+    phoneTypes.append(SeasidePerson::PhonePagerType);
+    phoneTypes.append(SeasidePerson::PhoneFaxType);
+
+    QStringList numbers = person->phoneNumbers();
+    QCOMPARE(numbers.count(), 5);
+    for (int i=0; i<numbers.count(); i++) {
+        person->setPhoneNumberType(i, phoneTypes.at(i));
+    }
+
+    QCOMPARE(spy.count(), 5);
     QCOMPARE(person->phoneNumbers().count(), 5);
+    QCOMPARE(person->phoneNumberTypes().count(), 5);
+
+    QList<int> contactsPhoneTypes = person->phoneNumberTypes();
+    for (int i=0; i<contactsPhoneTypes.count(); i++) {
+        QVERIFY(contactsPhoneTypes.at(i) == phoneTypes.at(i));
+    }
 }
 
-void tst_SeasidePerson::emailTypes() {
+void tst_SeasidePerson::emailTypes()
+{
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
 
-    QCOMPARE(person->emailAddressTypes(), QStringList());
+    QCOMPARE(person->emailAddressTypes(), QList<int>());
     QCOMPARE(person->emailAddresses(), QStringList());
 
     person->setEmailAddresses(QStringList() << "foo@bar" << "bar@foo"<< "foo@baz");
-
     QSignalSpy spy(person.data(), SIGNAL(emailAddressTypesChanged()));
-    person->setEmailAddressTypes(QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
-                                               << SeasidePerson::SP_TYPE_EMAIL_WORK
-                                               << SeasidePerson::SP_TYPE_EMAIL_OTHER);
-    QCOMPARE(spy.count(), 1);
-    QCOMPARE(person->emailAddressTypes(), QStringList() << SeasidePerson::SP_TYPE_EMAIL_HOME
-                                                        << SeasidePerson::SP_TYPE_EMAIL_WORK
-                                                        << SeasidePerson::SP_TYPE_EMAIL_OTHER);
 
+    QList<SeasidePerson::DetailTypes> emailTypes;
+    emailTypes.append(SeasidePerson::EmailHomeType);
+    emailTypes.append(SeasidePerson::EmailWorkType);
+    emailTypes.append(SeasidePerson::EmailOtherType);
+
+    QStringList emails = person->emailAddresses();
+    QCOMPARE(emails.count(), 3);
+    for (int i=0; i<emails.count(); i++) {
+        person->setEmailAddressType(i, emailTypes.at(i));
+    }
+
+    QCOMPARE(spy.count(), 3);
+    QCOMPARE(person->emailAddresses().count(), 3);
     QCOMPARE(person->emailAddressTypes().count(), 3);
+
+    QList<int> contactsSmailTypes = person->emailAddressTypes();
+    for (int i=0; i<contactsSmailTypes.count(); i++) {
+        QVERIFY(contactsSmailTypes.at(i) == emailTypes.at(i));
+    }
 }
 
 void tst_SeasidePerson::emailAddresses()
