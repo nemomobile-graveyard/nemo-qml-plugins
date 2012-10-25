@@ -42,19 +42,6 @@
 
 #include "seasideperson.h"
 
-/**
- * String identifying the contact detail from the UI.
- */
-/*const char *SeasidePerson::SP_TYPE_PHONE_HOME   = "phone_home";
-const char *SeasidePerson::SP_TYPE_PHONE_WORK   = "phone_work";
-const char *SeasidePerson::SP_TYPE_PHONE_MOBILE = "phone_mobile";
-const char *SeasidePerson::SP_TYPE_PHONE_FAX    = "phone_fax";
-const char *SeasidePerson::SP_TYPE_PHONE_PAGER  = "phone_pager";
-*/
-const char *SeasidePerson::SP_TYPE_EMAIL_HOME   = "email_personal";
-const char *SeasidePerson::SP_TYPE_EMAIL_WORK   = "email_work";
-const char *SeasidePerson::SP_TYPE_EMAIL_OTHER  = "email_other";
-
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
 {
@@ -345,21 +332,21 @@ void SeasidePerson::setEmailAddresses(const QStringList &emailAddresses)
     emit emailAddressesChanged();
 }
 
-QStringList SeasidePerson::emailAddressTypes() const
+QList<int> SeasidePerson::emailAddressTypes() const
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
-    QStringList types;
+    QList<int> types;
     types.reserve((emails.length()));
 
     foreach(const QContactEmailAddress &email, emails) {
         if (email.contexts().contains(QContactDetail::ContextHome)) {
-            types.push_back(SP_TYPE_EMAIL_HOME);
+            types.push_back(SeasidePerson::EmailHomeType);
         } else if (email.contexts().contains(QContactDetail::ContextWork)) {
-            types.push_back(SP_TYPE_EMAIL_WORK);
+            types.push_back(SeasidePerson::EmailWorkType);
         } else if (email.contexts().contains(QContactDetail::ContextOther)) {
-            types.push_back(SP_TYPE_EMAIL_OTHER);
+            types.push_back(SeasidePerson::EmailOtherType);
         } else {
-            qWarning() << "Warning: Could not get email context '" << email.contexts() << "'";
+            qWarning() << "Warning: Could not get email type '" << email.contexts() << "'";
         }
     }
 
