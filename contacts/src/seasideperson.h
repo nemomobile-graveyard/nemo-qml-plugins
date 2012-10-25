@@ -107,17 +107,17 @@ public:
     QStringList phoneNumbers() const;
     void setPhoneNumbers(const QStringList &phoneNumbers);
 
-    Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes WRITE setPhoneNumberTypes NOTIFY phoneNumberTypesChanged)
+    Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes NOTIFY phoneNumberTypesChanged)
     QList<int> phoneNumberTypes() const;
-    void setPhoneNumberTypes(const  QList<int> &phoneNumberTypes);
+    Q_INVOKABLE void setTypeForPhoneNumber(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
 
-    Q_PROPERTY(QStringList emailAddressTypes READ emailAddressTypes WRITE setEmailAddressTypes NOTIFY emailAddressTypesChanged)
+    Q_PROPERTY(QStringList emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
     QStringList emailAddressTypes() const;
-    void setEmailAddressTypes(const QStringList &emailAddressTypes);
+    Q_INVOKABLE void setTypeForEmailAddress(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;

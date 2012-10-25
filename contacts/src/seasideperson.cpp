@@ -302,43 +302,35 @@ QList<int> SeasidePerson::phoneNumberTypes() const
     return types;
 }
 
-void SeasidePerson::setPhoneNumberTypes(const QList<int> &phoneNumberTypes)
+void SeasidePerson::setTypeForPhoneNumber(int which, SeasidePerson::DetailTypes type)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
-    int i=0;
-    QContactPhoneNumber number;
-
-    if (phoneNumberTypes.length() != numbers.length()) {
-        qWarning() << "Number of phone numbers does not match the number of contexts being stored. Aborting.";
+    if (which >= numbers.length()) {
+        qWarning() << "Unable to set type for phone number: invalid index specified. Aborting.";
         return;
     }
 
-    foreach(int type, phoneNumberTypes) {
-        number = numbers.at(i);
-
-        if (type == SeasidePerson::PhoneHomeType) {
-            number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
-            number.setContexts(QContactDetail::ContextHome);
-        }  else if (type == SeasidePerson::PhoneWorkType) {
-            number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
-            number.setContexts(QContactDetail::ContextWork);
-        } else if (type == SeasidePerson::PhoneMobileType) {
-            number.setSubTypes(QContactPhoneNumber::SubTypeMobile);
-            number.setContexts(QContactDetail::ContextHome);
-        } else if (type == SeasidePerson::PhoneFaxType) {
-            number.setSubTypes(QContactPhoneNumber::SubTypeFax);
-            number.setContexts(QContactDetail::ContextHome);
-        } else if (type == SeasidePerson::PhonePagerType) {
-            number.setSubTypes(QContactPhoneNumber::SubTypePager);
-            number.setContexts(QContactDetail::ContextHome);
-        } else {
-            qWarning() << "Warning: Could not save phone type '" << type << "'";
-        }
-
-        mContact.saveDetail(&number);
-        i++;
+    QContactPhoneNumber number = numbers.at(which);
+    if (type == SeasidePerson::PhoneHomeType) {
+        number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
+        number.setContexts(QContactDetail::ContextHome);
+    }  else if (type == SeasidePerson::PhoneWorkType) {
+        number.setSubTypes(QContactPhoneNumber::SubTypeLandline);
+        number.setContexts(QContactDetail::ContextWork);
+    } else if (type == SeasidePerson::PhoneMobileType) {
+        number.setSubTypes(QContactPhoneNumber::SubTypeMobile);
+        number.setContexts(QContactDetail::ContextHome);
+    } else if (type == SeasidePerson::PhoneFaxType) {
+        number.setSubTypes(QContactPhoneNumber::SubTypeFax);
+        number.setContexts(QContactDetail::ContextHome);
+    } else if (type == SeasidePerson::PhonePagerType) {
+        number.setSubTypes(QContactPhoneNumber::SubTypePager);
+        number.setContexts(QContactDetail::ContextHome);
+    } else {
+        qWarning() << "Warning: Could not save phone type '" << type << "'";
     }
 
+    mContact.saveDetail(&number);
     emit phoneNumberTypesChanged();
 }
 
@@ -374,34 +366,27 @@ QStringList SeasidePerson::emailAddressTypes() const
     return types;
 }
 
-void SeasidePerson::setEmailAddressTypes(const QStringList &emailAddressTypes)
+void SeasidePerson::setTypeForEmailAddress(int which, SeasidePerson::DetailTypes type)
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
-    int i=0;
-    QContactEmailAddress email;
 
-    if (emailAddressTypes.length() != emails.length()) {
-        qWarning() << "Number of email addresses does not match the number of contexts being stored. Aborting.";
+    if (which >= emails.length()) {
+        qWarning() << "Unable to set type for email address: invalid index specified. Aborting.";
         return;
     }
 
-    foreach(const QString &type, emailAddressTypes) {
-        email = emails.at(i);
-
-        if (type == SP_TYPE_EMAIL_HOME) {
-            email.setContexts(QContactDetail::ContextHome);
-        }  else if (type == SP_TYPE_EMAIL_WORK) {
-            email.setContexts(QContactDetail::ContextWork);
-        } else if (type == SP_TYPE_EMAIL_OTHER) {
-            email.setContexts(QContactDetail::ContextOther);
-        } else {
-            qWarning() << "Warning: Could not save email type '" << type << "'";
-        }
-
-        mContact.saveDetail(&email);
-        i++;
+    QContactEmailAddress email = emails.at(which);
+    if (type == SeasidePerson::EmailHomeType) {
+        email.setContexts(QContactDetail::ContextHome);
+    }  else if (type == SeasidePerson::EmailWorkType) {
+        email.setContexts(QContactDetail::ContextWork);
+    } else if (type == SeasidePerson::EmailOtherType) {
+        email.setContexts(QContactDetail::ContextOther);
+    } else {
+        qWarning() << "Warning: Could not save email type '" << type << "'";
     }
 
+    mContact.saveDetail(&email);
     emit emailAddressTypesChanged();
 }
 
