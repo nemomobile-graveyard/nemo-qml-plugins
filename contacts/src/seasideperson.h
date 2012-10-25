@@ -51,11 +51,20 @@ public:
      * Identifiers of contact details for the UI.
      */
     enum DetailTypes {
+        // Name
+        FirstNameType,
+        LastNameType,
+        MiddleNameType,
+        CompanyType,
+        NickType,
+        TitleType,
+        // Phone
         PhoneHomeType,
         PhoneWorkType,
         PhoneMobileType,
         PhoneFaxType,
         PhonePagerType,
+        // Email
         EmailHomeType,
         EmailWorkType,
         EmailOtherType
