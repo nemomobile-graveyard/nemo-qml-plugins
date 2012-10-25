@@ -61,17 +61,6 @@ public:
         EmailOtherType
     };
 
-/*    static const char *SP_TYPE_PHONE_HOME;
-    static const char *SP_TYPE_PHONE_WORK;
-    static const char *SP_TYPE_PHONE_MOBILE;
-    static const char *SP_TYPE_PHONE_FAX;
-    static const char *SP_TYPE_PHONE_PAGER;
-*/
-    static const char *SP_TYPE_EMAIL_HOME;
-    static const char *SP_TYPE_EMAIL_WORK;
-    static const char *SP_TYPE_EMAIL_OTHER;
-
-
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
 
@@ -115,8 +104,8 @@ public:
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
 
-    Q_PROPERTY(QStringList emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
-    QStringList emailAddressTypes() const;
+    Q_PROPERTY(QList<int> emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
+    QList<int> emailAddressTypes() const;
     Q_INVOKABLE void setTypeForEmailAddress(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
