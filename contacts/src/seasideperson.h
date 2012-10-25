@@ -44,22 +44,31 @@ QTM_USE_NAMESPACE
 class SeasidePerson : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(DetailTypes)
+
 public:
     /**
-     * String identifying the contact detail from the UI.
+     * Identifiers of contact details for the UI.
      */
-    static const char *SP_CONTEXT_PHONE_HOME;
-    static const char *SP_CONTEXT_PHONE_WORK;
-    static const char *SP_CONTEXT_PHONE_MOBILE;
-    static const char *SP_CONTEXT_PHONE_FAX;
-    static const char *SP_CONTEXT_PHONE_PAGER;
-
-    /**
-     * String identifying the context when saving the contact.
-     */
-    static const char *QTCONTACTS_CONTEXT_HOME;
-    static const char *QTCONTACTS_CONTEXT_WORK;
-
+    enum DetailTypes {
+        // Name
+        FirstNameType,
+        LastNameType,
+        MiddleNameType,
+        CompanyType,
+        NickType,
+        TitleType,
+        // Phone
+        PhoneHomeType,
+        PhoneWorkType,
+        PhoneMobileType,
+        PhoneFaxType,
+        PhonePagerType,
+        // Email
+        EmailHomeType,
+        EmailWorkType,
+        EmailOtherType
+    };
 
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
@@ -96,13 +105,17 @@ public:
     QStringList phoneNumbers() const;
     void setPhoneNumbers(const QStringList &phoneNumbers);
 
-    Q_PROPERTY(QStringList phoneContexts READ phoneContexts WRITE setPhoneContexts NOTIFY phoneContextsChanged)
-    QStringList phoneContexts() const;
-    void setPhoneContexts(const QStringList &phoneContexts);
+    Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes NOTIFY phoneNumberTypesChanged)
+    QList<int> phoneNumberTypes() const;
+    Q_INVOKABLE void setPhoneNumberType(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
     void setEmailAddresses(const QStringList &emailAddresses);
+
+    Q_PROPERTY(QList<int> emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
+    QList<int> emailAddressTypes() const;
+    Q_INVOKABLE void setEmailAddressType(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
@@ -125,8 +138,9 @@ signals:
     void avatarPathChanged();
     void birthdayChanged();
     void phoneNumbersChanged();
-    void phoneContextsChanged();
+    void phoneNumberTypesChanged();
     void emailAddressesChanged();
+    void emailAddressTypesChanged();
     void accountUrisChanged();
     void accountPathsChanged();
 
