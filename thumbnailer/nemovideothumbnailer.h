@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (C) 2012 Jolla Ltd
+ * Contact: Andrew den Exter <andrew.den.exter@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,45 +30,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
+#ifndef NEMOVIDEOTHUMBNAILER_H
+#define NEMOVIDEOTHUMBNAILER_H
 
-#include "nemothumbnailitem.h"
-#include "nemothumbnailprovider.h"
+#include <QImage>
 
-#ifdef NEMO_GSTREAMER_THUMBNAILS
-#include <gst/gst.h>
-#endif
-
-class Q_DECL_EXPORT NemoThumbnailerPlugin : public QDeclarativeExtensionPlugin
+namespace NemoVideoThumbnailer
 {
-public:
-    virtual ~NemoThumbnailerPlugin() { }
+    QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize);
+}
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-#ifdef NEMO_GSTREAMER_THUMBNAILS
-        gst_init(0, 0);
 #endif
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.thumbnailer"));
-        engine->addImageProvider(QLatin1String("nemoThumbnail"), new NemoThumbnailProvider);
-
-        m_loader.start(QThread::IdlePriority);
-        qAddPostRoutine(NemoThumbnailLoader::shutdown);
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.thumbnailer"));
-
-        qmlRegisterType<NemoThumbnailItem>(uri, 1, 0, "Thumbnail");
-    }
-
-private:
-    NemoThumbnailLoader m_loader;
-};
-
-Q_EXPORT_PLUGIN2(nemothumbnailer, NemoThumbnailerPlugin);
-

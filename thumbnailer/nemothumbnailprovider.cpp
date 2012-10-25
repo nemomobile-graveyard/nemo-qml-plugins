@@ -37,6 +37,9 @@
 #include <QImageReader>
 #include <QDateTime>
 #include <QtEndian>
+#include <QElapsedTimer>
+
+#include <jpeglib.h>
 
 #undef THUMBNAILER_DEBUG
 
@@ -59,7 +62,7 @@ static inline QString rawCachePath()
     return cachePath() + QDir::separator() + "raw";
 }
 
-static void setupCache()
+void NemoThumbnailProvider::setupCache()
 {
     // the syscalls make baby jesus cry; but this protects us against sins like users
     QDir d(cachePath());
@@ -86,7 +89,7 @@ static QString cacheFileName(const QByteArray &hashKey, bool makePath = false)
            hashKey;
 }
 
-static QByteArray cacheKey(const QString &id, const QSize &requestedSize)
+QByteArray NemoThumbnailProvider::cacheKey(const QString &id, const QSize &requestedSize)
 {
     QByteArray baId = id.toLatin1(); // is there a more efficient way than a copy?
 
@@ -115,7 +118,7 @@ static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
     return QImage();
 }
 
-static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
+void NemoThumbnailProvider::writeCacheFile(const QByteArray &hashKey, const QImage &img)
 {
     QFile fi(cacheFileName(hashKey, true));
     if (!fi.open(QIODevice::WriteOnly)) {
@@ -187,7 +190,7 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
 
     // needed for stupid things like gallery model, which pass us a url
     if (id.startsWith("file://")) {
-        qWarning() << Q_FUNC_INFO << "Removing file:// prefix, before: " << id;
+//        qWarning() << Q_FUNC_INFO << "Removing file:// prefix, before: " << id;
         QString &nid = const_cast<QString &>(id);
         nid = nid.remove(0, 7);
     }
@@ -209,10 +212,27 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         return img;
     }
 
+    return generateThumbnail(id, hashData, requestedSize);
+}
+
+QImage NemoThumbnailProvider::loadThumbnail(const QString &fileName, const QByteArray &cacheKey)
+{
+    return ::attemptCachedServe(fileName, cacheKey);
+}
+
+QImage NemoThumbnailProvider::generateThumbnail(const QString &id, const QByteArray &hashData, const QSize &requestedSize)
+{
+    QImage img;
+    QSize originalSize;
+    QByteArray format;
+
     // image was not in cache thus we read it
     QImageReader ir(id);
-    QSize originalSize = ir.size();
-    QByteArray format = ir.format();
+    if (!ir.canRead())
+        return img;
+
+    originalSize = ir.size();
+    format = ir.format();
 
     // scales arbitrary sized source image to requested size scaling either up or down
     // keeping aspect ratio of the original image intact by maximizing either width or height
@@ -245,6 +265,7 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         (originalSize != requestedSize && originalSize.isValid())) {
         writeCacheFile(hashData, img);
     }
+
     TDEBUG() << Q_FUNC_INFO << "Wrote " << id << " to cache";
     return img;
 }
