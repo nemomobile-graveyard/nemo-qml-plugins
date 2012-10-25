@@ -107,7 +107,7 @@ public:
 
     Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes NOTIFY phoneNumberTypesChanged)
     QList<int> phoneNumberTypes() const;
-    Q_INVOKABLE void setTypeForPhoneNumber(int which, DetailTypes type);
+    Q_INVOKABLE void setPhoneNumberType(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
@@ -115,7 +115,7 @@ public:
 
     Q_PROPERTY(QList<int> emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
     QList<int> emailAddressTypes() const;
-    Q_INVOKABLE void setTypeForEmailAddress(int which, DetailTypes type);
+    Q_INVOKABLE void setEmailAddressType(int which, DetailTypes type);
 
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
