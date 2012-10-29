@@ -67,7 +67,11 @@ public:
         // Email
         EmailHomeType,
         EmailWorkType,
-        EmailOtherType
+        EmailOtherType,
+        // Website
+        WebsiteHomeType,
+        WebsiteWorkType,
+        WebsiteOtherType
     };
 
     explicit SeasidePerson(QObject *parent = 0);
@@ -117,6 +121,22 @@ public:
     QList<int> emailAddressTypes() const;
     Q_INVOKABLE void setEmailAddressType(int which, DetailTypes type);
 
+    Q_PROPERTY(QStringList websites READ websites WRITE setWebsites NOTIFY websitesChanged)
+    QStringList websites() const;
+    Q_INVOKABLE void setWebsites(const QStringList &sites);
+
+    Q_PROPERTY(QList<int> websiteTypes READ websiteTypes NOTIFY websiteTypesChanged)
+    QList<int> websiteTypes() const;
+    void setWebsiteType(int which, DetailTypes type);
+
+    Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)
+    QDateTime birthday() const;
+    void setBirthday(const QDateTime &bd);
+
+    Q_PROPERTY(QDateTime anniversary READ anniversary WRITE setAnniversary NOTIFY anniversaryChanged)
+    QDateTime anniversary() const;
+    void setAnniversary(const QDateTime &av);
+
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
 
@@ -136,11 +156,14 @@ signals:
     void companyNameChanged();
     void favoriteChanged();
     void avatarPathChanged();
-    void birthdayChanged();
     void phoneNumbersChanged();
     void phoneNumberTypesChanged();
     void emailAddressesChanged();
     void emailAddressTypesChanged();
+    void websitesChanged();
+    void websiteTypesChanged();
+    void birthdayChanged();
+    void anniversaryChanged();
     void accountUrisChanged();
     void accountPathsChanged();
 
