@@ -55,6 +55,10 @@ private slots:
     void phoneTypes();
     void emailAddresses();
     void emailTypes();
+    void websites();
+    void websiteTypes();
+    void birthday();
+    void anniversary();
     void marshalling();
     void setContact();
 };
@@ -231,6 +235,68 @@ void tst_SeasidePerson::emailAddresses()
     person->setEmailAddresses(QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->emailAddresses(), QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+}
+
+void tst_SeasidePerson::websites()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->websites(), QStringList());
+    QSignalSpy spy(person.data(), SIGNAL(websitesChanged()));
+    person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->websites(), QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
+}
+
+void tst_SeasidePerson::websiteTypes()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+
+    QCOMPARE(person->websiteTypes(), QList<int>());
+    QCOMPARE(person->websites(), QStringList());
+
+    person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
+    QSignalSpy spy(person.data(), SIGNAL(websiteTypesChanged()));
+
+    QList<SeasidePerson::DetailTypes> websiteTypes;
+    websiteTypes.append(SeasidePerson::WebsiteHomeType);
+    websiteTypes.append(SeasidePerson::WebsiteWorkType);
+    websiteTypes.append(SeasidePerson::WebsiteOtherType);
+
+    QStringList websites = person->websites();
+    QCOMPARE(websites.count(), 3);
+    for (int i = 0; i<websites.count(); i++) {
+        person->setWebsiteType(i, websiteTypes.at(i));
+    }
+
+    QCOMPARE(spy.count(), 3);
+    QCOMPARE(person->websites().count(), 3);
+    QCOMPARE(person->websiteTypes().count(), 3);
+
+    QList<int> contactsWebsiteTypes = person->websiteTypes();
+    for (int i=0; i<contactsWebsiteTypes.count(); i++) {
+        QVERIFY(contactsWebsiteTypes.at(i) == websiteTypes.at(i));
+    }
+
+}
+
+void tst_SeasidePerson::birthday()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->birthday(), QDateTime());
+    QSignalSpy spy(person.data(), SIGNAL(birthdayChanged()));
+    person->setBirthday(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+}
+
+void tst_SeasidePerson::anniversary()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->anniversary(), QDateTime());
+    QSignalSpy spy(person.data(), SIGNAL(anniversaryChanged()));
+    person->setAnniversary(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->anniversary(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
 }
 
 void tst_SeasidePerson::marshalling()
