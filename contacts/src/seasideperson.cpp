@@ -33,12 +33,14 @@
 
 #include <QContactAvatar>
 #include <QContactBirthday>
+#include <QContactAnniversary>
 #include <QContactName>
 #include <QContactFavorite>
 #include <QContactPhoneNumber>
 #include <QContactEmailAddress>
 #include <QContactOnlineAccount>
 #include <QContactOrganization>
+#include <QContactUrl>
 
 #include "seasideperson.h"
 
@@ -375,6 +377,88 @@ void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes ty
 
     mContact.saveDetail(&email);
     emit emailAddressTypesChanged();
+}
+
+QStringList SeasidePerson::websites() const
+{
+    LIST_PROPERTY_FROM_DETAIL_FIELD(QContactUrl, url);
+}
+
+void SeasidePerson::setWebsites(const QStringList &websites)
+{
+    SET_PROPERTY_FIELD_FROM_LIST(QContactUrl, url, setUrl, websites)
+    emit websitesChanged();
+}
+
+QList<int> SeasidePerson::websiteTypes() const
+{
+    const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
+    QList<int> types;
+    types.reserve((urls.length()));
+
+    foreach(const QContactUrl &url, urls) {
+        if (url.contexts().contains(QContactDetail::ContextHome)) {
+            types.push_back(SeasidePerson::WebsiteHomeType);
+        } else if (url.contexts().contains(QContactDetail::ContextWork)) {
+            types.push_back(SeasidePerson::WebsiteWorkType);
+        } else if (url.contexts().contains(QContactDetail::ContextOther)) {
+            types.push_back(SeasidePerson::WebsiteOtherType);
+        } else {
+            qWarning() << "Warning: Could not get website type '" << url.contexts() << "'";
+        }
+    }
+
+    return types;
+}
+
+void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailTypes type)
+{
+    const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
+
+    if (which >= urls.length()) {
+        qWarning() << "Unable to set type for website: invalid index specified. Aborting.";
+        return;
+    }
+
+    QContactUrl url = urls.at(which);
+    if (type == SeasidePerson::WebsiteHomeType) {
+        url.setContexts(QContactDetail::ContextHome);
+    }  else if (type == SeasidePerson::WebsiteWorkType) {
+        url.setContexts(QContactDetail::ContextWork);
+    } else if (type == SeasidePerson::WebsiteOtherType) {
+        url.setContexts(QContactDetail::ContextOther);
+    } else {
+        qWarning() << "Warning: Could not save website type '" << type << "'";
+    }
+
+    mContact.saveDetail(&url);
+    emit websiteTypesChanged();
+}
+
+QDateTime SeasidePerson::birthday() const
+{
+    return mContact.detail<QContactBirthday>().dateTime();
+}
+
+void SeasidePerson::setBirthday(const QDateTime &bd)
+{
+    QContactBirthday birthday = mContact.detail<QContactBirthday>();
+    birthday.setDateTime(bd);
+    mContact.saveDetail(&birthday);
+    emit birthdayChanged();
+}
+
+QDateTime SeasidePerson::anniversary() const
+{
+    return mContact.detail<QContactAnniversary>().originalDateTime();
+}
+
+void SeasidePerson::setAnniversary(const QDateTime &av)
+{
+    QContactAnniversary anniv = mContact.detail<QContactAnniversary>();
+    anniv.setOriginalDateTime(av);
+    mContact.saveDetail(&anniv);
+    emit anniversaryChanged();
 }
 
 // TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD
