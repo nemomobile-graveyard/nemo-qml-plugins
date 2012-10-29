@@ -65,6 +65,12 @@
 #include "seasidepeoplemodel.h"
 #include "seasidepeoplemodel_p.h"
 
+#ifdef DEBUG_MODEL
+#define MODEL_DEBUG qDebug
+#else
+#define MODEL_DEBUG if (false) qDebug
+#endif
+
 SeasidePeopleModel::SeasidePeopleModel(QObject *parent)
     : QAbstractListModel(parent)
     , priv(new SeasidePeopleModelPriv(this))
@@ -116,7 +122,7 @@ bool SeasidePeopleModel::savePerson(SeasidePerson *person)
         // it to - but this is ok, because the save request finishing will fix that.
         int rowId = priv->idToIndex.value(contact.localId());
         emit dataChanged(index(rowId, 0), index(rowId, 0));
-        qDebug() << Q_FUNC_INFO << "Faked save for " << contact.localId() << " row " << rowId;
+        MODEL_DEBUG() << Q_FUNC_INFO << "Faked save for " << contact.localId() << " row " << rowId;
     }
 
     // TODO: in a more complicated implementation, we'd only save
@@ -154,7 +160,7 @@ SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) co
 
 void SeasidePeopleModel::removePerson(SeasidePerson *person)
 {
-    qDebug() << Q_FUNC_INFO << "Removing " << person;
+    MODEL_DEBUG() << Q_FUNC_INFO << "Removing " << person;
 
     QContactRemoveRequest *removeRequest = new QContactRemoveRequest(this);
     removeRequest->setManager(priv->manager);
@@ -162,7 +168,7 @@ void SeasidePeopleModel::removePerson(SeasidePerson *person)
             SIGNAL(stateChanged(QContactAbstractRequest::State)),
             priv, SLOT(onRemoveStateChanged(QContactAbstractRequest::State)));
     removeRequest->setContactId(person->contact().id().localId());
-    qDebug() << Q_FUNC_INFO << "Removing " << person->contact().id().localId();
+    MODEL_DEBUG() << Q_FUNC_INFO << "Removing " << person->contact().id().localId();
 
     if (!removeRequest->start()) {
         qWarning() << Q_FUNC_INFO << "Remove request failed";
@@ -199,7 +205,7 @@ QVariant SeasidePeopleModel::data(const QModelIndex& index, int role) const
 
 int SeasidePeopleModel::importContacts(const QString &path)
 {
-    qDebug() << QDir::currentPath();
+    MODEL_DEBUG() << QDir::currentPath();
     QFile vcf(path);
     if (!vcf.open(QIODevice::ReadOnly)) {
         qWarning() << Q_FUNC_INFO << "Cannot open " << path;
@@ -220,7 +226,7 @@ int SeasidePeopleModel::importContacts(const QString &path)
         priv->contactsPendingSave.append(contact);
 
     priv->savePendingContacts();
-    qDebug() << Q_FUNC_INFO << "Imported " << newContacts.size() << " contacts " << " from " << path;
+    MODEL_DEBUG() << Q_FUNC_INFO << "Imported " << newContacts.size() << " contacts " << " from " << path;
     return newContacts.size();
 }
 
