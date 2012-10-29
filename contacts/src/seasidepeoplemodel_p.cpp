@@ -36,6 +36,12 @@
 #include "seasideperson.h"
 #include "seasidepeoplemodel_p.h"
 
+#ifdef DEBUG_MODEL
+#define MODEL_DEBUG qDebug
+#else
+#define MODEL_DEBUG if (false) qDebug
+#endif
+
 SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     : QObject(parent)
     , q(parent)
@@ -46,13 +52,13 @@ SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     sortOrder.clear();
     sortOrder.append(sort);
 
-    qDebug() << Q_FUNC_INFO << QContactManager::availableManagers();
+    MODEL_DEBUG() << Q_FUNC_INFO << QContactManager::availableManagers();
     if (!qgetenv("NEMO_CONTACT_MANAGER").isNull())
         manager = new QContactManager(qgetenv("NEMO_CONTACT_MANAGER"));
     else
         manager = new QContactManager;
 
-    qDebug() << Q_FUNC_INFO << "Manager is " << manager->managerName();
+    MODEL_DEBUG() << Q_FUNC_INFO << "Manager is " << manager->managerName();
 
     localeHelper = LocaleUtils::self();
 
@@ -79,7 +85,7 @@ void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int
 {
     foreach (const QContact &contact, contactsList) {
         SeasidePerson *person = new SeasidePerson(contact);
-        //qDebug() << Q_FUNC_INFO << "Adding contact " << contact.id() << " local " << contact.localId();
+        //MODEL_DEBUG() << Q_FUNC_INFO << "Adding contact " << contact.id() << " local " << contact.localId();
         QContactLocalId id = contact.localId();
 
         // Make sure we don't duplicate contacts
@@ -119,7 +125,7 @@ void SeasidePeopleModelPriv::savePendingContacts()
     saveRequest->setManager(manager);
 
     foreach (const QContact &contact, contactsPendingSave)
-        qDebug() << Q_FUNC_INFO << "Saving " << contact.id();
+        MODEL_DEBUG() << Q_FUNC_INFO << "Saving " << contact.id();
 
     if (!saveRequest->start()) {
         qWarning() << Q_FUNC_INFO << "Save request failed: " << saveRequest->error();
@@ -131,7 +137,7 @@ void SeasidePeopleModelPriv::savePendingContacts()
 
 template<typename T> inline T *checkRequest(QObject *sender, QContactAbstractRequest::State requestState)
 {
-    qDebug() << Q_FUNC_INFO << "Request state: " << requestState;
+    MODEL_DEBUG() << Q_FUNC_INFO << "Request state: " << requestState;
     T *request = qobject_cast<T *>(sender);
     if (!request) {
         qWarning() << Q_FUNC_INFO << "NULL request pointer";
@@ -139,7 +145,7 @@ template<typename T> inline T *checkRequest(QObject *sender, QContactAbstractReq
     }
 
     if (request->error() != QContactManager::NoError) {
-        qDebug() << Q_FUNC_INFO << "Error" << request->error()
+        qWarning() << Q_FUNC_INFO << "Error" << request->error()
                  << "occurred during request!";
         request->deleteLater();
         return 0;
@@ -165,7 +171,7 @@ void SeasidePeopleModelPriv::onSaveStateChanged(QContactAbstractRequest::State r
     QList<QContact> newContacts;
 
     foreach (const QContact &new_contact, contactList) {
-        qDebug() << Q_FUNC_INFO << "Successfully saved " << new_contact.id();
+        MODEL_DEBUG() << Q_FUNC_INFO << "Successfully saved " << new_contact.id();
 
         // make sure data shown to user matches what is
         // really in the database
@@ -194,7 +200,7 @@ void SeasidePeopleModelPriv::onRemoveStateChanged(QContactAbstractRequest::State
     if (!removeRequest)
         return;
 
-    qDebug() << Q_FUNC_INFO << "Removed" << removeRequest->contactIds();
+    MODEL_DEBUG() << Q_FUNC_INFO << "Removed" << removeRequest->contactIds();
     removeRequest->deleteLater();
     // actual removal done on contactsRemoved signal
 }
@@ -229,7 +235,7 @@ void SeasidePeopleModelPriv::contactsAdded(const QList<QContactLocalId>& contact
             SIGNAL(stateChanged(QContactAbstractRequest::State)),
             SLOT(onAddedFetchChanged(QContactAbstractRequest::State)));
     fetchRequest->setFilter(filter);
-    qDebug() << Q_FUNC_INFO << "Fetching new contacts " << filteredLocalIds;
+    MODEL_DEBUG() << Q_FUNC_INFO << "Fetching new contacts " << filteredLocalIds;
 
     if (!fetchRequest->start()) {
         qWarning() << Q_FUNC_INFO << "Fetch request failed";
@@ -253,7 +259,7 @@ void SeasidePeopleModelPriv::onAddedFetchChanged(QContactAbstractRequest::State 
     addContacts(addedContactsList, size);
     q->endInsertRows();
 
-    qDebug() << Q_FUNC_INFO << "Done updating model after adding"
+    MODEL_DEBUG() << Q_FUNC_INFO << "Done updating model after adding"
         << added << "contacts";
     fetchRequest->deleteLater();
 }
@@ -273,7 +279,7 @@ void SeasidePeopleModelPriv::contactsChanged(const QList<QContactLocalId>& conta
             SLOT(onChangedFetchChanged(QContactAbstractRequest::State)));
     fetchRequest->setFilter(filter);
 
-    qDebug() << Q_FUNC_INFO << "Fetching changed contacts " << contactIds;
+    MODEL_DEBUG() << Q_FUNC_INFO << "Fetching changed contacts " << contactIds;
 
     if (!fetchRequest->start()) {
         qWarning() << Q_FUNC_INFO << "Fetch request failed";
@@ -298,7 +304,7 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
     QList<QContact> changedContactsList = fetchRequest->contacts();
 
     foreach (const QContact &changedContact, changedContactsList) {
-        qDebug() << Q_FUNC_INFO << "Fetched changed contact " << changedContact.id();
+        MODEL_DEBUG() << Q_FUNC_INFO << "Fetched changed contact " << changedContact.id();
         QContactLocalId id = changedContact.localId();
 
         QMap<QContactLocalId, int>::ConstIterator it = idToIndex.find(changedContact.localId());
@@ -344,13 +350,13 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
     if (min <= max)
         emit q->dataChanged(q->index(min, 0), q->index(max, 0));
 
-    qDebug() << Q_FUNC_INFO << "Done updating model after contacts update";
+    MODEL_DEBUG() << Q_FUNC_INFO << "Done updating model after contacts update";
     fetchRequest->deleteLater();
 }
 
 void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& contactIds)
 {
-    qDebug() << Q_FUNC_INFO << "contacts removed:" << contactIds;
+    MODEL_DEBUG() << Q_FUNC_INFO << "contacts removed:" << contactIds;
 
     QList<int> removed;
     removed.reserve(contactIds.size());
@@ -391,7 +397,7 @@ void SeasidePeopleModelPriv::contactsRemoved(const QList<QContactLocalId>& conta
 
 void SeasidePeopleModelPriv::dataReset()
 {
-    qDebug() << Q_FUNC_INFO << "data reset";
+    MODEL_DEBUG() << Q_FUNC_INFO << "data reset";
     QContactFetchRequest *fetchRequest = new QContactFetchRequest(this);
     fetchRequest->setManager(manager);
     connect(fetchRequest,
@@ -415,7 +421,7 @@ void SeasidePeopleModelPriv::onDataResetFetchChanged(QContactAbstractRequest::St
     QList<QContact> contactsList = fetchRequest->contacts();
     int size = 0;
 
-    qDebug() << Q_FUNC_INFO << "Starting model reset";
+    MODEL_DEBUG() << Q_FUNC_INFO << "Starting model reset";
     q->beginResetModel();
 
     contactIds.clear();
@@ -427,7 +433,7 @@ void SeasidePeopleModelPriv::onDataResetFetchChanged(QContactAbstractRequest::St
     addContacts(contactsList, size);
 
     q->endResetModel();
-    qDebug() << Q_FUNC_INFO << "Done with model reset";
+    MODEL_DEBUG() << Q_FUNC_INFO << "Done with model reset";
     fetchRequest->deleteLater();
 }
 
@@ -556,7 +562,7 @@ void SeasidePeopleModel::setFilter(int role, bool dataResetNeeded){
 
 void SeasidePeopleModel::searchContacts(const QString text){
 
-        qDebug() << "[SeasidePeopleModel] searchContact " + text;
+        MODEL_DEBUG() << "[SeasidePeopleModel] searchContact " + text;
         QList<QContactFilter> filterList;
         QContactUnionFilter unionFilter;
 
