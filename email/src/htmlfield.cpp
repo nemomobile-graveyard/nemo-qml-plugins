@@ -38,7 +38,8 @@ void HtmlField::init()
     page->mainFrame()->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
     page->settings()->setAttribute(QWebSettings::TiledBackingStoreEnabled, true);
 
-    connect(page->mainFrame(), SIGNAL(contentsSizeChanged(QSize)), this, SIGNAL(contentsSizeChanged(QSize)));
+    connect(page->mainFrame(), SIGNAL(contentsSizeChanged(QSize)), this,
+            SIGNAL(contentsSizeChanged(QSize)));
 
     connect(m_gwv,  SIGNAL(geometryChanged()),       this, SLOT(webViewUpdateImplicitSize()));
     connect(m_gwv,  SIGNAL(scaleChanged()),          this, SIGNAL(contentsScaleChanged()));
@@ -47,7 +48,7 @@ void HtmlField::init()
     // Set the content loading timeout default.
     m_loadTimer.setInterval(5000);
     m_loadTimer.setSingleShot(true);
-    connect(&m_loadTimer, SIGNAL(timeout()),        this, SLOT(privateOnContentTimout()));
+    connect(&m_loadTimer, SIGNAL(timeout()),         this, SLOT(privateOnContentTimout()));
     connect(m_gwv,  SIGNAL(loadStarted()),           this, SLOT(privateOnLoadStarted()));
     connect(m_gwv,  SIGNAL(loadFinished(bool)),      this, SLOT(privateOnLoadFinished(bool)));
     connect(m_gwv,  SIGNAL(loadProgress(int)),       this, SLOT(privateOnLoadProgress(int)));

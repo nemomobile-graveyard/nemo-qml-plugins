@@ -9,14 +9,6 @@
 #ifndef FOLDERLISTMODEL_H
 #define FOLDERLISTMODEL_H
 
-
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-
 #include <qmailfolder.h>
 #include <qmailaccount.h>
 

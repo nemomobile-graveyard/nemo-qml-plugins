@@ -9,15 +9,6 @@
 #ifndef EMAILAGENT_H
 #define EMAILAGENT_H
 
-/*
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-*/
-
 #include <QDeclarativeItem>
 #include <QProcess>
 #include <QTimer>
