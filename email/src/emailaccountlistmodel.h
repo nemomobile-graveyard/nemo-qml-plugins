@@ -9,13 +9,6 @@
 #ifndef EMAILACCOUNTLISTMODEL_H
 #define EMAILACCOUNTLISTMODEL_H
 
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-
 #include <QAbstractListModel>
 
 #include <qmailaccountlistmodel.h>

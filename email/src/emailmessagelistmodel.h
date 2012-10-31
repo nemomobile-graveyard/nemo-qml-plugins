@@ -9,13 +9,6 @@
 #ifndef EMAILMESSAGELISTMODEL_H
 #define EMAILMESSAGELISTMODEL_H
 
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-
 #include <QAbstractListModel>
 #include <QProcess>
 
@@ -39,7 +32,7 @@ public:
         MessageReadStatusRole,                                 // returns the read/unread status
         MessageQuotedBodyRole,                                 // returns the quoted body
         MessageHtmlBodyRole,                                   // returns the html body
-        MessageUuidRole,			               // returns a unique string id
+        MessageUuidRole,			                           // returns a unique string id
         MessageSenderDisplayNameRole,                          // returns sender's display name
         MessageSenderEmailAddressRole,                         // returns sender's email address
         MessageCcRole,                                         // returns a list of Cc (email + displayName)

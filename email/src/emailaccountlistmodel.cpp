@@ -52,18 +52,15 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
      QMailAccountId accountId = QMailAccountListModel::idFromIndex(index);
     
      QMailAccount account(accountId);
-    if (role == DisplayName)
-    {
+    if (role == DisplayName) {
         return QMailAccountListModel::data(index, QMailAccountListModel::NameTextRole);
     }
 
-    if (role == EmailAddress)
-    {
+    if (role == EmailAddress) {
         return account.fromAddress().address();
     }
 
-    if (role == MailServer)
-    {
+    if (role == MailServer) {
         QString address = account.fromAddress().address();
         int index = address.indexOf("@");
         QString server = address.right(address.size() - index - 1);
@@ -71,8 +68,7 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
         return server.left(index);
     }
 
-    if (role == UnreadCount)
-    {
+    if (role == UnreadCount) {
         QMailFolderKey key = QMailFolderKey::parentAccountId(accountId);
         QMailFolderSortKey sortKey = QMailFolderSortKey::serverCount(Qt::DescendingOrder);
         QMailFolderIdList folderIds = QMailStore::instance()->queryFolders(key, sortKey);
@@ -80,11 +76,10 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
         QMailMessageKey accountKey(QMailMessageKey::parentAccountId(accountId));
         QMailMessageKey folderKey(QMailMessageKey::parentFolderId(folderIds));
         QMailMessageKey unreadKey(QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes));
-	return (QMailStore::instance()->countMessages(accountKey & folderKey & unreadKey));
+        return (QMailStore::instance()->countMessages(accountKey & folderKey & unreadKey));
     }
 
-    if (role == MailAccountId)
-    {
+    if (role == MailAccountId) {
         return accountId;
     }
 
@@ -122,8 +117,7 @@ QVariant EmailAccountListModel::indexFromAccountId(QVariant id)
     if (!accountId.isValid())
         return idx;
 
-    for (int row = 0; row < rowCount(); row++)
-    {
+    for (int row = 0; row < rowCount(); row++) {
         if (accountId == QMailAccountListModel::idFromIndex(index(row)))
             return row;
     }
@@ -148,8 +142,7 @@ int EmailAccountListModel::getRowCount()
 QVariant EmailAccountListModel::getAllDisplayNames()
 {
     QStringList displayNameList;
-    for (int row = 0; row < rowCount(); row++)
-    {
+    for (int row = 0; row < rowCount(); row++) {
         QString displayName = data(index(row), EmailAccountListModel::DisplayName).toString();
         displayNameList << displayName;
     }
@@ -159,8 +152,7 @@ QVariant EmailAccountListModel::getAllDisplayNames()
 QVariant EmailAccountListModel::getAllEmailAddresses()
 {
     QStringList emailAddressList;
-    for (int row = 0; row < rowCount(); row++)
-    {
+    for (int row = 0; row < rowCount(); row++) {
         QString emailAddress = data(index(row), EmailAccountListModel::EmailAddress).toString();
         emailAddressList << emailAddress;
     }

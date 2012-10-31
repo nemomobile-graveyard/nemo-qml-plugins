@@ -49,22 +49,18 @@ QVariant FolderListModel::data(const QModelIndex &index, int role) const
 
     
     QMailFolder folder(m_mailFolderIds[index.row()]);
-    if (role == FolderName)
-    {
+    if (role == FolderName) {
         return folder.displayName();
     }
-    else if (role == FolderId)
-    {
+    else if (role == FolderId) {
         return m_mailFolderIds[index.row()];
     } 
-    else if (role == FolderUnreadCount)
-    {
+    else if (role == FolderUnreadCount) {
         QMailMessageKey parentFolderKey(QMailMessageKey::parentFolderId(m_mailFolderIds[index.row()]));
         QMailMessageKey unreadKey(QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes));
         return (QMailStore::instance()->countMessages(parentFolderKey & unreadKey));
     }
-    else if (role == FolderServerCount)
-    {
+    else if (role == FolderServerCount) {
         return (folder.serverCount());
     }
 
@@ -82,15 +78,13 @@ void FolderListModel::setAccountKey(QVariant id)
 QStringList FolderListModel::folderNames()
 {
     QStringList folderNames;
-    foreach (QMailFolderId fId, m_mailFolderIds)
-    {
+    foreach (QMailFolderId fId, m_mailFolderIds) {
         QMailFolder folder(fId);
         QMailMessageKey parentFolderKey(QMailMessageKey::parentFolderId(fId));
         QMailMessageKey unreadKey(QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes));
         int numberOfMessages = QMailStore::instance()->countMessages(parentFolderKey & unreadKey);
         QString displayName = folder.displayName();
-        if (numberOfMessages > 0)
-        {
+        if (numberOfMessages > 0) {
             displayName = displayName + " (" + QString::number(numberOfMessages) + ")";
         }
         folderNames << displayName;
@@ -115,8 +109,7 @@ int FolderListModel::indexFromFolderId(QVariant vFolderId)
     else
         folderId = vFolderId.value<QMailFolderId>();
 
-    for (int i = 0; i < m_mailFolderIds.size(); i ++)
-    {
+    for (int i = 0; i < m_mailFolderIds.size(); i ++) {
         if (folderId == m_mailFolderIds[i])
             return i;
     }
@@ -135,8 +128,7 @@ QVariant FolderListModel::folderServerCount(QVariant vFolderId)
 
 QVariant FolderListModel::inboxFolderId()
 {
-    for (int i = 0; i < m_mailFolderIds.size(); i++)
-    {
+    for (int i = 0; i < m_mailFolderIds.size(); i++) {
         QMailFolder folder(m_mailFolderIds[i]);
         if (QString::compare(folder.displayName(), "INBOX", Qt::CaseInsensitive) == 0)
             return m_mailFolderIds[i];
@@ -146,8 +138,7 @@ QVariant FolderListModel::inboxFolderId()
 
 QVariant FolderListModel::inboxFolderName()
 {
-    for (int i = 0; i < m_mailFolderIds.size(); i++)
-    {
+    for (int i = 0; i < m_mailFolderIds.size(); i++) {
         QMailFolder folder(m_mailFolderIds[i]);
         QString folderName = folder.displayName();
         if (QString::compare(folderName, "INBOX", Qt::CaseInsensitive) == 0)

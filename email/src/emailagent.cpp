@@ -92,8 +92,7 @@ EmailAgent::~EmailAgent()
 
 void EmailAgent::accountsSync()
 {
-    if (!isSynchronizing()) 
-    {
+    if (!isSynchronizing()) {
         // First we need to ensure that account lists are empty
         m_retrieveAccounts.clear();
         m_transmitAccounts.clear();
@@ -109,10 +108,10 @@ void EmailAgent::accountsSync()
     }
 
     // Trigger accounts retrieving first
-    if (!m_retrieveAccounts.isEmpty())
+    if (!m_retrieveAccounts.isEmpty()) {
         synchronize(m_retrieveAccounts.takeFirst());
-     else
-     {
+    }
+    else {
          emit syncCompleted();
      }
 }
@@ -219,49 +218,46 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
     const QMailServiceAction::Status status(action->status());
 
     switch (activity) {
-        case QMailServiceAction::Failed:
-
-            // don't try to synchronise extra accounts if the user cancelled the sync
-            if (m_cancelling) {
-                m_retrieving = false;
-                m_transmitting = false;
-                emit error(status.accountId, status.text, status.errorCode);
-                return;
-            } else {
-                // Report the error
-                emit error(status.accountId, status.text, status.errorCode);
-            }
-            // fallthrough; if this wasn't a fatal error, try sync again
-        case QMailServiceAction::Successful:
-            if (action == m_retrievalAction) {
-                m_retrieving = false;
-                if (m_retrieveAccounts.isEmpty()) {
-                    emit retrievalCompleted();
-                    // If there's no account to retrieve let's start sending msgs
-                    if (!m_transmitAccounts.isEmpty())
-                        sendMessages(m_transmitAccounts.takeFirst());
-                }
-                else
-                    synchronize(m_retrieveAccounts.takeFirst());
-            }
-            else if (action == m_transmitAction) {
-                m_transmitting = false;
-                if (m_transmitAccounts.isEmpty())
-                {
-                    emit sendCompleted();
-                }
-                else
+    case QMailServiceAction::Failed:
+        // don't try to synchronise extra accounts if the user cancelled the sync
+        if (m_cancelling) {
+            m_retrieving = false;
+            m_transmitting = false;
+            emit error(status.accountId, status.text, status.errorCode);
+            return;
+        } else {
+            // Report the error
+            emit error(status.accountId, status.text, status.errorCode);
+        }
+        // fallthrough; if this wasn't a fatal error, try sync again
+    case QMailServiceAction::Successful:
+        if (action == m_retrievalAction) {
+            m_retrieving = false;
+            if (m_retrieveAccounts.isEmpty()) {
+                emit retrievalCompleted();
+                // If there's no account to retrieve let's start sending msgs
+                if (!m_transmitAccounts.isEmpty())
                     sendMessages(m_transmitAccounts.takeFirst());
             }
-
-            if (!isSynchronizing())
-            {
-                emit syncCompleted();
+            else
+                synchronize(m_retrieveAccounts.takeFirst());
+        }
+        else if (action == m_transmitAction) {
+            m_transmitting = false;
+            if (m_transmitAccounts.isEmpty()) {
+                emit sendCompleted();
             }
+            else
+                sendMessages(m_transmitAccounts.takeFirst());
+        }
 
-        default:
-            qDebug() << "Activity State Changed:" << activity;
-            break;
+        if (!isSynchronizing()) {
+            emit syncCompleted();
+        }
+
+    default:
+        qDebug() << "Activity State Changed:" << activity;
+        break;
     }
 }
 
@@ -306,8 +302,7 @@ void EmailAgent::markMessageAsUnread(QVariant msgId)
 QString EmailAgent::getSignatureForAccount(QVariant vMailAccountId)
 {
     QMailAccountId mailAccountId = vMailAccountId.value<QMailAccountId>();
-    if (mailAccountId.isValid())
-    {
+    if (mailAccountId.isValid()) {
         QMailAccount mailAccount (mailAccountId);
         return mailAccount.signature();
     }
@@ -327,8 +322,7 @@ void EmailAgent::exportAccountChanges(const QMailAccountId id)
 {
     // Only add the account to the list if it's not
     // already there.
-    if (id.isValid() &&
-        !m_exportAccounts.contains(id)) {
+    if (id.isValid() && !m_exportAccounts.contains(id)) {
 
         // Add account to the list
         m_exportAccounts.append(id);
@@ -337,7 +331,6 @@ void EmailAgent::exportAccountChanges(const QMailAccountId id)
         if (!m_exportTimer.isActive() && !m_exporting)
             m_exportTimer.start();
     }
-
 }
 
 void EmailAgent::exportAccounts()
@@ -387,17 +380,15 @@ void EmailAgent::downloadAttachment(QVariant vMsgId, const QString & attachmentD
     QMailMessage message (m_messageId);
 
     emit attachmentDownloadStarted();
-            qDebug()<<"PartsCount: "<<message.partCount();
-            qDebug()<<"attachmentDisplayName: "<<attachmentDisplayName;
-    for (uint i = 1; i < message.partCount(); i++)
-    {
+    qDebug()<<"PartsCount: "<<message.partCount();
+    qDebug()<<"attachmentDisplayName: "<<attachmentDisplayName;
+
+    for (uint i = 1; i < message.partCount(); i++) {
         QMailMessagePart sourcePart = message.partAt(i);
-        if (attachmentDisplayName == sourcePart.displayName())
-        {
+        if (attachmentDisplayName == sourcePart.displayName()) {
             QMailMessagePart::Location location = sourcePart.location();
             location.setContainingMessageId(m_messageId);
-            if (sourcePart.hasBody())
-            {
+            if (sourcePart.hasBody()) {
                 // The content has already been downloaded to local device.
                 QString downloadFolder = QDir::homePath() + "/Downloads/";
                 QFile f(downloadFolder+sourcePart.displayName());
@@ -410,9 +401,9 @@ void EmailAgent::downloadAttachment(QVariant vMsgId, const QString & attachmentD
             m_attachmentPart = sourcePart;
             m_attachmentRetrievalAction = new QMailRetrievalAction(this);
             connect (m_attachmentRetrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-                                                  this, SLOT(attachmentDownloadActivityChanged(QMailServiceAction::Activity)));
+                     this, SLOT(attachmentDownloadActivityChanged(QMailServiceAction::Activity)));
             connect(m_attachmentRetrievalAction, SIGNAL(progressChanged(uint, uint)),
-                                      this, SLOT(progressChanged(uint,uint)));
+                    this, SLOT(progressChanged(uint,uint)));
 
             m_attachmentRetrievalAction->retrieveMessagePart(location);
         }
@@ -422,18 +413,13 @@ void EmailAgent::downloadAttachment(QVariant vMsgId, const QString & attachmentD
 
 void EmailAgent::attachmentDownloadActivityChanged(QMailServiceAction::Activity activity)
 {
-    if (QMailServiceAction *action = static_cast<QMailServiceAction*>(sender()))
-    {
-        if (activity == QMailServiceAction::Successful)
-        {
-            if (action == m_attachmentRetrievalAction)
-            {
+    if (QMailServiceAction *action = static_cast<QMailServiceAction*>(sender())) {
+        if (activity == QMailServiceAction::Successful) {
+            if (action == m_attachmentRetrievalAction) {
                 QMailMessage message(m_messageId);
-                for (uint i = 1; i < message.partCount(); ++i)
-                {
+                for (uint i = 1; i < message.partCount(); ++i) {
                     const QMailMessagePart &sourcePart(message.partAt(i));
-                    if (sourcePart.location().toString(false) == m_attachmentPart.location().toString(false))
-                    {
+                    if (sourcePart.location().toString(false) == m_attachmentPart.location().toString(false)) {
                         QString downloadFolder = QDir::homePath() + "/Downloads/";
                         sourcePart.writeBodyTo(downloadFolder);
                         emit attachmentDownloadCompleted();
@@ -441,8 +427,7 @@ void EmailAgent::attachmentDownloadActivityChanged(QMailServiceAction::Activity 
                 }
             }
         }
-        else if (activity == QMailServiceAction::Failed)
-        {
+        else if (activity == QMailServiceAction::Failed) {
             emit attachmentDownloadCompleted();
         }
     }
@@ -463,29 +448,24 @@ bool EmailAgent::openAttachment(const QString & uri)
     QString s(fileProcess.readAll());
     QStringList parameters;
     parameters << "--opengl" << "--fullscreen";
-    if (s.contains("video", Qt::CaseInsensitive))
-    {
+    if (s.contains("video", Qt::CaseInsensitive)) {
         parameters << "--app" << "meego-app-video";
         parameters << "--cmd" << "playVideo";
     }
-    else if (s.contains("image", Qt::CaseInsensitive))
-    {
+    else if (s.contains("image", Qt::CaseInsensitive)) {
         parameters << "--app" << "meego-app-photos";
         parameters << "--cmd" << "showPhoto";
     }
-    else if (s.contains("audio", Qt::CaseInsensitive))
-    {
+    else if (s.contains("audio", Qt::CaseInsensitive)) {
         parameters << "--app" << "meego-app-music";
         parameters << "--cmd" << "playSong";
     }
-    else if (s.contains("Ogg data", Qt::CaseInsensitive))
-    {
+    else if (s.contains("Ogg data", Qt::CaseInsensitive)) {
         // Fix Me:  need more research on Ogg format. For now, default to video.
         parameters << "--app" << "meego-app-video";
         parameters << "--cmd" << "video";
     }
-    else
-    {
+    else {
         // Unsupported file type.
         return false;
     }

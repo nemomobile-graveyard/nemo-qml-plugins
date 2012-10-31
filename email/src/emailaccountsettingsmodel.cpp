@@ -135,88 +135,88 @@ QVariant EmailAccountSettingsModel::data(const QModelIndex &index, int role) con
             return QVariant();
         }
         switch (role) {
-            case DescriptionRole:
-                return mAccounts[index.row()].name();
-                break;
-            case EnabledRole:
-                return bool(mAccounts[index.row()].status() & QMailAccount::Enabled);
-                break;
-            case NameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("username");
-                break;
-            case AddressRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("address");
-                break;
-            case PasswordRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                recvpass = QMailDecoder::decode(svccfg.value("password"));
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                sendpass = QMailDecoder::decode(svccfg.value("smtppassword"));
-                if (recvpass == sendpass) {
-                    return recvpass;
-                } else {
-                    return QString();
-                }
-                break;
-            case RecvTypeRole:
-                if (recvsvc == "pop3")
-                    return 0;
-                else if (recvsvc == "imap4")
-                    return 1;
-                else
-                    return QVariant();
-                break;
-            case RecvServerRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                return svccfg.value("server");
-                break;
-            case RecvPortRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                return svccfg.value("port");
-                break;
-            case RecvSecurityRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                return svccfg.value("encryption");
-                break;
-            case RecvUsernameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                return svccfg.value("username");
-                break;
-            case RecvPasswordRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                return QMailDecoder::decode(svccfg.value("password"));
-                break;
-            case SendServerRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("server");
-                break;
-            case SendPortRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("port");
-                break;
-            case SendAuthRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("authentication");
-                break;
-            case SendSecurityRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("encryption");
-                break;
-            case SendUsernameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return svccfg.value("smtpusername");
-                break;
-            case SendPasswordRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                return QMailDecoder::decode(svccfg.value("smtppassword"));
-                break;
-            case PresetRole:
-                return mAccounts[index.row()].customField("preset");
-                break;
-            default:
+        case DescriptionRole:
+            return mAccounts[index.row()].name();
+            break;
+        case EnabledRole:
+            return bool(mAccounts[index.row()].status() & QMailAccount::Enabled);
+            break;
+        case NameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("username");
+            break;
+        case AddressRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("address");
+            break;
+        case PasswordRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            recvpass = QMailDecoder::decode(svccfg.value("password"));
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            sendpass = QMailDecoder::decode(svccfg.value("smtppassword"));
+            if (recvpass == sendpass) {
+                return recvpass;
+            } else {
+                return QString();
+            }
+            break;
+        case RecvTypeRole:
+            if (recvsvc == "pop3")
+                return 0;
+            else if (recvsvc == "imap4")
+                return 1;
+            else
                 return QVariant();
+            break;
+        case RecvServerRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            return svccfg.value("server");
+            break;
+        case RecvPortRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            return svccfg.value("port");
+            break;
+        case RecvSecurityRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            return svccfg.value("encryption");
+            break;
+        case RecvUsernameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            return svccfg.value("username");
+            break;
+        case RecvPasswordRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            return QMailDecoder::decode(svccfg.value("password"));
+            break;
+        case SendServerRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("server");
+            break;
+        case SendPortRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("port");
+            break;
+        case SendAuthRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("authentication");
+            break;
+        case SendSecurityRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("encryption");
+            break;
+        case SendUsernameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return svccfg.value("smtpusername");
+            break;
+        case SendPasswordRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            return QMailDecoder::decode(svccfg.value("smtppassword"));
+            break;
+        case PresetRole:
+            return mAccounts[index.row()].customField("preset");
+            break;
+        default:
+            return QVariant();
         }
     }
     return QVariant();
@@ -240,115 +240,115 @@ bool EmailAccountSettingsModel::setData(const QModelIndex &index, const QVariant
             return false;
         }
         switch (role) {
-            case DescriptionRole:
-                mAccounts[index.row()].setName(value.toString());
-                return true;
-                break;
-            case EnabledRole:
-                mAccounts[index.row()].setStatus(QMailAccount::Enabled, value.toBool());
-                return true;
-                break;
-            case NameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("username", value.toString());
-                return true;
-                break;
-            case AddressRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("address", value.toString());
-                return true;
-                break;
-            case PasswordRole:
-                if (!value.toString().isEmpty()) {
-                    svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                    svccfg.setValue("password", QMailDecoder::encode(value.toString()));
-                    svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                    svccfg.setValue("smtppassword", QMailDecoder::encode(value.toString()));
-                }
-                return true;
-                break;
-            case RecvTypeRole:
-                // prevent bug where recv type gets reset
-                // when loading the first time
-                if (value.toString() == "0") {
-                    newrecvsvc = "pop3";
-                } else if (value.toString() == "1") {
-                    newrecvsvc = "imap4";
-                } else {
-                    return false;
-                }
-                if (newrecvsvc == recvsvc) {
-                    return true;
-                } else {
-                    mAccountConfigs[index.row()].removeServiceConfiguration(recvsvc);
-                    mAccountConfigs[index.row()].addServiceConfiguration(newrecvsvc);
-                    getRecvCfg(mAccountConfigs[index.row()])->setValue("encryption", "1"); // SSL
-                    getRecvCfg(mAccountConfigs[index.row()])->setValue("servicetype", "source");
-                    getRecvCfg(mAccountConfigs[index.row()])->setValue("version", "100");
-                    // automatically clear the recv fields in the UI
-                    emit dataChanged(index, index);
-                    return true;
-                }
-                break;
-            case RecvServerRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                svccfg.setValue("server", value.toString());
-                return true;
-                break;
-            case RecvPortRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                svccfg.setValue("port", value.toString());
-                return true;
-                break;
-            case RecvSecurityRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                svccfg.setValue("encryption", value.toString());
-                return true;
-                break;
-            case RecvUsernameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
-                svccfg.setValue("username", value.toString());
-                return true;
-                break;
-            case RecvPasswordRole:
+        case DescriptionRole:
+            mAccounts[index.row()].setName(value.toString());
+            return true;
+            break;
+        case EnabledRole:
+            mAccounts[index.row()].setStatus(QMailAccount::Enabled, value.toBool());
+            return true;
+            break;
+        case NameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("username", value.toString());
+            return true;
+            break;
+        case AddressRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("address", value.toString());
+            return true;
+            break;
+        case PasswordRole:
+            if (!value.toString().isEmpty()) {
                 svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
                 svccfg.setValue("password", QMailDecoder::encode(value.toString()));
-                return true;
-                break;
-            case SendServerRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("server", value.toString());
-                return true;
-                break;
-            case SendPortRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("port", value.toString());
-                return true;
-                break;
-            case SendAuthRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("authentication", value.toString());
-                return true;
-                break;
-            case SendSecurityRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("encryption", value.toString());
-                return true;
-                break;
-            case SendUsernameRole:
-                svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
-                svccfg.setValue("smtpusername", value.toString());
-                return true;
-                break;
-            case SendPasswordRole:
                 svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
                 svccfg.setValue("smtppassword", QMailDecoder::encode(value.toString()));
-                return true;
-                break;
-            case PresetRole:
-                // setting preset not implemented here
-            default:
+            }
+            return true;
+            break;
+        case RecvTypeRole:
+            // prevent bug where recv type gets reset
+            // when loading the first time
+            if (value.toString() == "0") {
+                newrecvsvc = "pop3";
+            } else if (value.toString() == "1") {
+                newrecvsvc = "imap4";
+            } else {
                 return false;
+            }
+            if (newrecvsvc == recvsvc) {
+                return true;
+            } else {
+                mAccountConfigs[index.row()].removeServiceConfiguration(recvsvc);
+                mAccountConfigs[index.row()].addServiceConfiguration(newrecvsvc);
+                getRecvCfg(mAccountConfigs[index.row()])->setValue("encryption", "1"); // SSL
+                getRecvCfg(mAccountConfigs[index.row()])->setValue("servicetype", "source");
+                getRecvCfg(mAccountConfigs[index.row()])->setValue("version", "100");
+                // automatically clear the recv fields in the UI
+                emit dataChanged(index, index);
+                return true;
+            }
+            break;
+        case RecvServerRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            svccfg.setValue("server", value.toString());
+            return true;
+            break;
+        case RecvPortRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            svccfg.setValue("port", value.toString());
+            return true;
+            break;
+        case RecvSecurityRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            svccfg.setValue("encryption", value.toString());
+            return true;
+            break;
+        case RecvUsernameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            svccfg.setValue("username", value.toString());
+            return true;
+            break;
+        case RecvPasswordRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration(recvsvc);
+            svccfg.setValue("password", QMailDecoder::encode(value.toString()));
+            return true;
+            break;
+        case SendServerRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("server", value.toString());
+            return true;
+            break;
+        case SendPortRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("port", value.toString());
+            return true;
+            break;
+        case SendAuthRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("authentication", value.toString());
+            return true;
+            break;
+        case SendSecurityRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("encryption", value.toString());
+            return true;
+            break;
+        case SendUsernameRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("smtpusername", value.toString());
+            return true;
+            break;
+        case SendPasswordRole:
+            svccfg = mAccountConfigs[index.row()].serviceConfiguration("smtp");
+            svccfg.setValue("smtppassword", QMailDecoder::encode(value.toString()));
+            return true;
+            break;
+        case PresetRole:
+            // setting preset not implemented here
+        default:
+            return false;
         }
     }
 

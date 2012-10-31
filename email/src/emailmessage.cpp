@@ -32,17 +32,13 @@ EmailMessage::~EmailMessage ()
 
 void EmailMessage::setFrom (const QString &sender)
 {
-    QMailAccountIdList accountIds = QMailStore::instance()->queryAccounts(
-                                       QMailAccountKey::status(QMailAccount::Enabled,
-                                       QMailDataComparator::Includes), QMailAccountSortKey::name());
+    QMailAccountIdList accountIds = QMailStore::instance()->queryAccounts(QMailAccountKey::status(QMailAccount::Enabled,
+                                            QMailDataComparator::Includes), QMailAccountSortKey::name());
     // look up the account id for the given sender
-    foreach (QMailAccountId id, accountIds)
-    {
+    foreach (QMailAccountId id, accountIds) {
         QMailAccount account(id);
         QMailAddress from = account.fromAddress();
-        if (from.address() == sender || from.toString() == sender ||
-            from.name() == sender)
-        {
+        if (from.address() == sender || from.toString() == sender || from.name() == sender) {
             m_account = account;
             m_msg.setParentAccountId(id);
             m_msg.setFrom(account.fromAddress());
@@ -110,8 +106,7 @@ void EmailMessage::send()
 
     if (m_attachments.size() == 0)
         m_msg.setBody(QMailMessageBody::fromData(m_bodyText, type, QMailMessageBody::Base64));
-    else
-    {
+    else {
         QMailMessagePart body;
         body.setBody(QMailMessageBody::fromData(m_bodyText.toUtf8(), type, QMailMessageBody::Base64));
         m_msg.setMultipartType(QMailMessagePartContainer::MultipartMixed);
@@ -142,8 +137,7 @@ void EmailMessage::send()
         stored = QMailStore::instance()->updateMessage(&m_msg);
 
     EmailAgent *emailAgent = EmailAgent::instance();
-    if (stored && !emailAgent->isSynchronizing())
-    {
+    if (stored && !emailAgent->isSynchronizing()) {
         connect(emailAgent, SIGNAL(sendCompleted()), this, SLOT(onSendCompleted()));
         emailAgent->sendMessages(m_msg.parentAccountId());
     }
@@ -160,10 +154,10 @@ void EmailMessage::saveDraft()
     else
         type.setType("text/html; charset=UTF-8");
 
-    if (m_attachments.size() == 0)
+    if (m_attachments.size() == 0) {
         m_msg.setBody(QMailMessageBody::fromData(m_bodyText, type, QMailMessageBody::Base64));
-    else
-    {
+    }
+    else {
         QMailMessagePart body;
         body.setBody(QMailMessageBody::fromData(m_bodyText.toUtf8(), type, QMailMessageBody::Base64));
         m_msg.setMultipartType(QMailMessagePartContainer::MultipartMixed);
@@ -205,8 +199,7 @@ void EmailMessage::saveDraft()
             saved = QMailStore::instance()->updateMessage(&m_msg);
         //
         // Sync to the server, so the message will be in the remote Drafts folder
-        if (saved)
-        {
+        if (saved) {
             EmailAgent::instance()->flagMessages(QMailMessageIdList() << m_msg.id(),
                 QMailMessage::Draft, 0);
             EmailAgent::instance()->exportAccountChanges(m_msg.parentAccountId());
@@ -222,8 +215,7 @@ void EmailMessage::onSendCompleted()
 void EmailMessage::processAttachments ()
 {
     QMailMessagePart attachmentPart;
-    foreach (QString attachment, m_attachments)
-    {
+    foreach (QString attachment, m_attachments) {
         // Attaching a file
         if (attachment.startsWith("file://"))
             attachment.remove(0, 7);
