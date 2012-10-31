@@ -23,14 +23,12 @@ QString EmailMessageListModel::bodyHtmlText(QMailMessagePartContainer *container
 {
     QMailMessageContentType contentType = container->contentType();
 
-    if (container->multipartType() == QMailMessagePartContainerFwd::MultipartNone)
-    {
-        if (contentType.subType().toLower() == "html")
-        {
-            if (container->hasBody() && container->body().data().size() > 1)
+    if (container->multipartType() == QMailMessagePartContainerFwd::MultipartNone) {
+        if (contentType.subType().toLower() == "html") {
+            if (container->hasBody() && container->body().data().size() > 1) {
                 return container->body().data();
-            else
-            {
+            }
+            else {
                 connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
                                             this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
                 QMailMessage *msg = (QMailMessage *)container;
@@ -44,8 +42,7 @@ QString EmailMessageListModel::bodyHtmlText(QMailMessagePartContainer *container
         return "";
     }
 
-    if (!container->contentAvailable())
-    {
+    if (!container->contentAvailable()) {
         // if content is not available, attempts to downlaod from the server.
         connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
                                             this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
@@ -57,18 +54,14 @@ QString EmailMessageListModel::bodyHtmlText(QMailMessagePartContainer *container
     }
 
     QString text("");
-    for ( uint i = 0; i < container->partCount(); i++ )
-    {
+    for ( uint i = 0; i < container->partCount(); i++ ) {
         QMailMessagePart messagePart = container->partAt(i);
         contentType = messagePart.contentType();
-        if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html")
-        {
-            if (messagePart.hasBody())
-            {
+        if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html") {
+            if (messagePart.hasBody()) {
                 text += messagePart.body().data();
             }
-            else
-            {
+            else {
                 connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
                                             this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
 
@@ -79,18 +72,14 @@ QString EmailMessageListModel::bodyHtmlText(QMailMessagePartContainer *container
             }
         }
         QMailMessagePart subPart;
-        for (uint j = 0; j < messagePart.partCount(); j++)
-        {
+        for (uint j = 0; j < messagePart.partCount(); j++) {
             subPart = messagePart.partAt(j);
             contentType = subPart.contentType();
-            if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html")
-            {
-                if (subPart.hasBody())
-                {
+            if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html") {
+                if (subPart.hasBody()) {
                     text += subPart.body().data();
                 }
-                else
-                {
+                else {
                     connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
                                                 this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
                     QMailMessagePart::Location location = subPart.location();
@@ -109,31 +98,27 @@ QString EmailMessageListModel::bodyPlainText(const QMailMessage &mailMsg) const
     QMailMessagePartContainer *container = (QMailMessagePartContainer *)&mailMsg;
     QMailMessageContentType contentType = container->contentType();
     if (container->hasBody() && contentType.type().toLower() == "text" &&
-               contentType.subType().toLower() == "plain")
-    {
+            contentType.subType().toLower() == "plain") {
         return container->body().data();
-
     }
 
     QString text("");
-    for ( uint i = 0; i < container->partCount(); i++ )
-    {
+    for ( uint i = 0; i < container->partCount(); i++ ) {
         QMailMessagePart messagePart = container->partAt(i);
 
         contentType = messagePart.contentType();
         if (messagePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain")
-        {
+                                     contentType.subType().toLower() == "plain") {
             text += messagePart.body().data() + "\n";
         }
         QMailMessagePart subPart;
-        for (uint j = 0; j < messagePart.partCount(); j++)
-        {
+        for (uint j = 0; j < messagePart.partCount(); j++) {
             subPart = messagePart.partAt(j);
             contentType = subPart.contentType();
             if (subPart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain")
+                                     contentType.subType().toLower() == "plain") {
                 text += subPart.body().data() + "\n";
+            }
         }
     }
     return text;
@@ -200,15 +185,13 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     if (!index.isValid() || index.row() > rowCount(parent(index)))
         return QVariant();
 
-    if (role == QMailMessageModelBase::MessageTimeStampTextRole)
-    {
+    if (role == QMailMessageModelBase::MessageTimeStampTextRole) {
         QMailMessageId msgId = idFromIndex(index);
         QMailMessageMetaData message(msgId);
         QDateTime timeStamp = message.date().toLocalTime();
         return (timeStamp.toString("hh:mm MM/dd/yyyy"));
     }
-    else if (role == MessageAttachmentCountRole)
-    {
+    else if (role == MessageAttachmentCountRole) {
         // return number of attachments
         QMailMessage messageMetaData(idFromIndex(index));
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
@@ -217,17 +200,16 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         // TODO: can we satisfy this from metadata too?
         QMailMessage message(idFromIndex(index));
         int numberOfAttachments = 0;
-        for (uint i = 1; i < message.partCount(); i++)
-        {
+        for (uint i = 1; i < message.partCount(); i++) {
             QMailMessagePart sourcePart = message.partAt(i);
             if (!(sourcePart.multipartType() == QMailMessagePartContainer::MultipartNone))
                 continue;
 
             QMailMessageContentType contentType = sourcePart.contentType();
             if (sourcePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain")
+                                     contentType.subType().toLower() == "plain") {
                 continue;
-
+            }
             if (i == 1 && contentType.type().toLower() == "text" && contentType.subType().toLower() == "html")
                 continue;
 
@@ -235,8 +217,7 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         }
         return numberOfAttachments;
     }
-    else if (role == MessageAttachmentsRole)
-    {
+    else if (role == MessageAttachmentsRole) {
         // return a stringlist of attachments
         QMailMessage messageMetaData(idFromIndex(index));
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
@@ -244,27 +225,26 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
 
         QMailMessage message(idFromIndex(index));
         QStringList attachments;
-        for (uint i = 1; i < message.partCount(); i++)
-        {
+        for (uint i = 1; i < message.partCount(); i++) {
             QMailMessagePart sourcePart = message.partAt(i);
             if (!(sourcePart.multipartType() == QMailMessagePartContainer::MultipartNone))
                 continue;
 
             QMailMessageContentType contentType = sourcePart.contentType();
             if (sourcePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain")
+                                     contentType.subType().toLower() == "plain") {
                 continue;
-
-            if (i == 1 && contentType.type().toLower() == "text" && contentType.subType().toLower() == "html")
+            }
+            if (i == 1 && contentType.type().toLower() == "text" &&
+                        contentType.subType().toLower() == "html") {
                 continue;
-
+            }
             attachments << sourcePart.displayName();
         }
 
         return attachments;
     }
-    else if (role == MessageRecipientsRole)
-    {
+    else if (role == MessageRecipientsRole) {
         // TODO: metadata?
         QMailMessage message (idFromIndex(index));
         QStringList recipients;
@@ -274,8 +254,7 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         }
         return recipients;
     }
-    else if (role == MessageRecipientsDisplayNameRole)
-    {
+    else if (role == MessageRecipientsDisplayNameRole) {
         // TODO: metadata?
         QMailMessage message (idFromIndex(index));
         QStringList recipients;
@@ -285,8 +264,7 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         }
         return recipients;
     }
-    else if (role == MessageReadStatusRole)
-    {
+    else if (role == MessageReadStatusRole) {
         QMailMessageMetaData message (idFromIndex(index));
 
         if (message.status() & QMailMessage::Read)
@@ -294,18 +272,15 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         else
             return 0; // 0 for unread
     }
-    else if (role == QMailMessageModelBase::MessageBodyTextRole)
-    {
+    else if (role == QMailMessageModelBase::MessageBodyTextRole) {
         QMailMessage message (idFromIndex(index));
         return (bodyPlainText(message));
     }
-    else if (role == MessageHtmlBodyRole)
-    {
+    else if (role == MessageHtmlBodyRole) {
         QMailMessage message (idFromIndex(index));
         return (bodyHtmlText(&message));
     }
-    else if (role == MessageQuotedBodyRole)
-    {
+    else if (role == MessageQuotedBodyRole) {
         QMailMessage message (idFromIndex(index));
         QString body = bodyPlainText(message);
         body.prepend('\n');
@@ -313,8 +288,7 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         body.truncate(body.size() - 1);  // remove the extra ">" put there by QString.replace
         return body;
     }
-    else if (role == MessageUuidRole)
-    {
+    else if (role == MessageUuidRole) {
         QMailMessageId messageId = idFromIndex(index);
         QString uuid = QString::number(messageId.toULongLong());
         QMailMessage newId = QMailMessageId (uuid.toULongLong());
@@ -322,33 +296,27 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         QString body = message.body().data();
         return uuid;
     }
-    else if (role == MessageSenderDisplayNameRole)
-    {
+    else if (role == MessageSenderDisplayNameRole) {
         QMailMessageMetaData message(idFromIndex(index));
         return message.from().name();
     }
-    else if (role == MessageSenderEmailAddressRole)
-    {
+    else if (role == MessageSenderEmailAddressRole) {
         QMailMessageMetaData message(idFromIndex(index));
         return message.from().address();
     }
-    else if (role == MessageCcRole)
-    {
+    else if (role == MessageCcRole) {
         QMailMessage message (idFromIndex(index));
         return QMailAddress::toStringList (message.cc());
     }
-    else if (role == MessageBccRole)
-    {
+    else if (role == MessageBccRole) {
         QMailMessage message (idFromIndex(index));
         return QMailAddress::toStringList (message.bcc());
     }
-    else if (role == MessageTimeStampRole)
-    {
+    else if (role == MessageTimeStampRole) {
         QMailMessage message (idFromIndex(index));
         return (message.date().toLocalTime());
     }
-    else if (role == MessageSelectModeRole)
-    {
+    else if (role == MessageSelectModeRole) {
        int selected = 0;
        QMailMessageId msgId = idFromIndex(index);
        if (m_selectedMsgIds.contains(msgId) == true)
@@ -362,11 +330,9 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
 void EmailMessageListModel::setSearch(const QString search)
 {
 
-    if(search.isEmpty())
-    {
+    if(search.isEmpty()) {
         setKey(QMailMessageKey::nonMatchingKey());
-    }else
-    {
+    } else {
         if(m_search == search)
             return;
         QMailMessageKey subjectKey = QMailMessageKey::subject(search, QMailDataComparator::Includes);
@@ -393,26 +359,23 @@ void EmailMessageListModel::setAccountKey (QVariant id)
 {
     QMailAccountId accountId = id.value<QMailAccountId>();
     QMailAccountIdList ids;
-    if (!accountId.isValid() || id == -1)
-    {
+    if (!accountId.isValid() || id == -1) {
         ids = QMailStore::instance()->queryAccounts(
                 QMailAccountKey::status(QMailAccount::Enabled, QMailDataComparator::Includes),
                 QMailAccountSortKey::name());
     }
-    else
+    else {
         ids << accountId;
+    }
 
     QMailFolderIdList folderIdList;
 
-    for (int i = 0; i < ids.size(); i++)
-    {
+    for (int i = 0; i < ids.size(); i++) {
         QMailFolderKey key = QMailFolderKey::parentAccountId(accountId);
         QMailFolderIdList  mailFolderIds = QMailStore::instance()->queryFolders(key);
-        foreach (QMailFolderId folderId, mailFolderIds)
-        {
+        foreach (QMailFolderId folderId, mailFolderIds) {
             QMailFolder folder(folderId);
-            if (QString::compare(folder.displayName(), "INBOX", Qt::CaseInsensitive) == 0)
-            {
+            if (QString::compare(folder.displayName(), "INBOX", Qt::CaseInsensitive) == 0) {
                 folderIdList << folderId;
                 break;
             }
@@ -427,7 +390,8 @@ void EmailMessageListModel::setAccountKey (QVariant id)
         QMailMessageKey folderKey = QMailMessageKey::parentFolderId(folderIdList);
         QMailMessageListModel::setKey(folderKey);//!FIXME: should this be folderKey&accountKey?
     } else {
-        connect(QMailStore::instance(), SIGNAL(foldersAdded ( const QMailFolderIdList &)), this, SLOT(foldersAdded( const QMailFolderIdList &)));
+        connect(QMailStore::instance(), SIGNAL(foldersAdded ( const QMailFolderIdList &)), this,
+                SLOT(foldersAdded( const QMailFolderIdList &)));
     }
 
     QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
@@ -451,7 +415,8 @@ void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
         // default to INBOX for now
         QMailMessageKey folderKey = QMailMessageKey::parentFolderId(folderIdList);
         QMailMessageListModel::setKey(folderKey);//!FIXME: should this be folderKey&accountKey?
-        disconnect(QMailStore::instance(), SIGNAL(foldersAdded ( const QMailFolderIdList &)), this, SLOT(foldersAdded( const QMailFolderIdList &)));
+        disconnect(QMailStore::instance(), SIGNAL(foldersAdded ( const QMailFolderIdList &)), this,
+                   SLOT(foldersAdded( const QMailFolderIdList &)));
         m_key = key();
     }
 }
@@ -515,8 +480,7 @@ QVariant EmailMessageListModel::indexFromMessageId (QString uuid)
 {
     quint64 id = uuid.toULongLong();
     QMailMessageId msgId (id);
-    for (int row = 0; row < rowCount(); row++)
-    {
+    for (int row = 0; row < rowCount(); row++) {
         QVariant vMsgId = data(index(row), QMailMessageModelBase::MessageIdRole);
         
         if (msgId == vMsgId.value<QMailMessageId>())
@@ -589,8 +553,7 @@ QVariant EmailMessageListModel::recipients (int idx)
 
     QList<QMailAddress> addresses;
     addresses = message.to() + message.cc() + message.bcc();
-    foreach (QMailAddress address, addresses)
-    {
+    foreach (QMailAddress address, addresses) {
         QString emailAddress = address.address();
         if (QString::compare(myEmailAddress, emailAddress, Qt::CaseInsensitive) != 0)
             recipients << address.toString();
@@ -625,10 +588,8 @@ void EmailMessageListModel::deSelectAllMessages()
 
     QMailMessageIdList msgIds = m_selectedMsgIds;
     m_selectedMsgIds.clear();
-    foreach (QMailMessageId msgId,  msgIds)
-    {
-        for (int row = 0; row < rowCount(); row++)
-        {
+    foreach (QMailMessageId msgId,  msgIds) {
+        for (int row = 0; row < rowCount(); row++) {
             QVariant vMsgId = data(index(row), QMailMessageModelBase::MessageIdRole);
     
             if (msgId == vMsgId.value<QMailMessageId>())
@@ -641,10 +602,9 @@ void EmailMessageListModel::selectMessage( int idx )
 {
     QMailMessageId msgId = idFromIndex(index(idx));
 
-    if (!m_selectedMsgIds.contains (msgId))
-    {
+    if (!m_selectedMsgIds.contains (msgId)) {
         m_selectedMsgIds.append(msgId);
-    dataChanged(index(idx), index(idx));
+        dataChanged(index(idx), index(idx));
     }
 }
 
@@ -685,17 +645,13 @@ void EmailMessageListModel::deleteSelectedMessageIds()
 
 void EmailMessageListModel::downloadActivityChanged(QMailServiceAction::Activity activity)
 {
-    if (QMailServiceAction *action = static_cast<QMailServiceAction*>(sender()))
-    {
-        if (activity == QMailServiceAction::Successful)
-        {
-            if (action == m_retrievalAction)
-            {
+    if (QMailServiceAction *action = static_cast<QMailServiceAction*>(sender())) {
+        if (activity == QMailServiceAction::Successful) {
+            if (action == m_retrievalAction) {
                 emit messageDownloadCompleted();
             }
         }
-        else if (activity == QMailServiceAction::Failed)
-        {
+        else if (activity == QMailServiceAction::Failed) {
             //  Todo:  hmm.. may be I should emit an error here.
             emit messageDownloadCompleted();
         }
