@@ -1,0 +1,6 @@
+Name: Nemo QML Contacts plugin
+Description: Nemo QML Contacts plugin
+Version: 0.1.2
+Requires: QtCore QtDeclarative
+Libs: -L/usr/lib -l
+Cflags: -I/usr/include/nemo-qml-plugins/contacts
