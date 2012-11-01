@@ -186,6 +186,10 @@ void tst_SeasidePerson::phoneTypes()
         person->setPhoneNumberType(i, phoneTypes.at(i));
     }
 
+    // Test that we don't crash here even if we set the type out of bounds.
+    // We will get a warning printed to the console.
+    person->setPhoneNumberType(numbers.length(), phoneTypes.at(phoneTypes.length() - 1));
+
     QCOMPARE(spy.count(), 5);
     QCOMPARE(person->phoneNumbers().count(), 5);
     QCOMPARE(person->phoneNumberTypes().count(), 5);
@@ -216,6 +220,10 @@ void tst_SeasidePerson::emailTypes()
     for (int i=0; i<emails.count(); i++) {
         person->setEmailAddressType(i, emailTypes.at(i));
     }
+
+    // Test that we don't crash here even if we set the type out of bounds.
+    // We will get a warning printed to the console.
+    person->setEmailAddressType(emails.length(), emailTypes.at(emailTypes.length() - 1));
 
     QCOMPARE(spy.count(), 3);
     QCOMPARE(person->emailAddresses().count(), 3);
