@@ -123,11 +123,11 @@ public:
 
     Q_PROPERTY(QStringList websites READ websites WRITE setWebsites NOTIFY websitesChanged)
     QStringList websites() const;
-    Q_INVOKABLE void setWebsites(const QStringList &sites);
+    void setWebsites(const QStringList &sites);
 
     Q_PROPERTY(QList<int> websiteTypes READ websiteTypes NOTIFY websiteTypesChanged)
     QList<int> websiteTypes() const;
-    void setWebsiteType(int which, DetailTypes type);
+    Q_INVOKABLE void setWebsiteType(int which, DetailTypes type);
 
     Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)
     QDateTime birthday() const;
