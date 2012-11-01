@@ -58,7 +58,7 @@ public:
         Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
 
         qmlRegisterType<SeasideProxyModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideProxyModel>(uri, 1, 0, "ProxyModel");
+        qmlRegisterType<SeasideProxyModel>(uri, 1, 0, "PeopleProxyModel");
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
     }
 };
