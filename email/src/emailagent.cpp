@@ -19,7 +19,17 @@
 
 #include "emailagent.h"
 
-static int sRetrievedMinimum = 0;
+namespace {
+
+int sRetrievedMinimum = 0;
+
+QMailAccountId accountForMessageId(const QMailMessageId &msgId)
+{
+    QMailMessageMetaData metaData(msgId);
+    return metaData.parentAccountId();
+}
+
+}
 
 EmailAgent *EmailAgent::m_instance = 0;
 
@@ -121,8 +131,7 @@ void EmailAgent::deleteMessage(QVariant id)
     QMailMessageId msgId = id.value<QMailMessageId>();
     QMailMessageIdList msgIdList;
     msgIdList << msgId;
-    QMailMessage msg(msgId);
-    exportAccountChanges(msg.parentAccountId());
+    exportAccountChanges(accountForMessageId(msgId));
     return deleteMessages (msgIdList);
 }
 
@@ -286,8 +295,7 @@ void EmailAgent::markMessageAsRead(QVariant msgId)
     QMailMessageId id = msgId.value<QMailMessageId>();
     quint64 status(QMailMessage::Read);
     QMailStore::instance()->updateMessagesMetaData(QMailMessageKey::id(id), status, true);
-    QMailMessage msg (id);
-    exportAccountChanges(msg.parentAccountId());
+    exportAccountChanges(accountForMessageId(id));
 }
 
 void EmailAgent::markMessageAsUnread(QVariant msgId)
@@ -295,8 +303,7 @@ void EmailAgent::markMessageAsUnread(QVariant msgId)
     QMailMessageId id = msgId.value<QMailMessageId>();
     quint64 status(QMailMessage::Read);
     QMailStore::instance()->updateMessagesMetaData(QMailMessageKey::id(id), status, false);
-    QMailMessage msg (id);
-    exportAccountChanges(msg.parentAccountId());
+    exportAccountChanges(accountForMessageId(id));
 }
 
 QString EmailAgent::getSignatureForAccount(QVariant vMailAccountId)
