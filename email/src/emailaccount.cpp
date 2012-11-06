@@ -186,8 +186,16 @@ void EmailAccount::testConfiguration()
 
 void EmailAccount::activityChanged(QMailServiceAction::Activity activity)
 {
+    static const int AccountUpdatedByOther = 1040;
+
     if (sender() == static_cast<QObject*>(mRetrievalAction)) {
         const QMailServiceAction::Status status(mRetrievalAction->status());
+
+        if ((activity == QMailServiceAction::Failed) && (status.errorCode == AccountUpdatedByOther)) {
+            // ignore error 1040/"Account updated by other process"
+            activity = QMailServiceAction::Successful;
+        }
+
         if (activity == QMailServiceAction::Successful) {
             if (mAccount->status() & QMailAccount::MessageSink) {
                 mTransmitAction->transmitMessages(mAccount->id());
@@ -197,26 +205,22 @@ void EmailAccount::activityChanged(QMailServiceAction::Activity activity)
         } else if (activity == QMailServiceAction::Failed) {
             mErrorMessage = status.text;
             mErrorCode = status.errorCode;
-            if (status.errorCode == 1040) {
-                // ignore error 1040/"Account updated by other process"
-                mTransmitAction->transmitMessages(mAccount->id());
-            } else {
-                emit testFailed();
-            }
+            emit testFailed();
         }
     } else if (sender() == static_cast<QObject*>(mTransmitAction)) {
         const QMailServiceAction::Status status(mTransmitAction->status());
+
+        if ((activity == QMailServiceAction::Failed) && (status.errorCode == AccountUpdatedByOther)) {
+            // ignore error 1040/"Account updated by other process"
+            activity = QMailServiceAction::Successful;
+        }
+
         if (activity == QMailServiceAction::Successful) {
             emit testSucceeded();
         } else if (activity == QMailServiceAction::Failed) {
             mErrorMessage = status.text;
             mErrorCode = status.errorCode;
-            if (status.errorCode == 1040) {
-                // ignore error 1040/"Account updated by other process"
-                emit testSucceeded();
-            } else {
-                emit testFailed();
-            }
+            emit testFailed();
         }
     }
 }
