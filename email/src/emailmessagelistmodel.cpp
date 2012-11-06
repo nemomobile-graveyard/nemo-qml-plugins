@@ -19,109 +19,32 @@
 
 #include "emailmessagelistmodel.h"
 
-QString EmailMessageListModel::bodyHtmlText(QMailMessagePartContainer *container) const
+QString EmailMessageListModel::bodyHtmlText(const QMailMessage &mailMsg) const
 {
-    QMailMessageContentType contentType = container->contentType();
-
-    if (container->multipartType() == QMailMessagePartContainerFwd::MultipartNone) {
-        if (contentType.subType().toLower() == "html") {
-            if (container->hasBody() && container->body().data().size() > 1) {
-                return container->body().data();
-            }
-            else {
-                connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-                                            this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
-                QMailMessage *msg = (QMailMessage *)container;
-                QMailMessageIdList ids;
-                ids << msg->id();
-                m_retrievalAction->retrieveMessages(ids, QMailRetrievalAction::Content);
-                return " ";  // Put a space here as a place holder to notify UI that we do have html body.
-                             // Should find a better way.
-            }
+    // TODO: This function assumes that at least the structure has been retrieved already
+    if (const QMailMessagePartContainer *container = mailMsg.findHtmlContainer()) {
+        if (!container->contentAvailable()) {
+            // Retrieve the data for this part
+            connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
+                                        this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
+            QMailMessagePart::Location location = static_cast<const QMailMessagePart *>(container)->location();
+            m_retrievalAction->retrieveMessagePart(location);
+            return " ";  // Put a space here as a place holder to notify UI that we do have html body.
         }
-        return "";
+
+        return container->body().data();
     }
 
-    if (!container->contentAvailable()) {
-        // if content is not available, attempts to downlaod from the server.
-        connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-                                            this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
-        QMailMessage *msg = (QMailMessage *)container;
-        QMailMessageIdList ids;
-        ids << msg->id();
-        m_retrievalAction->retrieveMessages(ids, QMailRetrievalAction::Content);
-        return " ";  // Put a space here as a place holder to notify UI that we do have html body.
-    }
-
-    QString text("");
-    for ( uint i = 0; i < container->partCount(); i++ ) {
-        QMailMessagePart messagePart = container->partAt(i);
-        contentType = messagePart.contentType();
-        if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html") {
-            if (messagePart.hasBody()) {
-                text += messagePart.body().data();
-            }
-            else {
-                connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-                                            this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
-
-                QMailMessagePart::Location location = messagePart.location();
-                m_retrievalAction->retrieveMessagePart(location);
-                text = " ";
-                break;
-            }
-        }
-        QMailMessagePart subPart;
-        for (uint j = 0; j < messagePart.partCount(); j++) {
-            subPart = messagePart.partAt(j);
-            contentType = subPart.contentType();
-            if (contentType.type().toLower() == "text" && contentType.subType().toLower() == "html") {
-                if (subPart.hasBody()) {
-                    text += subPart.body().data();
-                }
-                else {
-                    connect (m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-                                                this, SLOT(downloadActivityChanged(QMailServiceAction::Activity)));
-                    QMailMessagePart::Location location = subPart.location();
-                    m_retrievalAction->retrieveMessagePart(location);
-                    text = " ";
-                    break;
-                }
-            }
-        }
-    }
-    return text;
+    return QString();
 }
 
 QString EmailMessageListModel::bodyPlainText(const QMailMessage &mailMsg) const
 {
-    QMailMessagePartContainer *container = (QMailMessagePartContainer *)&mailMsg;
-    QMailMessageContentType contentType = container->contentType();
-    if (container->hasBody() && contentType.type().toLower() == "text" &&
-            contentType.subType().toLower() == "plain") {
+    if (QMailMessagePartContainer *container = mailMsg.findPlainTextContainer()) {
         return container->body().data();
     }
 
-    QString text("");
-    for ( uint i = 0; i < container->partCount(); i++ ) {
-        QMailMessagePart messagePart = container->partAt(i);
-
-        contentType = messagePart.contentType();
-        if (messagePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain") {
-            text += messagePart.body().data() + "\n";
-        }
-        QMailMessagePart subPart;
-        for (uint j = 0; j < messagePart.partCount(); j++) {
-            subPart = messagePart.partAt(j);
-            contentType = subPart.contentType();
-            if (subPart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain") {
-                text += subPart.body().data() + "\n";
-            }
-        }
-    }
-    return text;
+    return QString();
 }
 
 //![0]
@@ -199,30 +122,8 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
             return 0;
 
         QMailMessage message(msgId);
-        int numberOfAttachments = 0;
-
-        // TODO: This only considers the first level of parts - it won't work for unusual
-        // MIME compositions, or messages where the attachments are inside a nested
-        // message which has been forwarded, for example.
-
-        // Also, it should probably be looking at contentDisposition rather than contentType.
-
-        for (uint i = 1; i < message.partCount(); i++) {
-            QMailMessagePart sourcePart = message.partAt(i);
-            if (!(sourcePart.multipartType() == QMailMessagePartContainer::MultipartNone))
-                continue;
-
-            QMailMessageContentType contentType = sourcePart.contentType();
-            if (sourcePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain") {
-                continue;
-            }
-            if (i == 1 && contentType.type().toLower() == "text" && contentType.subType().toLower() == "html")
-                continue;
-
-            numberOfAttachments += 1;
-        }
-        return numberOfAttachments;
+        const QList<QMailMessagePart::Location> &attachmentLocations = message.findAttachmentLocations();
+        return attachmentLocations.count();
     }
     else if (role == MessageAttachmentsRole) {
         // return a stringlist of attachments
@@ -232,23 +133,10 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
 
         QMailMessage message(msgId);
         QStringList attachments;
-        for (uint i = 1; i < message.partCount(); i++) {
-            QMailMessagePart sourcePart = message.partAt(i);
-            if (!(sourcePart.multipartType() == QMailMessagePartContainer::MultipartNone))
-                continue;
-
-            QMailMessageContentType contentType = sourcePart.contentType();
-            if (sourcePart.hasBody() && contentType.type().toLower() == "text" &&
-                                     contentType.subType().toLower() == "plain") {
-                continue;
-            }
-            if (i == 1 && contentType.type().toLower() == "text" &&
-                        contentType.subType().toLower() == "html") {
-                continue;
-            }
-            attachments << sourcePart.displayName();
+        foreach (const QMailMessagePart::Location &location, message.findAttachmentLocations()) {
+            const QMailMessagePart &attachmentPart = message.partAt(location);
+            attachments << attachmentPart.displayName();
         }
-
         return attachments;
     }
     else if (role == MessageRecipientsRole) {
@@ -279,11 +167,11 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     }
     else if (role == QMailMessageModelBase::MessageBodyTextRole) {
         QMailMessage message (msgId);
-        return (bodyPlainText(message));
+        return bodyPlainText(message);
     }
     else if (role == MessageHtmlBodyRole) {
         QMailMessage message (msgId);
-        return (bodyHtmlText(&message));
+        return bodyHtmlText(message);
     }
     else if (role == MessageQuotedBodyRole) {
         QMailMessage message (msgId);

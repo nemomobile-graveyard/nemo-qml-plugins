@@ -46,7 +46,7 @@ public:
     ~EmailMessageListModel();
     int rowCount (const QModelIndex & parent = QModelIndex()) const;
     QVariant data (const QModelIndex & index, int role = Qt::DisplayRole) const;
-    QString bodyHtmlText(QMailMessagePartContainer *container) const;
+    QString bodyHtmlText(const QMailMessage &) const;
     QString bodyPlainText(const QMailMessage &) const;
 
 signals:
