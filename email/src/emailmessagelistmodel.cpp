@@ -185,21 +185,28 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     if (!index.isValid() || index.row() > rowCount(parent(index)))
         return QVariant();
 
+    QMailMessageId msgId = idFromIndex(index);
+
     if (role == QMailMessageModelBase::MessageTimeStampTextRole) {
-        QMailMessageId msgId = idFromIndex(index);
         QMailMessageMetaData message(msgId);
         QDateTime timeStamp = message.date().toLocalTime();
         return (timeStamp.toString("hh:mm MM/dd/yyyy"));
     }
     else if (role == MessageAttachmentCountRole) {
         // return number of attachments
-        QMailMessage messageMetaData(idFromIndex(index));
+        QMailMessageMetaData messageMetaData(msgId);
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
             return 0;
 
-        // TODO: can we satisfy this from metadata too?
-        QMailMessage message(idFromIndex(index));
+        QMailMessage message(msgId);
         int numberOfAttachments = 0;
+
+        // TODO: This only considers the first level of parts - it won't work for unusual
+        // MIME compositions, or messages where the attachments are inside a nested
+        // message which has been forwarded, for example.
+
+        // Also, it should probably be looking at contentDisposition rather than contentType.
+
         for (uint i = 1; i < message.partCount(); i++) {
             QMailMessagePart sourcePart = message.partAt(i);
             if (!(sourcePart.multipartType() == QMailMessagePartContainer::MultipartNone))
@@ -219,11 +226,11 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     }
     else if (role == MessageAttachmentsRole) {
         // return a stringlist of attachments
-        QMailMessage messageMetaData(idFromIndex(index));
+        QMailMessageMetaData messageMetaData(msgId);
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
             return QStringList();
 
-        QMailMessage message(idFromIndex(index));
+        QMailMessage message(msgId);
         QStringList attachments;
         for (uint i = 1; i < message.partCount(); i++) {
             QMailMessagePart sourcePart = message.partAt(i);
@@ -245,43 +252,41 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return attachments;
     }
     else if (role == MessageRecipientsRole) {
-        // TODO: metadata?
-        QMailMessage message (idFromIndex(index));
+        QMailMessageMetaData messageMetaData(msgId);
         QStringList recipients;
-        QList<QMailAddress> addresses = message.to();
+        QList<QMailAddress> addresses = messageMetaData.recipients();
         foreach (const QMailAddress &address, addresses) {
             recipients << address.address();
         }
         return recipients;
     }
     else if (role == MessageRecipientsDisplayNameRole) {
-        // TODO: metadata?
-        QMailMessage message (idFromIndex(index));
+        QMailMessageMetaData messageMetaData(msgId);
         QStringList recipients;
-        QList<QMailAddress> addresses = message.to();
+        QList<QMailAddress> addresses = messageMetaData.recipients();
         foreach (const QMailAddress &address, addresses) {
             recipients << address.name();
         }
         return recipients;
     }
     else if (role == MessageReadStatusRole) {
-        QMailMessageMetaData message (idFromIndex(index));
+        QMailMessageMetaData messageMetaData(msgId);
 
-        if (message.status() & QMailMessage::Read)
+        if (messageMetaData.status() & QMailMessage::Read)
             return 1; // 1 for read
         else
             return 0; // 0 for unread
     }
     else if (role == QMailMessageModelBase::MessageBodyTextRole) {
-        QMailMessage message (idFromIndex(index));
+        QMailMessage message (msgId);
         return (bodyPlainText(message));
     }
     else if (role == MessageHtmlBodyRole) {
-        QMailMessage message (idFromIndex(index));
+        QMailMessage message (msgId);
         return (bodyHtmlText(&message));
     }
     else if (role == MessageQuotedBodyRole) {
-        QMailMessage message (idFromIndex(index));
+        QMailMessage message (msgId);
         QString body = bodyPlainText(message);
         body.prepend('\n');
         body.replace('\n', "\n>");
@@ -289,36 +294,36 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return body;
     }
     else if (role == MessageUuidRole) {
-        QMailMessageId messageId = idFromIndex(index);
-        QString uuid = QString::number(messageId.toULongLong());
+        QString uuid = QString::number(msgId.toULongLong());
+        /* What the ???
         QMailMessage newId = QMailMessageId (uuid.toULongLong());
         QMailMessage message (newId);
         QString body = message.body().data();
+        */
         return uuid;
     }
     else if (role == MessageSenderDisplayNameRole) {
-        QMailMessageMetaData message(idFromIndex(index));
-        return message.from().name();
+        QMailMessageMetaData messageMetaData(msgId);
+        return messageMetaData.from().name();
     }
     else if (role == MessageSenderEmailAddressRole) {
-        QMailMessageMetaData message(idFromIndex(index));
-        return message.from().address();
+        QMailMessageMetaData messageMetaData(msgId);
+        return messageMetaData.from().address();
     }
     else if (role == MessageCcRole) {
-        QMailMessage message (idFromIndex(index));
+        QMailMessage message (msgId);
         return QMailAddress::toStringList (message.cc());
     }
     else if (role == MessageBccRole) {
-        QMailMessage message (idFromIndex(index));
+        QMailMessage message (msgId);
         return QMailAddress::toStringList (message.bcc());
     }
     else if (role == MessageTimeStampRole) {
-        QMailMessage message (idFromIndex(index));
-        return (message.date().toLocalTime());
+        QMailMessageMetaData messageMetaData(msgId);
+        return (messageMetaData.date().toLocalTime());
     }
     else if (role == MessageSelectModeRole) {
        int selected = 0;
-       QMailMessageId msgId = idFromIndex(index);
        if (m_selectedMsgIds.contains(msgId) == true)
            selected = 1;
         return (selected);
@@ -373,7 +378,7 @@ void EmailMessageListModel::setAccountKey (QVariant id)
     for (int i = 0; i < ids.size(); i++) {
         QMailFolderKey key = QMailFolderKey::parentAccountId(accountId);
         QMailFolderIdList  mailFolderIds = QMailStore::instance()->queryFolders(key);
-        foreach (QMailFolderId folderId, mailFolderIds) {
+        foreach (const QMailFolderId &folderId, mailFolderIds) {
             QMailFolder folder(folderId);
             if (QString::compare(folder.displayName(), "INBOX", Qt::CaseInsensitive) == 0) {
                 folderIdList << folderId;
@@ -404,7 +409,7 @@ void EmailMessageListModel::setAccountKey (QVariant id)
 void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
 {
     QMailFolderIdList folderIdList;
-    foreach (QMailFolderId folderId, folderIds) {
+    foreach (const QMailFolderId &folderId, folderIds) {
         QMailFolder folder(folderId);
         if (QString::compare(folder.displayName(), "INBOX", Qt::CaseInsensitive) == 0) {
             folderIdList << folderId;
@@ -497,9 +502,7 @@ QVariant EmailMessageListModel::messageId (int idx)
 
 QVariant EmailMessageListModel::subject (int idx)
 {
-    QMailMessageId id = idFromIndex (index(idx));
-    QMailMessageMetaData msg(id);
-    return msg.subject();
+    return data(index(idx), QMailMessageModelBase::MessageSubjectTextRole);
 }
 
 QVariant EmailMessageListModel::mailSender (int idx)
@@ -545,15 +548,14 @@ QVariant EmailMessageListModel::toList (int idx)
 QVariant EmailMessageListModel::recipients (int idx)
 {
     QMailMessageId msgId = idFromIndex(index(idx));
-    QMailMessage message(msgId);
+    QMailMessageMetaData messageMetaData(msgId);
     QStringList recipients;
      
-    QMailAccount mailAccount (message.parentAccountId());
+    QMailAccount mailAccount (messageMetaData.parentAccountId());
     QString myEmailAddress = mailAccount.fromAddress().address();
 
-    QList<QMailAddress> addresses;
-    addresses = message.to() + message.cc() + message.bcc();
-    foreach (QMailAddress address, addresses) {
+    // Since 1468833f, QMMMD::recipients() returns To: CC: and BCC: recipients
+    foreach (const QMailAddress &address, messageMetaData.recipients()) {
         QString emailAddress = address.address();
         if (QString::compare(myEmailAddress, emailAddress, Qt::CaseInsensitive) != 0)
             recipients << address.toString();
@@ -588,7 +590,7 @@ void EmailMessageListModel::deSelectAllMessages()
 
     QMailMessageIdList msgIds = m_selectedMsgIds;
     m_selectedMsgIds.clear();
-    foreach (QMailMessageId msgId,  msgIds) {
+    foreach (const QMailMessageId &msgId,  msgIds) {
         for (int row = 0; row < rowCount(); row++) {
             QVariant vMsgId = data(index(row), QMailMessageModelBase::MessageIdRole);
     
