@@ -225,88 +225,141 @@ void EmailAccount::activityChanged(QMailServiceAction::Activity activity)
     }
 }
 
+namespace {
+
+    // The only supported types here ('external' type) are: '0':pop3 '1':imap4
+    QString externalRecvType(const QString &internal) {
+        if (internal == QLatin1String("pop3")) {
+            return QLatin1String("0");
+        } else if (internal == QLatin1String("imap4")) {
+            return QLatin1String("1");
+        }
+        qWarning() << "Unknown internal receive type:" << internal;
+        return QString();
+    }
+
+    // Internal type is the stored value
+    QString internalRecvType(const QString &external) {
+        if (external == QLatin1String("0")) {
+            return QLatin1String("pop3");
+        } else if (external == QLatin1String("1")) {
+            return QLatin1String("imap4");
+        }
+        qWarning() << "Unknown external receive type:" << external;
+        return QString();
+    }
+
+    // Equivalent to QMailTransport::EncryptType?
+    QString securityType(const QString &securityType) {
+        if (securityType == QLatin1String("SSL")) {
+            return QLatin1String("1");
+        } else if (securityType == QLatin1String("TLS")) {
+            return QLatin1String("2");
+        }
+
+        if (securityType != QLatin1String("none"))
+            qWarning() << "Unknown security type:" << securityType;
+        return QLatin1String("0");
+    }
+
+    // Equivalent to QMail::SaslMechanism?
+    QString authorizationType(const QString &authType) {
+        if (authType == QLatin1String("Login")) {
+            return QLatin1String("1");
+        } else if (authType == QLatin1String("Plain")) {
+            return QLatin1String("2");
+        } else if (authType == QLatin1String("CRAM-MD5")) {
+            return QLatin1String("3");
+        }
+
+        if (authType != QLatin1String("none"))
+            qWarning() << "Unknown authorization type:" << authType;
+        return QLatin1String("0");
+    }
+}
+
 void EmailAccount::applyPreset()
 {
     switch(preset()) {
         case mobilemePreset:
-            setRecvType("1");                    // imap
+            setRecvType(externalRecvType("imap4"));
             setRecvServer("mail.me.com");
             setRecvPort("993");
-            setRecvSecurity("1");                // SSL
+            setRecvSecurity(securityType("SSL"));
             setRecvUsername(username());         // username only
             setRecvPassword(password());
             setSendServer("smtp.me.com");
             setSendPort("587");
-            setSendSecurity("1");                // SSL
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("SSL"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(username());         // username only
             setSendPassword(password());
             break;
         case gmailPreset:
-            setRecvType("1");                    // imap
+            setRecvType(externalRecvType("imap4"));
             setRecvServer("imap.gmail.com");
             setRecvPort("993");
-            setRecvSecurity("1");                // SSL
+            setRecvSecurity(securityType("SSL"));
             setRecvUsername(address());          // full email address
             setRecvPassword(password());
             setSendServer("smtp.gmail.com");
             setSendPort("465");
-            setSendSecurity("1");                // SSL
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("SSL"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(address());          // full email address
             setSendPassword(password());
             break;
         case yahooPreset:
-            setRecvType("1");                    // imap
+            setRecvType(externalRecvType("imap4"));
             setRecvServer("imap.mail.yahoo.com");
             setRecvPort("993");
-            setRecvSecurity("1");                // SSL
+            setRecvSecurity(securityType("SSL"));
             setRecvUsername(address());          // full email address
             setRecvPassword(password());
             setSendServer("smtp.mail.yahoo.com");
             setSendPort("465");
-            setSendSecurity("1");                // SSL
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("SSL"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(address());          // full email address
             setSendPassword(password());
             break;
         case aolPreset:
-            setRecvType("1");                    // imap
+            setRecvType(externalRecvType("imap4"));
             setRecvServer("imap.aol.com");
             setRecvPort("143");
-            setRecvSecurity("0");                // none
+            setRecvSecurity(securityType("none"));
             setRecvUsername(username());         // username only
             setRecvPassword(password());
             setSendServer("smtp.aol.com");
             setSendPort("587");
-            setSendSecurity("0");                // none
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("none"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(username());         // username only
             setSendPassword(password());
             break;
         case mslivePreset:
-            setRecvType("0");                    // pop
+            setRecvType(externalRecvType("pop3"));
             setRecvServer("pop3.live.com");
             setRecvPort("995");
-            setRecvSecurity("1");                // SSL
+            setRecvSecurity(securityType("SSL"));
             setRecvUsername(address());          // full email address
             setRecvPassword(password());
             setSendServer("smtp.live.com");
             setSendPort("587");
-            setSendSecurity("2");                // TLS
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("TLS"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(address());          // full email address
             setSendPassword(password());
             break;
         case noPreset:
-            setRecvType("1");                    // imap
+            setRecvType(externalRecvType("imap4"));
             setRecvPort("993");
-            setRecvSecurity("1");                // SSL
+            setRecvSecurity(securityType("SSL"));
             setRecvUsername(username());         // username only
             setRecvPassword(password());
             setSendPort("587");
-            setSendSecurity("1");                // SSL
-            setSendAuth("1");                    // Login
+            setSendSecurity(securityType("SSL"));
+            setSendAuth(authorizationType("Login"));
             setSendUsername(username());         // username only
             setSendPassword(password());
             break;
@@ -379,23 +432,14 @@ void EmailAccount::setPassword(QString val)
 
 QString EmailAccount::recvType() const
 {
-    if (mRecvType == "pop3")
-        return "0";
-    else if (mRecvType == "imap4")
-        return "1";
-    else
-        return QString();
+    return externalRecvType(mRecvType);
 }
 
 void EmailAccount::setRecvType(QString val)
 {
     // prevent bug where recv type gets reset
     // when loading the first time
-    QString newRecvType;
-    if (val == "0")
-        newRecvType = "pop3";
-    else if (val == "1")
-        newRecvType = "imap4";
+    QString newRecvType = internalRecvType(val);
     if (newRecvType != mRecvType) {
         mAccountConfig->removeServiceConfiguration(mRecvType);
         mAccountConfig->addServiceConfiguration(newRecvType);
