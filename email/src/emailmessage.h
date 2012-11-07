@@ -43,6 +43,7 @@ private slots:
     void onSendCompleted();
 
 private:
+    void buildMessage();
     void processAttachments();
 
     QMailMessage m_msg;
