@@ -183,11 +183,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     }
     else if (role == MessageUuidRole) {
         QString uuid = QString::number(msgId.toULongLong());
-        /* What the ???
-        QMailMessage newId = QMailMessageId (uuid.toULongLong());
-        QMailMessage message (newId);
-        QString body = message.body().data();
-        */
         return uuid;
     }
     else if (role == MessageSenderDisplayNameRole) {
