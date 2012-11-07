@@ -48,7 +48,7 @@ public:
     static void setupCache();
     static QByteArray cacheKey(const QString &fileName, const QSize &requestedSize);
     static QImage loadThumbnail(const QString &fileName, const QByteArray &cacheKey);
-    static QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize);
+    static QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize, bool crop = true);
     static void writeCacheFile(const QByteArray &cacheKey, const QImage &thumbnail);
 };
 

@@ -37,7 +37,7 @@
 
 namespace NemoVideoThumbnailer
 {
-    QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize);
+    QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize, bool crop);
 }
 
 #endif

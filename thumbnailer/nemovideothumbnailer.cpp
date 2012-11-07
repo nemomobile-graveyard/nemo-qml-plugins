@@ -32,11 +32,13 @@
 
 #include "nemovideothumbnailer.h"
 
+#include <QtDebug>
+
 #ifndef NEMO_GSTREAMER_THUMBNAILS
 
 namespace NemoVideoThumbnailer {
 
-QImage generateThumbnail(const QString &, const QByteArray &, const QSize &)
+QImage generateThumbnail(const QString &, const QByteArray &, const QSize &, bool)
 {
     return QImage();
 }
@@ -135,7 +137,7 @@ static void decodebin_new_pad(GstElement *element, GstPad *pad, gpointer data)
 
 namespace NemoVideoThumbnailer {
 
-QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize)
+QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize, bool crop)
 {
     QImage image;
     Thumbnailer thumbnailer;
@@ -196,22 +198,23 @@ QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, co
             gst_structure_get_int(structure, "height", &height);
 
             if (width > 0 && height > 0) {
-                const int croppedWidth = height * requestedSize.width() / requestedSize.height();
-                const int croppedHeight = width * requestedSize.height() / requestedSize.width();
+                const int croppedWidth = crop ? height * requestedSize.width() / requestedSize.height() : width;
+                const int croppedHeight = crop ? width * requestedSize.height() / requestedSize.width() : height;
                 const int bytesPerLine = width * 4;
+                QImage frame;
 
                 if (croppedWidth < width) {
                     const uchar *data = GST_BUFFER_DATA(buffer) + (width - croppedWidth) * 2;
-                    image = QImage(data, croppedWidth, height, bytesPerLine, QImage::Format_RGB32);
+                    frame = QImage(data, croppedWidth, height, bytesPerLine, QImage::Format_RGB32);
                 } else if (croppedHeight < height) {
                     const uchar *data = GST_BUFFER_DATA(buffer) + bytesPerLine * ((height - croppedHeight) / 2);
-                    image = QImage(data, width, croppedHeight, bytesPerLine, QImage::Format_RGB32);
+                    frame = QImage(data, width, croppedHeight, bytesPerLine, QImage::Format_RGB32);
                 } else {
-                    image = QImage(GST_BUFFER_DATA(buffer), width, height, bytesPerLine, QImage::Format_RGB32);
+                    frame = QImage(GST_BUFFER_DATA(buffer), width, height, bytesPerLine, QImage::Format_RGB32);
                 }
 
-                image = image.scaled(requestedSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-                image.detach();
+                image = frame.scaled(requestedSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                image.detach(); // Ensure a deep copy is made in the instance the image isn't scaled.
             }
 
             gst_buffer_unref(buffer);

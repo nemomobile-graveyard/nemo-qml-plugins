@@ -55,6 +55,7 @@ struct ThumbnailRequest
     QString mimeType;
     QSize size;
     QImage image;
+    NemoThumbnailItem::FillMode fillMode;
 };
 
 ThumbnailRequest::ThumbnailRequest(
@@ -66,6 +67,7 @@ ThumbnailRequest::ThumbnailRequest(
     , fileName(fileName)
     , mimeType(item->m_mimeType)
     , size(item->m_sourceSize)
+    , fillMode(item->m_fillMode)
 {
 }
 
@@ -110,6 +112,7 @@ NemoThumbnailItem::NemoThumbnailItem(QDeclarativeItem *parent)
     , m_request(0)
     , m_priority(NormalPriority)
     , m_status(Null)
+    , m_fillMode(PreserveAspectCrop)
 {
     setFlag(ItemHasNoContents, false);
 }
@@ -184,6 +187,20 @@ void NemoThumbnailItem::setSourceSize(const QSize &size)
     }
 }
 
+NemoThumbnailItem::FillMode NemoThumbnailItem::fillMode() const
+{
+    return m_fillMode;
+}
+
+void NemoThumbnailItem::setFillMode(FillMode mode)
+{
+    if (m_fillMode != mode) {
+        m_fillMode = mode;
+        emit fillModeChanged();
+        updateThumbnail(true);
+    }
+}
+
 NemoThumbnailItem::Status NemoThumbnailItem::status() const
 {
     return m_status;
@@ -251,12 +268,16 @@ void NemoThumbnailLoader::updateRequest(NemoThumbnailItem *item, bool identityCh
     if (identityChanged) {
         fileName = item->m_source.toLocalFile();
         cacheKey = NemoThumbnailProvider::cacheKey(fileName, item->m_sourceSize);
+        if (item->m_fillMode == NemoThumbnailItem::PreserveAspectFit)
+            cacheKey += 'F';
 
         QPixmap pixmap;
         if (QPixmapCache::find(cacheKey, &pixmap)) {
             if (item->m_request)
                 cancelRequest(item);
             item->m_pixmap = pixmap;
+            item->setImplicitWidth(pixmap.width());
+            item->setImplicitHeight(pixmap.height());
             return;
         }
     }
@@ -270,6 +291,7 @@ void NemoThumbnailLoader::updateRequest(NemoThumbnailItem *item, bool identityCh
             item->m_request->cacheKey = cacheKey;
             item->m_request->fileName = fileName;
             item->m_request->size = item->m_sourceSize;
+            item->m_request->fillMode = item->m_fillMode;
         }
         item->m_request->mimeType = item->m_mimeType;
     } else {                                    // The current request is being processed. Replace it.
@@ -341,6 +363,8 @@ bool NemoThumbnailLoader::event(QEvent *event)
                     completedRequest->item->m_pixmap = QPixmap::fromImage(completedRequest->image);
                     QPixmapCache::insert(completedRequest->cacheKey, completedRequest->item->m_pixmap);
                     completedRequest->item->m_status = NemoThumbnailItem::Ready;
+                    completedRequest->item->setImplicitWidth(completedRequest->item->m_pixmap.width());
+                    completedRequest->item->setImplicitHeight(completedRequest->item->m_pixmap.height());
                     emit completedRequest->item->statusChanged();
                 } else {
                     completedRequest->item->m_pixmap = QPixmap();
@@ -396,6 +420,7 @@ void NemoThumbnailLoader::run()
         const QString fileName = request->fileName;
         const QString mimeType = request->mimeType;
         const QSize requestedSize = request->size;
+        const bool crop = request->fillMode == NemoThumbnailItem::PreserveAspectCrop;
 
         locker.unlock();
 
@@ -417,8 +442,8 @@ void NemoThumbnailLoader::run()
             }
         } else {
             QImage image = !mimeType.startsWith(QLatin1String("video/"), Qt::CaseInsensitive)
-                    ? NemoThumbnailProvider::generateThumbnail(fileName, cacheKey, requestedSize)
-                    : NemoVideoThumbnailer::generateThumbnail(fileName, cacheKey, requestedSize);
+                    ? NemoThumbnailProvider::generateThumbnail(fileName, cacheKey, requestedSize, crop)
+                    : NemoVideoThumbnailer::generateThumbnail(fileName, cacheKey, requestedSize, crop);
 
             locker.relock();
             request->image = image;

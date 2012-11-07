@@ -46,11 +46,19 @@ class NemoThumbnailItem : public QDeclarativeItem
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(QString mimeType READ mimeType WRITE setMimeType NOTIFY mimeTypeChanged)
     Q_PROPERTY(QSize sourceSize READ sourceSize WRITE setSourceSize NOTIFY sourceSizeChanged)
+    Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
     Q_PROPERTY(Priority priority READ priority WRITE setPriority NOTIFY priorityChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_ENUMS(Priority)
     Q_ENUMS(Status)
+    Q_ENUMS(FillMode)
 public:
+    enum FillMode
+    {
+        PreserveAspectFit = 1,  // Use the same values as Image for compatibility.
+        PreserveAspectCrop
+    };
+
     enum Priority
     {
         HighPriority,
@@ -85,6 +93,9 @@ public:
     QSize sourceSize() const;
     void setSourceSize(const QSize &size);
 
+    FillMode fillMode() const;
+    void setFillMode(FillMode mode);
+
     Priority priority() const;
     void setPriority(Priority priority);
 
@@ -96,6 +107,7 @@ Q_SIGNALS:
     void sourceChanged();
     void mimeTypeChanged();
     void sourceSizeChanged();
+    void fillModeChanged();
     void priorityChanged();
     void statusChanged();
 
@@ -104,6 +116,7 @@ private:
 
     void updateThumbnail(bool identityChanged);
 
+
     ThumbnailRequest *m_request;
     QUrl m_source;
     QString m_mimeType;
@@ -111,6 +124,7 @@ private:
     QPixmap m_pixmap;
     Priority m_priority;
     Status m_status;
+    FillMode m_fillMode;
 
     friend struct ThumbnailRequest;
     friend class NemoThumbnailLoader;
