@@ -19,11 +19,9 @@
 
 EmailMessage::EmailMessage (QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
+    , m_textOnly(true)
 {
-    // set the default priority to normal
-    m_msg.appendHeaderField("X-Priority", "3");
-    m_msg.appendHeaderField("X-MSMail-Priority", "Normal");
-    m_textOnly = true;   // body type is text by default
+    setPriority(NormalPriority);
 }
 
 EmailMessage::~EmailMessage ()
@@ -98,36 +96,7 @@ void EmailMessage::setPriority (EmailMessage::Priority priority)
 
 void EmailMessage::send()
 {
-    QMailMessageContentType type;
-    if (m_textOnly)
-        type.setType("text/plain; charset=UTF-8");
-    else
-        type.setType("text/html; charset=UTF-8");
-
-    if (m_attachments.size() == 0)
-        m_msg.setBody(QMailMessageBody::fromData(m_bodyText, type, QMailMessageBody::Base64));
-    else {
-        QMailMessagePart body;
-        body.setBody(QMailMessageBody::fromData(m_bodyText.toUtf8(), type, QMailMessageBody::Base64));
-        m_msg.setMultipartType(QMailMessagePartContainer::MultipartMixed);
-        m_msg.appendPart(body);
-    }
-
-    // Include attachments into the message before sending
-    processAttachments();
-
-    // set message basic attributes
-    m_msg.setDate(QMailTimeStamp::currentDateTime());
-    m_msg.setStatus(QMailMessage::Outgoing, true);
-    m_msg.setStatus(QMailMessage::ContentAvailable, true);
-    m_msg.setStatus(QMailMessage::PartialContentAvailable, true);
-    m_msg.setStatus(QMailMessage::Read, true);
-    m_msg.setStatus((QMailMessage::Outbox | QMailMessage::Draft), true);
-
-    m_msg.setParentFolderId(QMailFolder::LocalStorageFolderId);
-
-    m_msg.setMessageType(QMailMessage::Email);
-    m_msg.setSize(m_msg.indicativeSize() * 1024);
+    buildMessage();
 
     bool stored = false;
 
@@ -148,37 +117,7 @@ void EmailMessage::send()
 
 void EmailMessage::saveDraft()
 {
-    QMailMessageContentType type;
-    if (m_textOnly)
-        type.setType("text/plain; charset=UTF-8");
-    else
-        type.setType("text/html; charset=UTF-8");
-
-    if (m_attachments.size() == 0) {
-        m_msg.setBody(QMailMessageBody::fromData(m_bodyText, type, QMailMessageBody::Base64));
-    }
-    else {
-        QMailMessagePart body;
-        body.setBody(QMailMessageBody::fromData(m_bodyText.toUtf8(), type, QMailMessageBody::Base64));
-        m_msg.setMultipartType(QMailMessagePartContainer::MultipartMixed);
-        m_msg.appendPart(body);
-    }
-
-    // Include attachments into the message before sending
-    processAttachments();
-
-    // set message basic attributes
-    m_msg.setDate(QMailTimeStamp::currentDateTime());
-    m_msg.setStatus(QMailMessage::Outgoing, true);
-    m_msg.setStatus(QMailMessage::ContentAvailable, true);
-    m_msg.setStatus(QMailMessage::PartialContentAvailable, true);
-    m_msg.setStatus(QMailMessage::Read, true);
-    m_msg.setStatus((QMailMessage::Outbox | QMailMessage::Draft), true);
-
-    m_msg.setParentFolderId(QMailFolder::LocalStorageFolderId);
-
-    m_msg.setMessageType(QMailMessage::Email);
-    m_msg.setSize(m_msg.indicativeSize() * 1024);
+    buildMessage();
 
     QMailFolderKey nameKey(QMailFolderKey::displayName("Drafts", QMailDataComparator::Includes));
     QMailFolderKey accountKey(QMailFolderKey::parentAccountId(m_msg.parentAccountId()));
@@ -210,6 +149,40 @@ void EmailMessage::saveDraft()
 void EmailMessage::onSendCompleted()
 {
     emit sendCompleted();
+}
+
+void EmailMessage::buildMessage()
+{
+    QMailMessageContentType type;
+    if (m_textOnly)
+        type.setType("text/plain; charset=UTF-8");
+    else
+        type.setType("text/html; charset=UTF-8");
+
+    if (m_attachments.size() == 0)
+        m_msg.setBody(QMailMessageBody::fromData(m_bodyText, type, QMailMessageBody::Base64));
+    else {
+        QMailMessagePart body;
+        body.setBody(QMailMessageBody::fromData(m_bodyText.toUtf8(), type, QMailMessageBody::Base64));
+        m_msg.setMultipartType(QMailMessagePartContainer::MultipartMixed);
+        m_msg.appendPart(body);
+    }
+
+    // Include attachments into the message
+    processAttachments();
+
+    // set message basic attributes
+    m_msg.setDate(QMailTimeStamp::currentDateTime());
+    m_msg.setStatus(QMailMessage::Outgoing, true);
+    m_msg.setStatus(QMailMessage::ContentAvailable, true);
+    m_msg.setStatus(QMailMessage::PartialContentAvailable, true);
+    m_msg.setStatus(QMailMessage::Read, true);
+    m_msg.setStatus((QMailMessage::Outbox | QMailMessage::Draft), true);
+
+    m_msg.setParentFolderId(QMailFolder::LocalStorageFolderId);
+
+    m_msg.setMessageType(QMailMessage::Email);
+    m_msg.setSize(m_msg.indicativeSize() * 1024);
 }
 
 void EmailMessage::processAttachments ()
