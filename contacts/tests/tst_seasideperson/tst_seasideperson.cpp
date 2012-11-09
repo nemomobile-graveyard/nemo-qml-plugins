@@ -59,6 +59,7 @@ private slots:
     void websiteTypes();
     void birthday();
     void anniversary();
+    void address();
     void marshalling();
     void setContact();
 };
@@ -306,6 +307,37 @@ void tst_SeasidePerson::anniversary()
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->anniversary(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
 }
+
+void tst_SeasidePerson::address()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->addresses(), QStringList());
+    QCOMPARE(person->addressTypes(), QList<int>());
+    QSignalSpy spy(person.data(), SIGNAL(addressesChanged()));
+
+    QString address1 = "Street 1\nLocality 1\nRegion 1\nPostcode 1\nCountry 1\nPoBox 1";
+    QString address2 = "Street 2\nLocality 2\nRegion 2\nPostcode 2\nCountry 2\nPoBox 2";
+
+    QStringList addresses;
+    addresses.append(address1);
+    addresses.append(address2);
+    person->setAddresses(addresses);
+    QCOMPARE(spy.count(), 1);
+
+    addresses = person->addresses();
+    QCOMPARE(addresses.count(), 2);
+    QCOMPARE(addresses.at(0), QString("Street 1\nLocality 1\nRegion 1\nPostcode 1\nCountry 1\nPoBox 1"));
+    QCOMPARE(addresses.at(1), QString("Street 2\nLocality 2\nRegion 2\nPostcode 2\nCountry 2\nPoBox 2"));
+
+    person->setAddressType(0, SeasidePerson::AddressHomeType);
+    person->setAddressType(1, SeasidePerson::AddressWorkType);
+    person->setAddressType(2, SeasidePerson::AddressWorkType);  // Invalid, should not crash.
+
+    QCOMPARE(person->addressTypes().count(), 2);
+    QCOMPARE(person->addressTypes().at(0), (int)SeasidePerson::AddressHomeType);
+    QCOMPARE(person->addressTypes().at(1), (int)SeasidePerson::AddressWorkType);
+}
+
 
 void tst_SeasidePerson::marshalling()
 {

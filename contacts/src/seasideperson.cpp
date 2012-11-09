@@ -38,6 +38,7 @@
 #include <QContactFavorite>
 #include <QContactPhoneNumber>
 #include <QContactEmailAddress>
+#include <QContactAddress>
 #include <QContactOnlineAccount>
 #include <QContactOrganization>
 #include <QContactUrl>
@@ -232,19 +233,43 @@ QStringList SeasidePerson::phoneNumbers() const
     LIST_PROPERTY_FROM_DETAIL_FIELD(QContactPhoneNumber, number);
 }
 
-// this could probably be optimised, but it's easiest: we just remove
-// all the old phone number details, and add new ones
 #define SET_PROPERTY_FIELD_FROM_LIST(detailType, fieldNameGet, fieldNameSet, newValueList) \
     const QList<detailType> &oldDetailList = mContact.details<detailType>(); \
     \
     if (oldDetailList.count() != newValueList.count()) { \
-        foreach (detailType detail, oldDetailList) \
-            mContact.removeDetail(&detail); \
+        bool removeAndReadd = true; \
+        if (oldDetailList.count() < newValueList.count()) { \
+            /* Check to see if existing details were modified at all */ \
+            bool modification = false; \
+            for (int i = 0; i < oldDetailList.count(); ++i) { \
+                if (oldDetailList.at(i).fieldNameGet() != newValueList.at(i)) { \
+                    modification = true; \
+                    break; \
+                } \
+            } \
     \
-        foreach (const QString &value, newValueList) { \
-            detailType detail; \
-            detail.fieldNameSet(value); \
-            mContact.saveDetail(&detail); \
+            if (!modification) { \
+                /* If the only changes are new additions, just add them. */ \
+                for (int i = oldDetailList.count(); i < newValueList.count(); ++i) { \
+                    detailType detail; \
+                    detail.fieldNameSet(newValueList.at(i)); \
+                    mContact.saveDetail(&detail); \
+                } \
+                removeAndReadd = false; \
+            } else { \
+                removeAndReadd = true; \
+            } \
+        } \
+    \
+        if (removeAndReadd) { \
+            foreach (detailType detail, oldDetailList) \
+                mContact.removeDetail(&detail); \
+    \
+            foreach (const QString &value, newValueList) { \
+                detailType detail; \
+                detail.fieldNameSet(value); \
+                mContact.saveDetail(&detail); \
+            } \
         } \
     } else { \
         /* assign new numbers to the existing details. */ \
@@ -377,6 +402,120 @@ void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes ty
 
     mContact.saveDetail(&email);
     emit emailAddressTypesChanged();
+}
+
+// Fields are separated by \n characters
+QStringList SeasidePerson::addresses() const
+{
+    QStringList retn;
+    const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
+    foreach (const QContactAddress &address, addresses) {
+        QString currAddressStr;
+        currAddressStr.append(address.street());
+        currAddressStr.append("\n");
+        currAddressStr.append(address.locality());
+        currAddressStr.append("\n");
+        currAddressStr.append(address.region());
+        currAddressStr.append("\n");
+        currAddressStr.append(address.postcode());
+        currAddressStr.append("\n");
+        currAddressStr.append(address.country());
+        currAddressStr.append("\n");
+        currAddressStr.append(address.postOfficeBox());
+        retn.append(currAddressStr);
+    }
+    return retn;
+}
+
+void SeasidePerson::setAddresses(const QStringList &addresses)
+{
+    QList<QStringList> splitStrings;
+    foreach (const QString &currAddressStr, addresses) {
+        QStringList split = currAddressStr.split("\n");
+        if (split.count() != 6) {
+            qWarning() << "Warning: Could not save addresses - invalid format for address:" << currAddressStr;
+            return;
+        } else {
+            splitStrings.append(split);
+        }
+    }
+
+    const QList<QContactAddress> &oldDetailList = mContact.details<QContactAddress>();
+    if (oldDetailList.count() != splitStrings.count()) {
+        /* remove all current details, recreate new ones */
+        foreach (QContactAddress oldAddress, oldDetailList)
+            mContact.removeDetail(&oldAddress);
+        foreach (const QStringList &split, splitStrings) {
+            QContactAddress newAddress;
+            newAddress.setStreet(split.at(0));
+            newAddress.setLocality(split.at(1));
+            newAddress.setRegion(split.at(2));
+            newAddress.setPostcode(split.at(3));
+            newAddress.setCountry(split.at(4));
+            newAddress.setPostOfficeBox(split.at(5));
+            mContact.saveDetail(&newAddress);
+        }
+    } else {
+        /* overwrite existing details */
+        for (int i = 0; i < splitStrings.count(); ++i) {
+            const QStringList &split = splitStrings.at(i);
+            QContactAddress oldAddress = oldDetailList.at(i);
+            oldAddress.setStreet(split.at(0));
+            oldAddress.setLocality(split.at(1));
+            oldAddress.setRegion(split.at(2));
+            oldAddress.setPostcode(split.at(3));
+            oldAddress.setCountry(split.at(4));
+            oldAddress.setPostOfficeBox(split.at(5));
+            mContact.saveDetail(&oldAddress);
+        }
+    }
+
+    emit addressesChanged();
+}
+
+QList<int> SeasidePerson::addressTypes() const
+{
+    const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
+    QList<int> types;
+    types.reserve((addresses.length()));
+
+    foreach(const QContactAddress &address, addresses) {
+        if (address.contexts().contains(QContactDetail::ContextHome)) {
+            types.push_back(SeasidePerson::AddressHomeType);
+        } else if (address.contexts().contains(QContactDetail::ContextWork)) {
+            types.push_back(SeasidePerson::AddressWorkType);
+        } else if (address.contexts().contains(QContactDetail::ContextOther)) {
+            types.push_back(SeasidePerson::AddressOtherType);
+        } else {
+            qWarning() << "Warning: Could not get address type '" << address.contexts() << "'";
+        }
+    }
+
+    return types;
+}
+
+void SeasidePerson::setAddressType(int which, SeasidePerson::DetailTypes type)
+{
+    const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
+
+    if (which >= addresses.length()) {
+        qWarning() << "Unable to set type for address: invalid index specified. Aborting.";
+        return;
+    }
+
+    QContactAddress address = addresses.at(which);
+    if (type == SeasidePerson::AddressHomeType) {
+        address.setContexts(QContactDetail::ContextHome);
+    }  else if (type == SeasidePerson::AddressWorkType) {
+        address.setContexts(QContactDetail::ContextWork);
+    } else if (type == SeasidePerson::AddressOtherType) {
+        address.setContexts(QContactDetail::ContextOther);
+    } else {
+        qWarning() << "Warning: Could not save address type '" << type << "'";
+    }
+
+    mContact.saveDetail(&address);
+    emit addressTypesChanged();
 }
 
 QStringList SeasidePerson::websites() const

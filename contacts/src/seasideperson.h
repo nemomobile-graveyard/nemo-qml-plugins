@@ -41,6 +41,8 @@
 
 QTM_USE_NAMESPACE
 
+Q_DECLARE_METATYPE(QContact)
+
 class SeasidePerson : public QObject
 {
     Q_OBJECT
@@ -68,6 +70,10 @@ public:
         EmailHomeType,
         EmailWorkType,
         EmailOtherType,
+        // Address
+        AddressHomeType,
+        AddressWorkType,
+        AddressOtherType,
         // Website
         WebsiteHomeType,
         WebsiteWorkType,
@@ -121,6 +127,14 @@ public:
     QList<int> emailAddressTypes() const;
     Q_INVOKABLE void setEmailAddressType(int which, DetailTypes type);
 
+    Q_PROPERTY(QStringList addresses READ addresses WRITE setAddresses NOTIFY addressesChanged)
+    QStringList addresses() const;
+    void setAddresses(const QStringList &addresses);
+
+    Q_PROPERTY(QList<int> addressTypes READ addressTypes NOTIFY addressTypesChanged)
+    QList<int> addressTypes() const;
+    Q_INVOKABLE void setAddressType(int which, DetailTypes type);
+
     Q_PROPERTY(QStringList websites READ websites WRITE setWebsites NOTIFY websitesChanged)
     QStringList websites() const;
     void setWebsites(const QStringList &sites);
@@ -146,6 +160,9 @@ public:
     QContact contact() const;
     void setContact(const QContact &contact);
 
+    Q_INVOKABLE QVariant contactData() const { return QVariant::fromValue(contact()); }
+    Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
+
     void recalculateDisplayLabel();
 
 signals:
@@ -160,6 +177,8 @@ signals:
     void phoneNumberTypesChanged();
     void emailAddressesChanged();
     void emailAddressTypesChanged();
+    void addressesChanged();
+    void addressTypesChanged();
     void websitesChanged();
     void websiteTypesChanged();
     void birthdayChanged();
