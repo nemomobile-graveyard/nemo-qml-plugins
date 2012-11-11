@@ -39,8 +39,6 @@
 #include <QtEndian>
 #include <QElapsedTimer>
 
-#include <jpeglib.h>
-
 #undef THUMBNAILER_DEBUG
 
 #ifdef THUMBNAILER_DEBUG
