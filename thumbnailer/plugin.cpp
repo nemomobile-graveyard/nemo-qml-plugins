@@ -37,10 +37,6 @@
 #include "nemothumbnailitem.h"
 #include "nemothumbnailprovider.h"
 
-#ifdef NEMO_GSTREAMER_THUMBNAILS
-#include <gst/gst.h>
-#endif
-
 class Q_DECL_EXPORT NemoThumbnailerPlugin : public QDeclarativeExtensionPlugin
 {
 public:
@@ -48,9 +44,6 @@ public:
 
     void initializeEngine(QDeclarativeEngine *engine, const char *uri)
     {
-#ifdef NEMO_GSTREAMER_THUMBNAILS
-        gst_init(0, 0);
-#endif
         Q_ASSERT(uri == QLatin1String("org.nemomobile.thumbnailer"));
         engine->addImageProvider(QLatin1String("nemoThumbnail"), new NemoThumbnailProvider);
 

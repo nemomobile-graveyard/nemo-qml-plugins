@@ -51,6 +51,8 @@ QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, co
 
         if (!image.isNull())
             NemoThumbnailProvider::writeCacheFile(cacheKey, image);
+    } else {
+        qWarning("Cannot generate video thumbnail, thumbnailer function not available.");
     }
 
     return image;
