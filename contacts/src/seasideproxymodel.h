@@ -79,8 +79,7 @@ public:
     }
     Q_INVOKABLE int contactCount()
     {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->manager()->contactIds().count();
+        rowCount(QModelIndex());
     }
 
 protected:
