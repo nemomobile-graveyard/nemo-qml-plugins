@@ -37,6 +37,7 @@
 #include <QImageReader>
 #include <QDateTime>
 #include <QtEndian>
+#include <QElapsedTimer>
 
 #undef THUMBNAILER_DEBUG
 
@@ -59,7 +60,7 @@ static inline QString rawCachePath()
     return cachePath() + QDir::separator() + "raw";
 }
 
-static void setupCache()
+void NemoThumbnailProvider::setupCache()
 {
     // the syscalls make baby jesus cry; but this protects us against sins like users
     QDir d(cachePath());
@@ -86,7 +87,7 @@ static QString cacheFileName(const QByteArray &hashKey, bool makePath = false)
            hashKey;
 }
 
-static QByteArray cacheKey(const QString &id, const QSize &requestedSize)
+QByteArray NemoThumbnailProvider::cacheKey(const QString &id, const QSize &requestedSize)
 {
     QByteArray baId = id.toLatin1(); // is there a more efficient way than a copy?
 
@@ -115,7 +116,7 @@ static QImage attemptCachedServe(const QString &id, const QByteArray &hashKey)
     return QImage();
 }
 
-static void writeCacheFile(const QByteArray &hashKey, const QImage &img)
+void NemoThumbnailProvider::writeCacheFile(const QByteArray &hashKey, const QImage &img)
 {
     QFile fi(cacheFileName(hashKey, true));
     if (!fi.open(QIODevice::WriteOnly)) {
@@ -187,7 +188,7 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
 
     // needed for stupid things like gallery model, which pass us a url
     if (id.startsWith("file://")) {
-        qWarning() << Q_FUNC_INFO << "Removing file:// prefix, before: " << id;
+//        qWarning() << Q_FUNC_INFO << "Removing file:// prefix, before: " << id;
         QString &nid = const_cast<QString &>(id);
         nid = nid.remove(0, 7);
     }
@@ -209,32 +210,55 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         return img;
     }
 
+    return generateThumbnail(id, hashData, requestedSize);
+}
+
+QImage NemoThumbnailProvider::loadThumbnail(const QString &fileName, const QByteArray &cacheKey)
+{
+    return ::attemptCachedServe(fileName, cacheKey);
+}
+
+QImage NemoThumbnailProvider::generateThumbnail(const QString &id, const QByteArray &hashData, const QSize &requestedSize, bool crop)
+{
+    QImage img;
+    QSize originalSize;
+    QByteArray format;
+
     // image was not in cache thus we read it
     QImageReader ir(id);
-    QSize originalSize = ir.size();
-    QByteArray format = ir.format();
+    if (!ir.canRead())
+        return img;
 
-    // scales arbitrary sized source image to requested size scaling either up or down
-    // keeping aspect ratio of the original image intact by maximizing either width or height
-    // and cropping the rest of the image away
+    originalSize = ir.size();
+    format = ir.format();
+
     if (originalSize != requestedSize && originalSize.isValid()) {
-        QSize scaledSize(requestedSize);
-        // now scale it filling the original rectangle by keeping aspect ratio
-        scaledSize.scale(originalSize, Qt::KeepAspectRatio);
+        if (crop) {
+            // scales arbitrary sized source image to requested size scaling either up or down
+            // keeping aspect ratio of the original image intact by maximizing either width or height
+            // and cropping the rest of the image away
+            QSize scaledSize(requestedSize);
+            // now scale it filling the original rectangle by keeping aspect ratio
+            scaledSize.scale(originalSize, Qt::KeepAspectRatio);
 
-        // set the adjusted clipping rectangle in the center of the original image
-        QRect clipRect(0, 0, scaledSize.width(), scaledSize.height());
-        QPoint originalCenterPoint(originalSize.width() / 2, originalSize.height() / 2);
-        clipRect.moveCenter(originalCenterPoint);
-        ir.setClipRect(clipRect);
+            // set the adjusted clipping rectangle in the center of the original image
+            QRect clipRect(0, 0, scaledSize.width(), scaledSize.height());
+            QPoint originalCenterPoint(originalSize.width() / 2, originalSize.height() / 2);
+            clipRect.moveCenter(originalCenterPoint);
+            ir.setClipRect(clipRect);
 
-        // set requested target size of a thumbnail
-        // as clipping rectangle is of same aspect ratio as requestedSize no distortion should happen
-        ir.setScaledSize(requestedSize);
-        img = ir.read();
+            // set requested target size of a thumbnail
+            // as clipping rectangle is of same aspect ratio as requestedSize no distortion should happen
+            ir.setScaledSize(requestedSize);
+        } else {
+            // Maintains correct aspect ratio without cropping, as such the final image may
+            // be smaller than requested in one dimension.
+            QSize scaledSize(originalSize);
+            scaledSize.scale(requestedSize, Qt::KeepAspectRatio);
+            ir.setScaledSize(scaledSize);
+        }
     }
-    else
-        img = ir.read();
+    img = ir.read();
 
     NemoImageMetadata meta(id, format);
     if (meta.orientation() != NemoImageMetadata::TopLeft)
@@ -245,6 +269,7 @@ QImage NemoThumbnailProvider::requestImage(const QString &id, QSize *size, const
         (originalSize != requestedSize && originalSize.isValid())) {
         writeCacheFile(hashData, img);
     }
+
     TDEBUG() << Q_FUNC_INFO << "Wrote " << id << " to cache";
     return img;
 }
