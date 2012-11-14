@@ -77,6 +77,10 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         return model->exportContacts();
     }
+    Q_INVOKABLE int contactCount()
+    {
+        rowCount(QModelIndex());
+    }
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
