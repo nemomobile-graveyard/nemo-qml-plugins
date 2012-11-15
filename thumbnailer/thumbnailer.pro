@@ -1,10 +1,6 @@
-TARGET = nemothumbnailer
-PLUGIN_IMPORT_PATH = org/nemomobile/thumbnailer
+TEMPLATE = subdirs
 
-SOURCES += plugin.cpp \
-           nemothumbnailprovider.cpp \
-           nemoimagemetadata.cpp
-HEADERS += nemothumbnailprovider.h \
-           nemoimagemetadata.h
+SUBDIRS = plugin.pro
 
-include(../plugin.pri)
+packagesExist(gstreamer-0.10 gstreamer-app-0.10): SUBDIRS += gstvideothumbnailer
+else: warning("gstreamer packages not available, video thumbnailing disabled")

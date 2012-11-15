@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (C) 2012 Jolla Ltd
+ * Contact: Andrew den Exter <andrew.den.exter@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,38 +30,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
-
-#include "nemothumbnailitem.h"
+#include "nemovideothumbnailer.h"
 #include "nemothumbnailprovider.h"
 
-class Q_DECL_EXPORT NemoThumbnailerPlugin : public QDeclarativeExtensionPlugin
+#include <QLibrary>
+
+typedef QImage (*CreateThumbnailFunc)(const QString &fileName, const QSize &requestedSize, bool crop);
+
+namespace NemoVideoThumbnailer {
+
+QImage generateThumbnail(const QString &fileName, const QByteArray &cacheKey, const QSize &requestedSize, bool crop)
 {
-public:
-    virtual ~NemoThumbnailerPlugin() { }
+    QImage image;
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.thumbnailer"));
-        engine->addImageProvider(QLatin1String("nemoThumbnail"), new NemoThumbnailProvider);
+    static CreateThumbnailFunc createThumbnail = (CreateThumbnailFunc)QLibrary::resolve(
+                QLatin1String(NEMO_THUMBNAILER_DIR "/libvideothumbnailer.so"), "createThumbnail");
 
-        m_loader.start(QThread::IdlePriority);
-        qAddPostRoutine(NemoThumbnailLoader::shutdown);
+    if (createThumbnail) {
+        image = createThumbnail(fileName, requestedSize, crop);
+
+        if (!image.isNull())
+            NemoThumbnailProvider::writeCacheFile(cacheKey, image);
+    } else {
+        qWarning("Cannot generate video thumbnail, thumbnailer function not available.");
     }
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.thumbnailer"));
+    return image;
+}
 
-        qmlRegisterType<NemoThumbnailItem>(uri, 1, 0, "Thumbnail");
-    }
-
-private:
-    NemoThumbnailLoader m_loader;
-};
-
-Q_EXPORT_PLUGIN2(nemothumbnailer, NemoThumbnailerPlugin);
-
+}
