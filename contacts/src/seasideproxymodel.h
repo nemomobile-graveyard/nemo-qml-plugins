@@ -34,7 +34,6 @@ public:
     };
 
     Q_INVOKABLE virtual void setFilter(FilterType filter);
-
     Q_INVOKABLE virtual void search(const QString &pattern);
 
     // for SectionScroller support
@@ -77,10 +76,12 @@ public:
         SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
         return model->exportContacts();
     }
-    Q_INVOKABLE int contactCount()
-    {
-        rowCount(QModelIndex());
-    }
+
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
+    int count() const;
+
+signals:
+    void countChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
@@ -91,7 +92,7 @@ private:
 
     friend class tst_SeasideProxyModel;
     SeasideProxyModelPriv *priv;
-    Q_DISABLE_COPY(SeasideProxyModel);
+    Q_DISABLE_COPY(SeasideProxyModel)
 };
 
 #endif // SEASIDEPROXYMODEL_H

@@ -32,6 +32,16 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
     setDynamicSortFilter(true);
     setFilterKeyColumn(-1);
 
+
+    connect(this, SIGNAL(rowsInserted(QModelIndex,int,int)),
+            SIGNAL(countChanged()));
+
+    connect(this, SIGNAL(rowsRemoved(QModelIndex,int,int)),
+            SIGNAL(countChanged()));
+
+    connect(this, SIGNAL(layoutChanged()),
+            SIGNAL(countChanged()));
+
     setSourceModel(SeasidePeopleModel::instance());
     sort(0, Qt::AscendingOrder);
 }
@@ -147,4 +157,7 @@ QVariantMap SeasideProxyModel::get(int row) const
     return m;
 }
 
-
+int SeasideProxyModel::count() const
+{
+    return rowCount(QModelIndex());
+}
