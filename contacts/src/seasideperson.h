@@ -74,6 +74,12 @@ public:
         AddressHomeType,
         AddressWorkType,
         AddressOtherType,
+        AddressStreetType,
+        AddressLocalityType,
+        AddressRegionType,
+        AddressPostcodeType,
+        AddressCountryType,
+        AddressPOBoxType,
         // Website
         WebsiteHomeType,
         WebsiteWorkType,
