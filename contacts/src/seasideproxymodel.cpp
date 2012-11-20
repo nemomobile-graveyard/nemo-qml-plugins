@@ -18,9 +18,15 @@
 class SeasideProxyModelPriv
 {
 public:
+    SeasideProxyModelPriv()
+        : componentComplete(false)
+    {
+    }
+
     SeasideProxyModel::FilterType filterType;
     LocaleUtils *localeHelper;
     QString searchPattern;
+    bool componentComplete;
 };
 
 SeasideProxyModel::SeasideProxyModel(QObject *parent)
@@ -32,7 +38,6 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
     setDynamicSortFilter(true);
     setFilterKeyColumn(-1);
 
-
     connect(this, SIGNAL(rowsInserted(QModelIndex,int,int)),
             SIGNAL(countChanged()));
 
@@ -41,9 +46,6 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
 
     connect(this, SIGNAL(layoutChanged()),
             SIGNAL(countChanged()));
-
-    setSourceModel(SeasidePeopleModel::instance());
-    sort(0, Qt::AscendingOrder);
 }
 
 SeasideProxyModel::~SeasideProxyModel()
@@ -51,16 +53,39 @@ SeasideProxyModel::~SeasideProxyModel()
     delete priv;
 }
 
+void SeasideProxyModel::classBegin()
+{
+    priv->componentComplete = false;
+}
+
+void SeasideProxyModel::componentComplete()
+{
+    priv->componentComplete = true;
+
+    setSourceModel(SeasidePeopleModel::instance());
+    sort(0, Qt::AscendingOrder);
+}
+
+SeasideProxyModel::FilterType SeasideProxyModel::filter() const
+{
+    return priv->filterType;
+}
+
 void SeasideProxyModel::setFilter(FilterType filter)
 {
-    priv->filterType = filter;
-    invalidateFilter();
+    if (filter != priv->filterType) {
+        priv->filterType = filter;
+        if (priv->componentComplete)
+            invalidateFilter();
+        emit filterChanged();
+    }
 }
 
 void SeasideProxyModel::search(const QString &pattern)
 {
     priv->searchPattern = pattern;
-    invalidateFilter();
+    if (priv->componentComplete)
+        invalidateFilter();
 }
 
 bool SeasideProxyModel::personMatchesFilter(SeasidePerson *person, const QString &filter)
