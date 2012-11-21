@@ -62,11 +62,23 @@ void SeasideProxyModel::componentComplete()
 {
     priv->componentComplete = true;
 
-    setSourceModel(SeasidePeopleModel::instance());
+    SeasidePeopleModel *sourceModel = SeasidePeopleModel::instance();
+    setSourceModel(sourceModel);
     sort(0, Qt::AscendingOrder);
+
+    connect(sourceModel, SIGNAL(populatedChanged()),
+            this, SIGNAL(populatedChanged()));
 }
 
-SeasideProxyModel::FilterType SeasideProxyModel::filter() const
+bool SeasideProxyModel::populated() const
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    if (model)
+        return model->populated();
+    return false;
+}
+
+SeasideProxyModel::FilterType SeasideProxyModel::filterType() const
 {
     return priv->filterType;
 }
@@ -75,17 +87,29 @@ void SeasideProxyModel::setFilter(FilterType filter)
 {
     if (filter != priv->filterType) {
         priv->filterType = filter;
+        if (filter == FilterNone)
+            priv->searchPattern = QString();
         if (priv->componentComplete)
             invalidateFilter();
-        emit filterChanged();
+        emit filterTypeChanged();
+        if (filter == FilterNone)
+            emit filterPatternChanged();
     }
 }
 
-void SeasideProxyModel::search(const QString &pattern)
+QString SeasideProxyModel::filterPattern() const
 {
-    priv->searchPattern = pattern;
-    if (priv->componentComplete)
-        invalidateFilter();
+    return priv->searchPattern;
+}
+
+void SeasideProxyModel::setFilterPattern(const QString &pattern)
+{
+    if (pattern != priv->searchPattern) {
+        priv->searchPattern = pattern;
+        if (priv->componentComplete)
+            invalidateFilter();
+        emit filterPatternChanged();
+    }
 }
 
 bool SeasideProxyModel::personMatchesFilter(SeasidePerson *person, const QString &filter)
@@ -147,6 +171,8 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     }
 
     switch (priv->filterType) {
+        case FilterNone:
+            return false;
         case FilterAll:
             return true;
         case FilterFavorites:
