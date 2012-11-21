@@ -12,11 +12,14 @@
 #include <QSortFilterProxyModel>
 #include "seasidepeoplemodel.h"
 
+#include <QDeclarativeParserStatus>
+
 class SeasideProxyModelPriv;
 
-class SeasideProxyModel : public QSortFilterProxyModel
+class SeasideProxyModel : public QSortFilterProxyModel, public QDeclarativeParserStatus
 {
     Q_OBJECT
+    Q_PROPERTY(FilterType filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_ENUMS(FilterType)
 
 public:
@@ -33,6 +36,11 @@ public:
         Secondary,
     };
 
+    void classBegin();
+    void componentComplete();
+
+
+    FilterType filter() const;
     Q_INVOKABLE virtual void setFilter(FilterType filter);
     Q_INVOKABLE virtual void search(const QString &pattern);
 
@@ -82,6 +90,7 @@ public:
 
 signals:
     void countChanged();
+    void filterChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
