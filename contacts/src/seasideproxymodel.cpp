@@ -51,16 +51,32 @@ SeasideProxyModel::~SeasideProxyModel()
     delete priv;
 }
 
-void SeasideProxyModel::setFilter(FilterType filter)
+void SeasideProxyModel::setFilterMode(SeasideProxyModel::FilterType filter)
 {
     priv->filterType = filter;
+    if (filter == SeasideProxyModel::FilterNone)
+        priv->searchPattern = QString();
     invalidateFilter();
+    if (filter == SeasideProxyModel::FilterNone)
+        emit filterPatternChanged();
+    emit filterModeChanged();
 }
 
-void SeasideProxyModel::search(const QString &pattern)
+SeasideProxyModel::FilterType SeasideProxyModel::filterMode() const
+{
+    return priv->filterType;
+}
+
+void SeasideProxyModel::setFilterPattern(const QString &pattern)
 {
     priv->searchPattern = pattern;
     invalidateFilter();
+    emit filterPatternChanged();
+}
+
+QString SeasideProxyModel::filterPattern() const
+{
+    return priv->searchPattern;
 }
 
 bool SeasideProxyModel::personMatchesFilter(SeasidePerson *person, const QString &filter)
@@ -122,6 +138,8 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
     }
 
     switch (priv->filterType) {
+        case FilterNone:
+            return false;
         case FilterAll:
             return true;
         case FilterFavorites:

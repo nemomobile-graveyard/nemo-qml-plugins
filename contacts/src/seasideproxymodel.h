@@ -24,6 +24,7 @@ public:
     virtual ~SeasideProxyModel();
 
     enum FilterType {
+        FilterNone,
         FilterAll,
         FilterFavorites,
     };
@@ -33,8 +34,13 @@ public:
         Secondary,
     };
 
-    Q_INVOKABLE virtual void setFilter(FilterType filter);
-    Q_INVOKABLE virtual void search(const QString &pattern);
+    Q_PROPERTY(FilterType filterMode READ filterMode WRITE setFilterMode NOTIFY filterModeChanged)
+    void setFilterMode(FilterType filterMode);
+    FilterType filterMode() const;
+
+    Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
+    void setFilterPattern(const QString &pattern);
+    QString filterPattern() const;
 
     // for SectionScroller support
     Q_INVOKABLE QVariantMap get(int row) const;
@@ -82,6 +88,8 @@ public:
 
 signals:
     void countChanged();
+    void filterModeChanged();
+    void filterPatternChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
