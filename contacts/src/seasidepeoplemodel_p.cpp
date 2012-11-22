@@ -45,6 +45,7 @@
 SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     : QObject(parent)
     , q(parent)
+    , memoryCachePopulated(false)
 {
     QContactSortOrder sort;
     sort.setDetailDefinitionName(QContactName::DefinitionName, QContactName::FieldFirstName);
@@ -432,9 +433,11 @@ void SeasidePeopleModelPriv::onDataResetFetchChanged(QContactAbstractRequest::St
 
     addContacts(contactsList, size);
 
+    memoryCachePopulated = true;
     q->endResetModel();
     MODEL_DEBUG() << Q_FUNC_INFO << "Done with model reset";
     fetchRequest->deleteLater();
+    q->populatedChanged();
 }
 
 

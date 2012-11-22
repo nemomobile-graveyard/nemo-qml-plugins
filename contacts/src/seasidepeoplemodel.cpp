@@ -273,6 +273,11 @@ QString SeasidePeopleModel::exportContacts() const
     return vcard.fileName();
 }
 
+bool SeasidePeopleModel::populated() const
+{
+    return priv->memoryCachePopulated;
+}
+
 QContactManager *SeasidePeopleModel::manager() const
 {
     return priv->manager;

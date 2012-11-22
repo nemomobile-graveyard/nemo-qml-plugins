@@ -30,6 +30,7 @@ public:
     }
 
     SeasidePeopleModel *q;
+    bool memoryCachePopulated;
     QContactManager *manager;
     QContactFetchHint currentFetchHint;
     QList<QContactSortOrder> sortOrder;

@@ -47,6 +47,7 @@ class SeasidePeopleModel: public QAbstractListModel
     Q_OBJECT
     Q_ENUMS(PeopleRoles)
     Q_ENUMS(FilterRoles)
+    Q_PROPERTY(bool populated READ populated NOTIFY populatedChanged)
 
 public:
     SeasidePeopleModel(QObject *parent = 0);
@@ -74,7 +75,12 @@ public:
     Q_INVOKABLE int importContacts(const QString &path);
     Q_INVOKABLE QString exportContacts() const;
 
+    bool populated() const;
+
     QContactManager *manager() const;
+
+Q_SIGNALS:
+    void populatedChanged();
 
 private:
     SeasidePeopleModelPriv *priv;

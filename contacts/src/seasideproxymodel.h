@@ -19,7 +19,9 @@ class SeasideProxyModelPriv;
 class SeasideProxyModel : public QSortFilterProxyModel, public QDeclarativeParserStatus
 {
     Q_OBJECT
-    Q_PROPERTY(FilterType filter READ filter WRITE setFilter NOTIFY filterChanged)
+    Q_PROPERTY(bool populated READ populated NOTIFY populatedChanged)
+    Q_PROPERTY(FilterType filterType READ filterType WRITE setFilter NOTIFY filterTypeChanged)
+    Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
     Q_ENUMS(FilterType)
 
 public:
@@ -27,6 +29,7 @@ public:
     virtual ~SeasideProxyModel();
 
     enum FilterType {
+        FilterNone,
         FilterAll,
         FilterFavorites,
     };
@@ -39,10 +42,13 @@ public:
     void classBegin();
     void componentComplete();
 
+    bool populated() const;
 
-    FilterType filter() const;
+    FilterType filterType() const;
     Q_INVOKABLE virtual void setFilter(FilterType filter);
-    Q_INVOKABLE virtual void search(const QString &pattern);
+    QString filterPattern() const;
+    Q_INVOKABLE void setFilterPattern(const QString &pattern);
+    Q_INVOKABLE void search(const QString &pattern) { setFilterPattern(pattern); }
 
     // for SectionScroller support
     Q_INVOKABLE QVariantMap get(int row) const;
@@ -89,8 +95,10 @@ public:
     int count() const;
 
 signals:
+    void populatedChanged();
     void countChanged();
-    void filterChanged();
+    void filterTypeChanged();
+    void filterPatternChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
