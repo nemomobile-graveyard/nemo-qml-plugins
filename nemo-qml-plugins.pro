@@ -5,4 +5,6 @@ SUBDIRS += thumbnailer \
            folderlistmodel \
            configuration \
            email \
-           messages
+           messages \
+           signon \
+           accounts
