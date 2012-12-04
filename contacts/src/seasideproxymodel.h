@@ -22,7 +22,10 @@ class SeasideProxyModel : public QSortFilterProxyModel, public QDeclarativeParse
     Q_PROPERTY(bool populated READ populated NOTIFY populatedChanged)
     Q_PROPERTY(FilterType filterType READ filterType WRITE setFilter NOTIFY filterTypeChanged)
     Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
+    Q_PROPERTY(SortByField sortByField READ sortByField WRITE setSortByField NOTIFY sortByFieldChanged)
+
     Q_ENUMS(FilterType)
+    Q_ENUMS(SortByField)
 
 public:
     SeasideProxyModel(QObject *parent = 0);
@@ -31,12 +34,17 @@ public:
     enum FilterType {
         FilterNone,
         FilterAll,
-        FilterFavorites,
+        FilterFavorites
+    };
+
+    enum SortByField {
+        FirstNameFirst,
+        LastNameFirst
     };
 
     enum StringType {
         Primary,
-        Secondary,
+        Secondary
     };
 
     void classBegin();
@@ -49,6 +57,8 @@ public:
     QString filterPattern() const;
     Q_INVOKABLE void setFilterPattern(const QString &pattern);
     Q_INVOKABLE void search(const QString &pattern) { setFilterPattern(pattern); }
+    SortByField sortByField() const;
+    void setSortByField(SortByField sortByField);
 
     // for SectionScroller support
     Q_INVOKABLE QVariantMap get(int row) const;
@@ -99,6 +109,7 @@ signals:
     void countChanged();
     void filterTypeChanged();
     void filterPatternChanged();
+    void sortByFieldChanged();
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;

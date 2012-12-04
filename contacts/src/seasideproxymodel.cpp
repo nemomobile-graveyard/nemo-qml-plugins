@@ -24,6 +24,7 @@ public:
     }
 
     SeasideProxyModel::FilterType filterType;
+    SeasideProxyModel::SortByField sortByField;
     LocaleUtils *localeHelper;
     QString searchPattern;
     bool componentComplete;
@@ -34,6 +35,7 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
     Q_UNUSED(parent);
     priv = new SeasideProxyModelPriv;
     priv->filterType = FilterAll;
+    priv->sortByField = FirstNameFirst;
     priv->localeHelper = LocaleUtils::self();
     setDynamicSortFilter(true);
     setFilterKeyColumn(-1);
@@ -112,6 +114,18 @@ void SeasideProxyModel::setFilterPattern(const QString &pattern)
     }
 }
 
+SeasideProxyModel::SortByField SeasideProxyModel::sortByField() const {
+    return priv->sortByField;
+}
+
+void SeasideProxyModel::setSortByField(SortByField sortByField) {
+    if (sortByField != priv->sortByField) {
+        priv->sortByField = sortByField;
+        invalidate();
+        emit sortByFieldChanged();
+    }
+}
+
 bool SeasideProxyModel::personMatchesFilter(SeasidePerson *person, const QString &filter)
 {
     // split the display label and filter into words.
@@ -183,7 +197,7 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
 }
 
 bool SeasideProxyModel::lessThan(const QModelIndex& left,
-                          const QModelIndex& right) const
+                                 const QModelIndex& right) const
 {
     SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
 
@@ -194,6 +208,14 @@ bool SeasideProxyModel::lessThan(const QModelIndex& left,
         return false;
     else if (!rightPerson)
         return true;
+
+    if (leftPerson->displayLabelNameOrder() != priv->sortByField) {
+        leftPerson->recalculateDisplayLabel(priv->sortByField);
+    }
+
+    if (rightPerson->displayLabelNameOrder() != priv->sortByField) {
+        rightPerson->recalculateDisplayLabel(priv->sortByField);
+    }
 
     return priv->localeHelper->isLessThan(leftPerson->displayLabel(),
                                           rightPerson->displayLabel());

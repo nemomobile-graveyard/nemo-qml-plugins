@@ -39,6 +39,9 @@
 // Mobility
 #include <QContact>
 
+// Seaside
+#include "seasideproxymodel.h"
+
 QTM_USE_NAMESPACE
 
 Q_DECLARE_METATYPE(QContact)
@@ -102,8 +105,11 @@ public:
 
     Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
     QString sectionBucket() const;
+
     Q_PROPERTY(QString displayLabel READ displayLabel NOTIFY displayLabelChanged)
     QString displayLabel() const;
+    Q_PROPERTY(SeasideProxyModel::SortByField displayLabelNameOrder READ displayLabelNameOrder NOTIFY displayLabelNameOrderChanged)
+    SeasideProxyModel::SortByField displayLabelNameOrder() const { return mDisplayLabelNameOrder; }
 
     Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
     QString companyName() const;
@@ -169,7 +175,7 @@ public:
     Q_INVOKABLE QVariant contactData() const { return QVariant::fromValue(contact()); }
     Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
 
-    void recalculateDisplayLabel();
+    void recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst);
 
 signals:
     void contactRemoved();
@@ -191,12 +197,14 @@ signals:
     void anniversaryChanged();
     void accountUrisChanged();
     void accountPathsChanged();
+    void displayLabelNameOrderChanged();
 
 private:
     // TODO: private class
     explicit SeasidePerson(const QContact &contact, QObject *parent = 0);
     QContact mContact;
     QString mDisplayLabel;
+    SeasideProxyModel::SortByField mDisplayLabelNameOrder;
 
     friend class tst_SeasidePerson;
     friend class SeasidePeopleModelPriv;
