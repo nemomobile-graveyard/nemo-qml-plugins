@@ -80,7 +80,8 @@ QVariant ConfigurationValue::value() const
 
 void ConfigurationValue::setValue(const QVariant &value)
 {
-    mItem->set(value); // TODO: setValue once we change MGConfItem API
+    if (mItem)
+        mItem->set(value); // TODO: setValue once we change MGConfItem API
     // MGConfItem will emit valueChanged for us
 }
 
