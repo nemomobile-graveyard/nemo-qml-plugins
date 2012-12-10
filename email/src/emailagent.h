@@ -44,6 +44,7 @@ public:
     Q_INVOKABLE void deleteFolder(QVariant vFolderId);
     Q_INVOKABLE void renameFolder(QVariant vFolderId, const QString &name);
     Q_INVOKABLE void synchronize (QVariant vMailAccountId);
+    Q_INVOKABLE void retrieveMessageList (QVariant vMailAccountId, QVariant vFolderId, uint minimum = 0);
     Q_INVOKABLE void cancelSync ();
     Q_INVOKABLE void markMessageAsRead (QVariant vMsgId);
     Q_INVOKABLE void markMessageAsUnread (QVariant vMsgId);
