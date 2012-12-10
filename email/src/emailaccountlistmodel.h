@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -28,7 +29,8 @@ public:
         MailServer = Qt::UserRole + 6,
         UnreadCount = Qt::UserRole + 7,
         MailAccountId  = Qt::UserRole + 8,
-        Index = Qt::UserRole + 9,
+        LastSynchronized = Qt::UserRole + 9,
+        Index = Qt::UserRole + 10
     };
 
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
