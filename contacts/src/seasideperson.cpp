@@ -55,8 +55,6 @@ SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(contact)
 {
-    mDisplayLabelNameOrder = SeasideProxyModel::FirstNameFirst;
-    recalculateDisplayLabel();
 }
 
 SeasidePerson::~SeasidePerson()
@@ -153,13 +151,8 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
 
 void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy)
 {
-    QString oldDisplayLabel = displayLabel();
+    QString oldDisplayLabel = mDisplayLabel;
     QString newDisplayLabel = generateDisplayLabel(mContact, sortBy);
-
-    if (mDisplayLabelNameOrder != sortBy) {
-        mDisplayLabelNameOrder = sortBy;
-        displayLabelNameOrderChanged();
-    }
 
     // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
@@ -168,12 +161,16 @@ void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortB
     }
 }
 
-QString SeasidePerson::displayLabel() const
+QString SeasidePerson::displayLabel()
 {
+    if (mDisplayLabel.isEmpty()) {
+        recalculateDisplayLabel();
+    }
+
     return mDisplayLabel;
 }
 
-QString SeasidePerson::sectionBucket() const
+QString SeasidePerson::sectionBucket()
 {
     if (displayLabel().isEmpty())
         return QString();

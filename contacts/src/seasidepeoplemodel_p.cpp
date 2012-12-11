@@ -33,6 +33,8 @@
 #include <QContactLocalIdFilter>
 #include <QContactName>
 
+#include <mgconfitem.h>
+
 #include "seasideperson.h"
 #include "seasidepeoplemodel_p.h"
 
@@ -72,6 +74,9 @@ SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     connect(manager, SIGNAL(dataChanged()), this, SLOT(dataReset()));
 
     dataReset();
+
+    sortByFieldConf = new MGConfItem("/org/nemomobile/contacts/display_label_order", this);
+    connect(sortByFieldConf, SIGNAL(valueChanged()), this, SLOT(onSortByConfChanged()));
 }
 
 QString SeasidePeopleModelPriv::normalizePhoneNumber(const QString &msisdn)
@@ -103,7 +108,16 @@ void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int
 
             phoneNumbersToContactIds.insert(normalizedPhoneNumber, contact.localId());
         }
+
+        connect(q, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
+                person, SLOT(recalculateDisplayLabel(SeasideProxyModel::SortByField)), Qt::UniqueConnection);
+
+        if (q->sortByField() != personSortByField) {
+            person->recalculateDisplayLabel(q->sortByField());
+        }
     }
+
+    personSortByField = q->sortByField();
 }
 
 void SeasidePeopleModelPriv::fixIndexMap()
@@ -287,6 +301,11 @@ void SeasidePeopleModelPriv::contactsChanged(const QList<QContactLocalId>& conta
         delete fetchRequest;
         return;
     }
+}
+
+void SeasidePeopleModelPriv::onSortByConfChanged()
+{
+    emit q->sortByFieldChanged((SeasideProxyModel::SortByField)sortByFieldConf->value().toInt());
 }
 
 void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::State requestState)
