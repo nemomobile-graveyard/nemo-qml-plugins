@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -79,6 +80,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessageBccRole] = "bcc";
     roles[MessageTimeStampRole] = "qDateTime";
     roles[MessageSelectModeRole] = "selected";
+    roles[MessagePreviewRole] = "preview";
     setRoleNames(roles);
 
     initMailServer();
@@ -109,15 +111,14 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return QVariant();
 
     QMailMessageId msgId = idFromIndex(index);
+    QMailMessageMetaData messageMetaData(msgId);
 
     if (role == QMailMessageModelBase::MessageTimeStampTextRole) {
-        QMailMessageMetaData message(msgId);
-        QDateTime timeStamp = message.date().toLocalTime();
+        QDateTime timeStamp = messageMetaData.date().toLocalTime();
         return (timeStamp.toString("hh:mm MM/dd/yyyy"));
     }
     else if (role == MessageAttachmentCountRole) {
         // return number of attachments
-        QMailMessageMetaData messageMetaData(msgId);
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
             return 0;
 
@@ -127,7 +128,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     }
     else if (role == MessageAttachmentsRole) {
         // return a stringlist of attachments
-        QMailMessageMetaData messageMetaData(msgId);
         if (!messageMetaData.status() & QMailMessageMetaData::HasAttachments)
             return QStringList();
 
@@ -140,7 +140,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return attachments;
     }
     else if (role == MessageRecipientsRole) {
-        QMailMessageMetaData messageMetaData(msgId);
         QStringList recipients;
         QList<QMailAddress> addresses = messageMetaData.recipients();
         foreach (const QMailAddress &address, addresses) {
@@ -149,7 +148,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return recipients;
     }
     else if (role == MessageRecipientsDisplayNameRole) {
-        QMailMessageMetaData messageMetaData(msgId);
         QStringList recipients;
         QList<QMailAddress> addresses = messageMetaData.recipients();
         foreach (const QMailAddress &address, addresses) {
@@ -158,8 +156,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return recipients;
     }
     else if (role == MessageReadStatusRole) {
-        QMailMessageMetaData messageMetaData(msgId);
-
         if (messageMetaData.status() & QMailMessage::Read)
             return 1; // 1 for read
         else
@@ -186,11 +182,9 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return uuid;
     }
     else if (role == MessageSenderDisplayNameRole) {
-        QMailMessageMetaData messageMetaData(msgId);
         return messageMetaData.from().name();
     }
     else if (role == MessageSenderEmailAddressRole) {
-        QMailMessageMetaData messageMetaData(msgId);
         return messageMetaData.from().address();
     }
     else if (role == MessageCcRole) {
@@ -202,7 +196,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         return QMailAddress::toStringList (message.bcc());
     }
     else if (role == MessageTimeStampRole) {
-        QMailMessageMetaData messageMetaData(msgId);
         return (messageMetaData.date().toLocalTime());
     }
     else if (role == MessageSelectModeRole) {
@@ -210,6 +203,9 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
        if (m_selectedMsgIds.contains(msgId) == true)
            selected = 1;
         return (selected);
+    }
+    else if (role == MessagePreviewRole) {
+        return messageMetaData.preview().simplified();
     }
 
     return QMailMessageListModel::data(index, role);
