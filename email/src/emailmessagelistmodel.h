@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -38,7 +39,8 @@ public:
         MessageCcRole,                                         // returns a list of Cc (email + displayName)
         MessageBccRole,                                        // returns a list of Bcc (email + displayName)
         MessageTimeStampRole,                                  // returns timestamp in QDateTime format
-        MessageSelectModeRole                                  // returns the select mode
+        MessageSelectModeRole,                                 // returns the select mode
+        MessagePreviewRole                                     // returns message preview if available
     };
 
 

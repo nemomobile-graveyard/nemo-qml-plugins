@@ -144,7 +144,7 @@ void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
     emit messagesDeleted(ids);
 }
 
-void EmailAgent::createFolder (const QString &name, QVariant mailAccountId, QVariant parentFolderId)
+void EmailAgent::createFolder(const QString &name, QVariant mailAccountId, QVariant parentFolderId)
 {
     
     Q_ASSERT(!name.isEmpty());
@@ -174,6 +174,19 @@ void EmailAgent::renameFolder(QVariant folderId, const QString &name)
     Q_ASSERT(id.isValid());
 
     m_storageAction->onlineRenameFolder(id, name);
+}
+
+void EmailAgent::retrieveFolderList(QVariant accountId, QVariant folderId, bool descending)
+{
+    QMailAccountId acctId = accountId.value<QMailAccountId>();
+    QMailFolderId foldId = folderId.value<QMailFolderId>();
+
+    if (!isSynchronizing() && acctId.isValid()) {
+        emit syncBegin();
+        m_cancelling = false;
+        m_retrieving = true;
+        m_retrievalAction->retrieveFolderList(acctId, foldId, descending);
+    }
 }
 
 void EmailAgent::synchronize(QVariant id)
@@ -274,6 +287,7 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
         }
 
         if (!isSynchronizing()) {
+            qDebug() << "Sync completed.";
             emit syncCompleted();
         }
 
