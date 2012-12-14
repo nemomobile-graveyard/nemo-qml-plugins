@@ -5,4 +5,5 @@ SUBDIRS += thumbnailer \
            folderlistmodel \
            configuration \
            email \
-           messages
+           messages \
+           time
