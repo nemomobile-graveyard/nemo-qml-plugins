@@ -94,6 +94,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(sortKey);
     m_selectedMsgIds.clear();
+    combinedInbox = false;
 }
 
 EmailMessageListModel::~EmailMessageListModel()
@@ -237,6 +238,9 @@ void EmailMessageListModel::setFolderKey (QVariant id)
     m_key=key();
     QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(sortKey);
+
+    if (combinedInbox)
+        combinedInbox = false;
 }
 
 void EmailMessageListModel::setAccountKey (QVariant id)
@@ -282,7 +286,9 @@ void EmailMessageListModel::setAccountKey (QVariant id)
     QMailMessageListModel::setSortKey(sortKey);
 
     m_key= key();
-    
+
+    if (combinedInbox)
+        combinedInbox = false;
 }
 
 void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
@@ -537,4 +543,32 @@ void EmailMessageListModel::downloadActivityChanged(QMailServiceAction::Activity
             emit messageDownloadCompleted();
         }
     }
+}
+
+void EmailMessageListModel::setCombinedInbox(bool unread)
+{
+    QMailAccountIdList ids = QMailStore::instance()->queryAccounts(
+            QMailAccountKey::status(QMailAccount::Enabled, QMailDataComparator::Includes),
+            QMailAccountSortKey::name());
+
+    QMailMessageKey accountKey = QMailMessageKey::parentAccountId(ids);
+    QMailFolderKey inboxKey = QMailFolderKey::path("inbox", QMailDataComparator::Includes);
+    QMailMessageKey messageKey =  QMailMessageKey::parentFolderId(inboxKey);
+
+    if (unread) {
+        QMailMessageKey unreadKey = QMailMessageKey::parentFolderId(inboxKey)
+                & QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes);
+        QMailMessageListModel::setKey(accountKey & unreadKey);
+    }
+    else {
+        QMailMessageListModel::setKey(accountKey & messageKey);
+    }
+
+    combinedInbox = true;
+    m_key = key();
+}
+
+QVariant EmailMessageListModel::isCombinedInbox()
+{
+    return combinedInbox;
 }
