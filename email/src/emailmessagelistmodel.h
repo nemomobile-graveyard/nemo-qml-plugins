@@ -62,6 +62,7 @@ public slots:
     Q_INVOKABLE void sortByDate (int key);
     Q_INVOKABLE void sortByAttachment (int key);
     Q_INVOKABLE void setSearch(const QString search);
+    Q_INVOKABLE void setCombinedInbox(bool unread = false);
 
     Q_INVOKABLE QVariant indexFromMessageId(QString msgId);
     Q_INVOKABLE QVariant messageId (int index);
@@ -78,6 +79,7 @@ public slots:
     Q_INVOKABLE QVariant bccList (int index);
     Q_INVOKABLE QVariant toList (int index);
     Q_INVOKABLE QVariant messageRead (int index);
+    Q_INVOKABLE QVariant isCombinedInbox();
     Q_INVOKABLE int messagesCount ();
     Q_INVOKABLE void deSelectAllMessages();
     Q_INVOKABLE void selectMessage( int index );
@@ -102,6 +104,7 @@ private:
     QString m_search;
     QMailMessageKey m_key;                  // key set externally other than search
     QList<QMailMessageId> m_selectedMsgIds;
+    bool combinedInbox;
 };
 
 #endif
