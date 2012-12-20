@@ -1,0 +1,8 @@
+project = Nemo Mobile libaccounts-qt QML Adapters
+description = QML adapters to allow applications to use libaccounts-qt in their QML applications
+outputdir   = ../doc/html
+outputformats = HTML
+headerdirs  = .
+sourcedirs  = .
+sources.fileextensions = "*.cpp *.qdoc *.qml"
+headers.fileextensions = "*.h"
