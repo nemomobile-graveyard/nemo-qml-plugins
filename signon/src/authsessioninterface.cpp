@@ -36,6 +36,7 @@
 
 //libsignon-qt
 #include <SignOn/AuthSession>
+#include <SignOn/SessionData>
 
 
 AuthSessionInterfacePrivate::AuthSessionInterfacePrivate(SignOn::AuthSession *authSession, AuthSessionInterface *parent)
@@ -130,18 +131,34 @@ SignOn::AuthSession *AuthSessionInterface::authSession() const
 */
 void AuthSessionInterface::process(SessionDataInterface *sessionData, const QString &mechanism)
 {
+    if (!sessionData)
+        return;
     d->session->process(sessionData->sessionData(), mechanism);
+}
+
+/*!
+    \qmlmethod void AuthSession::process(const QVariantMap &sessionData, const QString &mechanism)
+    Process an authentication request contained in the \a sessionData using the given \a mechanism.
+    The \a sessionData should include credentials including userName, secret, etc.
+*/
+void AuthSessionInterface::process(const QVariantMap &sessionData, const QString &mechanism)
+{
+    d->session->process(SignOn::SessionData(sessionData), mechanism);
 }
 
 // TODO: remove request() as it is mostly unused
 void AuthSessionInterface::request(SessionDataInterface *sessionData, const QString &mechanism)
 {
+    if (!sessionData)
+        return;
     d->session->request(sessionData->sessionData(), mechanism);
 }
 
 // TODO: remove challenge() as it is mostly unused
 void AuthSessionInterface::challenge(SessionDataInterface *sessionData, const QString &mechanism)
 {
+    if (!sessionData)
+        return;
     d->session->challenge(sessionData->sessionData(), mechanism);
 }
 

@@ -68,6 +68,26 @@ AccountInterfacePrivate::~AccountInterfacePrivate()
 {
 }
 
+static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
+{
+    QString strVal = acc->valueAsString(key);
+    if (!strVal.isNull())
+        return QVariant(strVal);
+
+    quint64 uintMax = 0xffffffffffffffffU;
+    quint64 uintVal = acc->valueAsUInt64(key, uintMax);
+    if (uintVal != uintMax)
+        return QVariant(uintVal);
+
+    int intMax = 0xffffffff;
+    int intVal = acc->valueAsInt(key, intMax);
+    if (intVal != intMax)
+        return QVariant(intVal);
+
+    bool boolVal = acc->valueAsBool(key);
+    return QVariant(boolVal);
+}
+
 void AccountInterfacePrivate::setAccount(Accounts::Account *acc)
 {
     if (!acc) {
@@ -172,11 +192,8 @@ void AccountInterfacePrivate::asyncQueryInfo()
         // enumerate the configuration values
         QVariantMap allValues;
         QStringList allKeys = account->allKeys();
-        foreach (const QString &key, allKeys) {
-            QVariant currValue;
-            account->value(key, currValue); // pass by ref.
-            allValues.insert(key, currValue);
-        }
+        foreach (const QString &key, allKeys)
+            allValues.insert(key, configurationValueVariant(account, key));
         if (configurationValues != allValues) {
             configurationValues = allValues;
             emit q->configurationValuesChanged();
@@ -298,11 +315,8 @@ void AccountInterfacePrivate::handleSynced()
         // check to see if the configuration values were updated
         QVariantMap allValues;
         QStringList allKeys = account->allKeys();
-        foreach (const QString &key, allKeys) {
-            QVariant currValue;
-            account->value(key, currValue); // pass by ref.
-            allValues.insert(key, currValue);
-        }
+        foreach (const QString &key, allKeys)
+            allValues.insert(key, configurationValueVariant(account, key));
         if (configurationValues != allValues) {
             configurationValues = allValues;
             emit q->configurationValuesChanged();
@@ -506,9 +520,6 @@ void AccountInterface::sync()
         d->enabledServiceNamesPendingInit = false;
     }
 
-    d->account->setEnabled(d->enabled);
-    d->account->setDisplayName(d->displayName);
-
     // set the credentials / identity identifiers for each service.
     foreach (const QString &srvn, d->supportedServiceNames) {
         int currIdentId = d->identityIdentifiers.value(srvn).value<int>();
@@ -548,14 +559,32 @@ void AccountInterface::sync()
     // set the configuration values.
     QStringList allKeys = d->account->allKeys();
     QStringList setKeys = d->configurationValues.keys();
+    QStringList doneKeys;
     foreach (const QString &key, allKeys) {
+        // overwrite existing keys
         if (setKeys.contains(key)) {
+            doneKeys.append(key);
             const QVariant &currValue = d->configurationValues.value(key);
-            d->account->setValue(key, currValue);
+            if (currValue.isValid()) {
+                d->account->setValue(key, currValue);
+            } else {
+                d->account->remove(key);
+            }
         } else {
+            // remove removed keys
             d->account->remove(key);
         }
     }
+    foreach (const QString &key, setKeys) {
+        // add new keys
+        if (!doneKeys.contains(key)) {
+            const QVariant &currValue = d->configurationValues.value(key);
+            d->account->setValue(key, currValue);
+        }
+    }
+
+    d->account->setEnabled(d->enabled);
+    d->account->setDisplayName(d->displayName);
 
     d->setStatus(AccountInterface::SyncInProgress);
     d->account->sync();
@@ -579,12 +608,21 @@ void AccountInterface::remove()
 /*!
     \qmlmethod void Account::setConfigurationValue(const QString &key, const QVariant &value)
     Sets the account's configuration settings value for the key \a key
-    to the value \a value.
+    to the value \a value.  The only supported value types are int, quint64, bool and QString.
 */
 void AccountInterface::setConfigurationValue(const QString &key, const QVariant &value)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
+
+    if (value.type() != QVariant::Int
+            && value.type() != QVariant::LongLong
+            && value.type() != QVariant::ULongLong
+            && value.type() != QVariant::Bool
+            && value.type() != QVariant::String) {
+        qWarning() << Q_FUNC_INFO << "Unsupported configuration value type!  Must be int, quint64, bool or string.";
+        return; // unsupported value type.
+    }
 
     d->configurationValues.insert(key, value);
     if (d->status == AccountInterface::Initializing)
@@ -916,6 +954,8 @@ QStringList AccountInterface::enabledServiceNames() const
     Some default settings are usually specified in the \c{.service}
     file installed by the account provider plugin.  Other settings
     may be specified directly for an account.
+
+    The only supported value types are int, quint64, bool and QString.
 */
 
 QVariantMap AccountInterface::configurationValues() const
@@ -929,7 +969,24 @@ void AccountInterface::setConfigurationValues(const QVariantMap &values)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
-    d->configurationValues = values;
+
+    QVariantMap validValues;
+    QStringList vkeys = values.keys();
+    foreach (const QString &key, vkeys) {
+        QVariant currValue = values.value(key);
+        if (currValue.type() == QVariant::Bool
+                || currValue.type() == QVariant::Int
+                || currValue.type() == QVariant::LongLong
+                || currValue.type() == QVariant::ULongLong
+                || currValue.type() == QVariant::String) {
+            validValues.insert(key, currValue);
+        }
+    }
+
+    if (d->configurationValues == validValues)
+        return;
+
+    d->configurationValues = validValues;
     if (d->status == AccountInterface::Initializing)
         d->configurationValuesPendingInit = true;
     else

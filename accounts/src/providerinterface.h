@@ -53,6 +53,7 @@ class ProviderInterface : public QObject
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(QString displayName READ displayName CONSTANT)
     Q_PROPERTY(QString iconName READ iconName CONSTANT)
+    Q_PROPERTY(QStringList serviceNames READ serviceNames CONSTANT)
     // XXX TODO: expose the QDomDocument?  What about the translation catalogue for the display name?
 
 public:
@@ -63,6 +64,8 @@ public:
     QString name() const;
     QString displayName() const;
     QString iconName() const;
+
+    QStringList serviceNames() const;
 
 private:
     ProviderInterfacePrivate *d;
