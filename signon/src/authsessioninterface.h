@@ -113,6 +113,7 @@ public:
     ~AuthSessionInterface();
 
     // invokable api
+    Q_INVOKABLE void process(const QVariantMap &sessionData, const QString &mechanism);
     Q_INVOKABLE void process(SessionDataInterface *sessionData, const QString &mechanism);
     Q_INVOKABLE void request(SessionDataInterface *sessionData, const QString &mechanism);
     Q_INVOKABLE void challenge(SessionDataInterface *sessionData, const QString &mechanism);

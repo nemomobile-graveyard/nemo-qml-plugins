@@ -31,10 +31,14 @@
 
 #include "providerinterface.h"
 
+//libaccounts-qt
+#include <Accounts/Manager>
+
 class ProviderInterfacePrivate
 {
 public:
     Accounts::Provider provider;
+    QStringList serviceNames;
 };
 
 /*!
@@ -58,6 +62,15 @@ ProviderInterface::ProviderInterface(const Accounts::Provider &provider, QObject
     : QObject(parent), d(new ProviderInterfacePrivate)
 {
     d->provider = provider;
+
+    // first time fetch of service names.
+    Accounts::Manager m;
+    Accounts::ServiceList services = m.serviceList();
+    foreach (const Accounts::Service &srv, services) {
+        if (srv.provider() == d->provider.name()) {
+            d->serviceNames.append(srv.name());
+        }
+    }
 }
 
 ProviderInterface::~ProviderInterface()
@@ -94,5 +107,15 @@ QString ProviderInterface::displayName() const
 QString ProviderInterface::iconName() const
 {
     return d->provider.iconName();
+}
+
+/*!
+    \qmlproperty QStringList Provider::serviceNames
+    The names of services provided by this provider.
+*/
+
+QStringList ProviderInterface::serviceNames() const
+{
+    return d->serviceNames;
 }
 

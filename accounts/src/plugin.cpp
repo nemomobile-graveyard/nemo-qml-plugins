@@ -36,6 +36,7 @@
 
 #include "account-model.h"
 #include "account-provider-model.h"
+#include "service-account-model.h"
 
 #include "accountinterface.h"
 #include "accountmanagerinterface.h"
@@ -65,6 +66,7 @@ public:
 
         // Types which should be exposed to "normal" applications:
         qmlRegisterType<AccountModel>(uri, 1, 0, "AccountModel");
+        qmlRegisterType<ServiceAccountModel>(uri, 1, 0, "ServiceAccountModel");
         qmlRegisterType<AccountProviderModel>(uri, 1, 0, "AccountProviderModel");
         qmlRegisterType<ProviderInterface>(uri, 1, 0, "Provider");
         qmlRegisterUncreatableType<ServiceAccountInterface>(uri, 1, 0, "ServiceAccount", m2);

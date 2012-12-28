@@ -172,12 +172,21 @@ void tst_AccountInterface::providerName()
 void tst_AccountInterface::displayName()
 {
     QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
     account->setProviderName("test-provider");
     QCOMPARE(account->displayName(), QString(QLatin1String("")));
     QSignalSpy spy(account.data(), SIGNAL(displayNameChanged()));
     account->setDisplayName(QString(QLatin1String("test-display-name")));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(account->displayName(), QString(QLatin1String("test-display-name")));
+    account->sync(); // pending sync.
+    account->componentComplete(); // will construct new account.
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    account->setDisplayName(QString(QLatin1String("test-display-name-two")));
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->displayName(), QString(QLatin1String("test-display-name-two")));
+    account->remove();
 }
 
 void tst_AccountInterface::supportedServiceNames()
@@ -219,25 +228,88 @@ void tst_AccountInterface::configurationValues()
 {
     QVariantMap testData;
     QString testKey(QLatin1String("test-key"));
-    QVariant testValue(QString(QLatin1String("test-value")));
-    testData.insert(testKey, testValue);
+    QVariant testStrValue(QString(QLatin1String("test-value")));
+    QVariant testBoolValue(true);
+    QVariant testIntValue(-5);
+    QVariant testQuintValue(0xaaaaaaaaaaaa);
+    testData.insert(testKey, testStrValue);
 
     QVariantMap noValueTestData;
     noValueTestData.insert(testKey, QVariant());
 
     QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
     account->setProviderName("test-provider");
     QCOMPARE(account->configurationValues(), QVariantMap());
     QSignalSpy spy(account.data(), SIGNAL(configurationValuesChanged()));
     account->setConfigurationValues(testData);
     QCOMPARE(spy.count(), 1);
     QCOMPARE(account->configurationValues(), testData);
-    account->setConfigurationValue(testKey, QVariant());
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(account->configurationValues(), noValueTestData);
     account->removeConfigurationValue(testKey);
-    QCOMPARE(spy.count(), 3);
+    QCOMPARE(spy.count(), 2);
     QCOMPARE(account->configurationValues(), QVariantMap());
+
+    // invalid values
+    account->setConfigurationValue(testKey, QVariant(QColor(Qt::black)));
+    QCOMPARE(spy.count(), 2); // no change signal
+    QCOMPARE(account->configurationValues(), QVariantMap()); // not set.
+    account->setConfigurationValue(testKey, QVariant());
+    QCOMPARE(spy.count(), 2); // no change signal
+    QCOMPARE(account->configurationValues(), QVariantMap()); // not set.
+
+    // bool, int, quint64 and string should all work.
+    account->setConfigurationValue(testKey, testBoolValue);
+    QCOMPARE(spy.count(), 3);
+    QCOMPARE(account->configurationValues().value(testKey), testBoolValue);
+    account->setConfigurationValue(testKey, testIntValue);
+    QCOMPARE(spy.count(), 4);
+    QCOMPARE(account->configurationValues().value(testKey), testIntValue);
+    account->setConfigurationValue(testKey, testQuintValue);
+    QCOMPARE(spy.count(), 5);
+    QCOMPARE(account->configurationValues().value(testKey), testQuintValue);
+    account->setConfigurationValue(testKey, testStrValue);
+    QCOMPARE(spy.count(), 6);
+    QCOMPARE(account->configurationValues().value(testKey), testStrValue);
+
+    // ensure that configuration values can be saved.
+    account->sync(); // pending sync.
+    account->componentComplete(); // will create new account.
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues().value(testKey), testStrValue);
+    account->setConfigurationValue(testKey, testQuintValue);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues().value(testKey), testQuintValue);
+    account->setConfigurationValue(testKey, testIntValue);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues().value(testKey), testIntValue);
+    account->setConfigurationValue(testKey, testBoolValue);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues().value(testKey), testBoolValue);
+
+    // ensure that configuration values from subgroups are reported correctly.
+    QString testGroup = QLatin1String("test-group");
+    Accounts::Manager m;
+    Accounts::Account *a = m.account(account->identifier());
+    QVERIFY(a != 0);
+    a->beginGroup(testGroup);
+    a->setValue(testKey, testStrValue);
+    a->endGroup();
+    a->sync();
+
+    // account doesn't emit signals on configuration values changed...
+    // we really need a "refresh" function, similar to the one in Identity.
+    QScopedPointer<AccountInterface> existingAccount(new AccountInterface);
+    existingAccount->classBegin();
+    existingAccount->setIdentifier(account->identifier());
+    existingAccount->componentComplete(); // will load existing account
+    QTRY_COMPARE(existingAccount->status(), AccountInterface::Initialized);
+    QCOMPARE(existingAccount->configurationValues().value(QString("%1/%2").arg(testGroup).arg(testKey)), testStrValue);
+
+    // cleanup.
+    account->remove();
 }
 
 void tst_AccountInterface::status()

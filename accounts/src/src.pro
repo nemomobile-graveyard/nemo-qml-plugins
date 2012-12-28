@@ -16,7 +16,8 @@ SOURCES += \
            $$PWD/providerinterface.cpp \
            $$PWD/serviceaccountinterface.cpp \
            $$PWD/serviceinterface.cpp \
-           $$PWD/servicetypeinterface.cpp
+           $$PWD/servicetypeinterface.cpp \
+           $$PWD/service-account-model.cpp
 
 HEADERS += \
            $$PWD/accountinterface.h \
@@ -30,7 +31,8 @@ HEADERS += \
            $$PWD/accountinterface_p.h \
            $$PWD/accountmanagerinterface_p.h \
            $$PWD/serviceaccountinterface_p.h \
-           $$PWD/servicetypeinterface.h
+           $$PWD/servicetypeinterface.h \
+           $$PWD/service-account-model.h
 
 OTHER_FILES += accounts.qdoc accounts.qdocconf
 
