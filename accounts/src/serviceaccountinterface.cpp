@@ -58,13 +58,33 @@ ServiceAccountInterfacePrivate::~ServiceAccountInterfacePrivate()
         delete serviceAccount;
 }
 
+static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
+{
+    QString strVal = acc->valueAsString(key);
+    if (!strVal.isNull())
+        return QVariant(strVal);
+
+    quint64 uintMax = 0xffffffffffffffffU;
+    quint64 uintVal = acc->valueAsUInt64(key, uintMax);
+    if (uintVal != uintMax)
+        return QVariant(uintVal);
+
+    int intMax = 0xffffffff;
+    int intVal = acc->valueAsInt(key, intMax);
+    if (intVal != intMax)
+        return QVariant(intVal);
+
+    bool boolVal = acc->valueAsBool(key);
+    return QVariant(boolVal);
+}
+
 void ServiceAccountInterfacePrivate::updateConfigurationValues()
 {
     configurationValues.clear();
     QStringList allKeys = serviceAccount->allKeys();
     foreach (const QString &key, allKeys) {
         QVariant currentValue;
-        currentValue = serviceAccount->value(key); // ?? documentation is wrong.
+        currentValue = serviceAccount->value(key);
         configurationValues.insert(key, currentValue);
     }
 
@@ -160,24 +180,26 @@ ProviderInterface *ServiceAccountInterface::provider() const
     \qmlmethod void ServiceAccount::setConfigurationValue(const QString &key, const QVariant &value)
 
     Sets the configuration setting for the key \a key to the
-    given value \a value
+    given value \a value.  This operation may be synchronous or asynchronous.
+    If it succeeds, the configurationValuesChanged() signal will be emitted.
 */
 void ServiceAccountInterface::setConfigurationValue(const QString &key, const QVariant &value)
 {
     d->serviceAccount->setValue(key, value);
-    emit configurationValuesChanged();
+    d->serviceAccount->account()->sync();
 }
 
 /*!
     \qmlmethod void ServiceAccount::removeConfigurationValue(const QString &key)
 
     Removes the configuration setting key \a key and any
-    associated values.
+    associated values.  This operation may be synchronous or asynchronous.
+    If it succeeds, the configurationValuesChanged() signal will be emitted.
 */
 void ServiceAccountInterface::removeConfigurationValue(const QString &key)
 {
     d->serviceAccount->remove(key);
-    emit configurationValuesChanged();
+    d->serviceAccount->account()->sync();
 }
 
 /*!
@@ -194,7 +216,8 @@ QVariantMap ServiceAccountInterface::configurationValues() const
 /*!
     \qmlmethod QVariantMap ServiceAccount::unrelatedValues()
 
-    Holds the non-service-specific account settings of this ServiceAccount.
+    Holds all of the account settings of this account,
+    even those which are not directly related to the service.
     Some settings may be applicable to multiple services, and thus are
     stored in non-service-specific settings.
 */
@@ -207,13 +230,14 @@ QVariantMap ServiceAccountInterface::unrelatedValues() const
     // We don't expose unrelatedValues as a property, because Accounts::Account
     // doesn't emit a changed() signal the way Accounts::AccountService does.
     // Since we can't notify on changes, let's not pretend it's a property.
-    QStringList allKeys = d->serviceAccount->account()->allKeys();
+    Accounts::Account *acct = d->serviceAccount->account();
+    Accounts::Service srv = acct->selectedService();
+    acct->selectService(Accounts::Service());
+    QStringList allKeys = acct->allKeys();
     QVariantMap unrelatedValues;
-    foreach (const QString &key, allKeys) {
-        QVariant currentValue;
-        d->serviceAccount->account()->value(key, currentValue); // passed by ref.
-        unrelatedValues.insert(key, currentValue);
-    }
+    foreach (const QString &key, allKeys)
+        unrelatedValues.insert(key, configurationValueVariant(acct, key));
+    acct->selectService(srv);
 
     return unrelatedValues;
 }

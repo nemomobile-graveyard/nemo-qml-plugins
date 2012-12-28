@@ -206,7 +206,7 @@ void AccountInterfacePrivate::asyncQueryInfo()
         enabledServiceNames.clear(); // clear them all.  this is because of the sync() semantics of service names.
         foreach (const QString &sn, tmpList) {
             if (supportedServiceNames.contains(sn))
-                q->enableAccountWithService(sn);
+                q->enableWithService(sn);
         }
     } else {
         // nothing to do.
@@ -371,7 +371,7 @@ void AccountInterfacePrivate::setStatus(AccountInterface::Status newStatus)
 
                 onStatusChanged: {
                     if (status == Account.Initialized) {
-                        enableAccountWithService("google-talk")
+                        enableWithService("google-talk")
                         setConfigurationValue("AwayMessage", "I'm away!")
                         sync() // trigger database write
                     } else if (status == Account.Synced) {
@@ -658,7 +658,7 @@ bool AccountInterface::supportsServiceType(const QString &serviceType)
 }
 
 /*!
-    \qmlmethod void Account::enableAccountWithService(const QString &serviceName)
+    \qmlmethod void Account::enableWithService(const QString &serviceName)
 
     Enables the account with the service identified by the given \a serviceName.
 
@@ -668,7 +668,7 @@ bool AccountInterface::supportsServiceType(const QString &serviceType)
 
     Note: this method will have no effect until sync() is called!
 */
-void AccountInterface::enableAccountWithService(const QString &serviceName)
+void AccountInterface::enableWithService(const QString &serviceName)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
@@ -685,7 +685,7 @@ void AccountInterface::enableAccountWithService(const QString &serviceName)
 
 
 /*!
-    \qmlmethod void Account::disableAccountWithService(const QString &serviceName)
+    \qmlmethod void Account::disableWithService(const QString &serviceName)
 
     Disables the account with the service identified by the given \a serviceName.
 
@@ -695,7 +695,7 @@ void AccountInterface::enableAccountWithService(const QString &serviceName)
 
     Note: this method will have no effect until sync() is called!
 */
-void AccountInterface::disableAccountWithService(const QString &serviceName)
+void AccountInterface::disableWithService(const QString &serviceName)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
@@ -931,8 +931,8 @@ QStringList AccountInterface::supportedServiceNames() const
     enabled.
 
     An account may be enabled with any service it supports, by calling
-    enableAccountWithService().  It may be disabled with a service by
-    calling disableAccountWithService().
+    enableWithService().  It may be disabled with a service by
+    calling disableWithService().
 
     During account creation, the account should be enabled with any
     service for which it is valid, or as specified by the user.

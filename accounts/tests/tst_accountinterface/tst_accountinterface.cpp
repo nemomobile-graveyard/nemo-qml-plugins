@@ -86,8 +86,8 @@ private slots:
     //invokables
     //these are already tested:
     //sync() in identifier()
-    //enableAccountWithService() in enabledServiceNames()
-    //disableAccountWithService() in enabledServiceNames()
+    //enableWithService() in enabledServiceNames()
+    //disableWithService() in enabledServiceNames()
 
     // expected usage
     void expectedUsage();
@@ -210,14 +210,14 @@ void tst_AccountInterface::enabledServiceNames()
     account->componentComplete(); // will construct new account.
     QCOMPARE(account->enabledServiceNames(), QStringList());
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
-    account->enableAccountWithService(QString(QLatin1String("test-service")));
+    account->enableWithService(QString(QLatin1String("test-service")));
     QCOMPARE(account->status(), AccountInterface::Modified);
     account->sync();
     // note: the change signal can be emitted an arbitrary number of times,
     // depending on how many signals the backend emits (one by one).
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     QCOMPARE(account->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service")));
-    account->disableAccountWithService(QString(QLatin1String("test-service")));
+    account->disableWithService(QString(QLatin1String("test-service")));
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     QCOMPARE(account->enabledServiceNames(), QStringList());
@@ -388,7 +388,7 @@ void tst_AccountInterface::expectedUsage()
     newAccount->classBegin();
     newAccount->setProviderName("test-provider");
     newAccount->setDisplayName("test-account");
-    newAccount->enableAccountWithService("test-service");
+    newAccount->enableWithService("test-service");
     QCOMPARE(newAccount->status(), AccountInterface::Initializing);
     newAccount->componentComplete();
     QTRY_COMPARE(newAccount->status(), AccountInterface::Modified); // outstanding modifications.

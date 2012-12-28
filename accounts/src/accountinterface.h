@@ -114,8 +114,8 @@ public:
     Q_INVOKABLE void removeConfigurationValue(const QString &key);
 
     Q_INVOKABLE bool supportsServiceType(const QString &serviceType);
-    Q_INVOKABLE void enableAccountWithService(const QString &serviceName);
-    Q_INVOKABLE void disableAccountWithService(const QString &serviceName);
+    Q_INVOKABLE void enableWithService(const QString &serviceName);
+    Q_INVOKABLE void disableWithService(const QString &serviceName);
 
     Q_INVOKABLE int identityIdentifier(const QString &serviceName = QString()) const;
     Q_INVOKABLE void setIdentityIdentifier(int id, const QString &serviceName = QString());

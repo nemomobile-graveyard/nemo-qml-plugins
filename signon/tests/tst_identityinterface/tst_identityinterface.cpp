@@ -204,11 +204,43 @@ void tst_IdentityInterface::errorMessage()
 
 void tst_IdentityInterface::userName()
 {
-    QScopedPointer<IdentityInterface> identity(new IdentityInterface);
-    QSignalSpy spy(identity.data(), SIGNAL(userNameChanged()));
-    identity->setUserName(QString(QLatin1String("test-username")));
-    QCOMPARE(spy.count(), 1);
-    QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+    int identityIdentifier = 0;
+
+    // unsaved, ensure that setting the username works
+    {
+        QScopedPointer<IdentityInterface> identity(new IdentityInterface);
+        QSignalSpy spy(identity.data(), SIGNAL(userNameChanged()));
+        identity->setUserName(QString(QLatin1String("test-username")));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+    }
+
+    // after save, ensure that the username can be read back
+    {
+        QScopedPointer<IdentityInterface> identity(new IdentityInterface);
+        identity->classBegin();
+        identity->componentComplete();
+        QTRY_COMPARE(identity->status(), IdentityInterface::Initialized);
+        QCOMPARE(identity->userName(), QString());
+        identity->setUserName(QString(QLatin1String("test-username")));
+        QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+        identity->sync(); // begin sync.
+        QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+        QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
+        QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+        identityIdentifier = identity->identifier();
+    }
+
+    // ensure that it can be read from the non-writing instance
+    {
+        QScopedPointer<IdentityInterface> identity(new IdentityInterface);
+        identity->classBegin();
+        identity->setIdentifier(identityIdentifier);
+        identity->componentComplete();
+        QTRY_COMPARE(identity->status(), IdentityInterface::Initialized);
+        QCOMPARE(identity->userName(), QString(QLatin1String("test-username")));
+        identity->remove(); // cleanup.
+    }
 }
 
 void tst_IdentityInterface::secret()

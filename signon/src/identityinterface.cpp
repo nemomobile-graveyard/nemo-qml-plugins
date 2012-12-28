@@ -119,7 +119,7 @@ void IdentityInterfacePrivate::handleInfo(const SignOn::IdentityInfo &retInfo)
         pendingInitModifications = true;
         userNamePendingInit = false;
     } else if (userName != info.userName()) {
-        userName == info.userName();
+        userName = info.userName();
         emit q->userNameChanged();
     }
 
