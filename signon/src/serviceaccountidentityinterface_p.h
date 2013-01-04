@@ -38,6 +38,9 @@
 
 //libsignon-qt
 #include <SignOn/Identity>
+#include <SignOn/AuthSession>
+
+using namespace SignOn;
 
 class ServiceAccountIdentityInterfacePrivate : public QObject
 {
@@ -48,23 +51,35 @@ public:
     ~ServiceAccountIdentityInterfacePrivate();
 
     void setIdentity(SignOn::Identity *ident, bool emitSignals, bool takeOwnership);
-    void setStatus(ServiceAccountIdentityInterface::Status newStatus);
+    void setStatus(ServiceAccountIdentityInterface::Status newStatus, const QString &message = QString());
 
     ServiceAccountIdentityInterface *q;
+    SignOn::AuthSession *session;
     SignOn::Identity *identity;
     bool ownIdentity; // only true if constructed with 0 identity initially!
-    bool finishedInitialization; // false until we update our available methods.
+    bool startedInitialization; // false until we have an identity id.
+    bool finishedInitialization; // false until we update our available methods and mechanisms.
 
     ServiceAccountIdentityInterface::Status status;
     ServiceAccountIdentityInterface::ErrorType error;
     QString errorMessage;
+    QString statusMessage;
 
-    QStringList availableMethods;
+    QMap<QString, QStringList> methodMechanisms;
+
+    // while sign-on is in progress, these will be set.
+    QString currentMethod;
+    QString currentMechanism;
 
 public Q_SLOTS:
-    void handleError(SignOn::Error err);
+    void handleError(const SignOn::Error &err);
     void handleRemoved();
-    void handleMethodsAvailable(const QStringList &methods);
+    void handleInfo(const SignOn::IdentityInfo &info);
+    void handleResponse(const SignOn::SessionData &sd);
+    void handleStateChanged(AuthSession::AuthSessionState newState, const QString &message);
+
+public:
+    void setUpSessionSignals();
 };
 
 #endif

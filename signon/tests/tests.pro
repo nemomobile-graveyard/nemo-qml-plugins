@@ -1,5 +1,7 @@
 TEMPLATE = subdirs
-SUBDIRS = tst_identityinterface
+SUBDIRS = \
+    tst_identityinterface \
+    tst_serviceaccountidentityinterface
 
 tests_xml.target = tests.xml
 tests_xml.files = tests.xml

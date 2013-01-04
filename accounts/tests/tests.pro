@@ -1,5 +1,11 @@
 TEMPLATE = subdirs
-SUBDIRS = tst_accountinterface
+SUBDIRS = \
+    tst_accountinterface \
+    tst_accountmanagerinterface \
+    tst_providerinterface \
+    tst_serviceinterface \
+    tst_servicetypeinterface \
+    tst_serviceaccountinterface
 
 tests_xml.target = tests.xml
 tests_xml.files = tests.xml
@@ -15,3 +21,8 @@ tests_service.target = test-service.service
 tests_service.files = test-service.service
 tests_service.path = /usr/share/accounts/services
 INSTALLS += tests_service
+
+tests_service_type.target = test-service-type.service-type
+tests_service_type.files = test-service-type.service-type
+tests_service_type.path = /usr/share/accounts/service_types
+INSTALLS += tests_service_type

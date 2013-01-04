@@ -33,12 +33,16 @@
 #define SERVICEACCOUNTIDENTITYINTERFACE_H
 
 #include <QtCore/QObject>
+#include <QtCore/QVariantMap>
+#include <QtCore/QStringList>
+#include <QtCore/QString>
 
 //libsignon-qt
 #include <SignOn/Identity>
+#include <SignOn/AuthSession>
 
 class ServiceAccountIdentityInterfacePrivate;
-class AuthSessionInterface;
+class SessionDataInterface;
 
 /*
  * ServiceAccountIdentityInterface
@@ -57,26 +61,55 @@ class ServiceAccountIdentityInterface : public QObject
 
     Q_PROPERTY(int identifier READ identifier WRITE setIdentifier NOTIFY identifierChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged)
     Q_PROPERTY(ErrorType error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
 
-    Q_PROPERTY(QStringList availableMethods READ availableMethods NOTIFY availableMethodsChanged)
+    Q_PROPERTY(QStringList methods READ methods NOTIFY methodsChanged)
 
     Q_ENUMS(Status)
     Q_ENUMS(ErrorType)
 
 public:
     enum Status {
-        Initialized,
-        Synced,
-        RefreshInProgress,
+        NotStarted          = SignOn::AuthSession::SessionNotStarted,
+        HostResolving       = SignOn::AuthSession::HostResolving,
+        ServerConnecting    = SignOn::AuthSession::ServerConnecting,
+        DataSending         = SignOn::AuthSession::DataSending,
+        ReplyWaiting        = SignOn::AuthSession::ReplyWaiting,
+        UserPending         = SignOn::AuthSession::UserPending,
+        UiRefreshing        = SignOn::AuthSession::UiRefreshing,
+        ProcessPending      = SignOn::AuthSession::ProcessPending,
+        SessionStarted      = SignOn::AuthSession::SessionStarted,
+        ProcessCanceling    = SignOn::AuthSession::ProcessCanceling,
+        ProcessDone         = SignOn::AuthSession::ProcessDone,
+        CustomState         = SignOn::AuthSession::CustomState,
+        Initialized         = SignOn::AuthSession::MaxState+1,
+        Initializing,        
         Error,
         Invalid
     };
 
     enum ErrorType {
-        UnknownError, // XXX TODO.
-        NoError
+        UnknownError                = SignOn::AuthSession::UnknownError,
+        InternalServerError         = SignOn::AuthSession::InternalServerError,
+        InternalCommunicationError  = SignOn::AuthSession::InternalCommunicationError,
+        PermissionDeniedError       = SignOn::AuthSession::PermissionDeniedError,
+        AuthSessionError            = SignOn::AuthSession::AuthSessionErr,
+        MechanismNotAvailableError  = SignOn::AuthSession::MechanismNotAvailableError,
+        MissingDataError            = SignOn::AuthSession::MissingDataError,
+        InvalidCredentialsError     = SignOn::AuthSession::InvalidCredentialsError,
+        WrongStateError             = SignOn::AuthSession::WrongStateError,
+        OperationNotSupportedError  = SignOn::AuthSession::OperationNotSupportedError,
+        NoConnectionError           = SignOn::AuthSession::NoConnectionError,
+        NetworkError                = SignOn::AuthSession::NetworkError,
+        SslError                    = SignOn::AuthSession::SslError,
+        RuntimeError                = SignOn::AuthSession::RuntimeError,
+        CanceledError               = SignOn::AuthSession::CanceledError,
+        TimedOutError               = SignOn::AuthSession::TimedOutError,
+        UserInteractionError        = SignOn::AuthSession::UserInteractionError,
+        UserError                   = SignOn::Error::UserErr,
+        NoError                     = UserError+1
     };
 
 public:
@@ -84,7 +117,7 @@ public:
     ~ServiceAccountIdentityInterface();
 
     // invokable API
-    Q_INVOKABLE void refreshAvailableMethods();
+    Q_INVOKABLE QStringList methodMechanisms(const QString &methodName) const;
     Q_INVOKABLE void verifySecret(const QString &secret);
 
     // UI-related: these cause a dialog to be spawned
@@ -93,8 +126,8 @@ public:
     Q_INVOKABLE void verifyUser(const QVariantMap &params);
 
     // session-related:
-    Q_INVOKABLE AuthSessionInterface *createSession(const QString &methodName, QObject *parent = 0);
-    Q_INVOKABLE void destroySession(AuthSessionInterface *session);
+    Q_INVOKABLE bool signIn(const QString &methodName, const QString &mechanism, const QVariantMap &sessionData);
+    Q_INVOKABLE void process(const QVariantMap &sessionData);
     Q_INVOKABLE void signOut();
 
     // property accessors and mutators
@@ -103,9 +136,11 @@ public:
     ErrorType error() const;
     QString errorMessage() const;
     Status status() const;
-    QStringList availableMethods() const;
+    QString statusMessage() const;
+    QStringList methods() const;
 
 Q_SIGNALS:
+    void responseReceived(const QVariantMap &data);
     void signedOut();
     void secretVerified(bool valid);
     void userVerified(bool valid);
@@ -114,7 +149,8 @@ Q_SIGNALS:
     void errorChanged();
     void errorMessageChanged();
     void statusChanged();
-    void availableMethodsChanged();
+    void statusMessageChanged();
+    void methodsChanged();
 
 private:
     ServiceAccountIdentityInterfacePrivate *d;
