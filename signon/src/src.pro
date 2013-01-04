@@ -7,7 +7,6 @@ CONFIG += link_pkgconfig
 PKGCONFIG += libsignon-qt
 
 SOURCES += \
-           $$PWD/authsessioninterface.cpp \
            $$PWD/identityinterface.cpp \
            $$PWD/identitymanagerinterface.cpp \
            $$PWD/plugin.cpp \
@@ -15,8 +14,6 @@ SOURCES += \
            $$PWD/sessiondatainterface.cpp
 
 HEADERS += \
-           $$PWD/authsessioninterface.h \
-           $$PWD/authsessioninterface_p.h \
            $$PWD/identityinterface.h \
            $$PWD/identityinterface_p.h \
            $$PWD/identitymanagerinterface.h \

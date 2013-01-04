@@ -32,7 +32,7 @@
 #include "serviceaccountidentityinterface.h"
 #include "serviceaccountidentityinterface_p.h"
 
-#include "authsessioninterface.h"
+#include "sessiondatainterface.h"
 
 #include <QtDebug>
 
@@ -40,23 +40,28 @@
 #include <SignOn/Identity>
 #include <SignOn/AuthSession>
 
-
 ServiceAccountIdentityInterfacePrivate::ServiceAccountIdentityInterfacePrivate(SignOn::Identity *ident, ServiceAccountIdentityInterface *parent)
-    : QObject(parent), q(parent), identity(ident), finishedInitialization(false)
+    : QObject(parent), q(parent), session(0), identity(ident)
+    , startedInitialization(false)
+    , finishedInitialization(false)
     , status(ServiceAccountIdentityInterface::Invalid)
     , error(ServiceAccountIdentityInterface::NoError)
 {
-    if (ident)
+    if (ident) {
         ownIdentity = false;
-    else
+        startedInitialization = true;
+    } else {
         ownIdentity = true;
+    }
     setIdentity(ident, false, false);
 }
 
 ServiceAccountIdentityInterfacePrivate::~ServiceAccountIdentityInterfacePrivate()
 {
     if (ownIdentity)
-        delete identity;
+        delete identity; // will destroy any sessions, as the identity is the owner of all created sessions.
+    else if (session && identity)
+        identity->destroySession(session); // destroy session manually.
 }
 
 void ServiceAccountIdentityInterfacePrivate::setIdentity(SignOn::Identity *ident, bool emitSignals, bool takeOwnership)
@@ -77,40 +82,48 @@ void ServiceAccountIdentityInterfacePrivate::setIdentity(SignOn::Identity *ident
         connect(identity, SIGNAL(removed()), this, SLOT(handleRemoved()));
         connect(identity, SIGNAL(secretVerified(bool)), q, SIGNAL(secretVerified(bool)));
         connect(identity, SIGNAL(userVerified(bool)), q, SIGNAL(userVerified(bool)));
-        connect(identity, SIGNAL(methodsAvailable(QStringList)), this, SLOT(handleMethodsAvailable(QStringList)));
+        connect(identity, SIGNAL(info(SignOn::IdentityInfo)), this, SLOT(handleInfo(SignOn::IdentityInfo)));
 
         // clear our state.
-        status = ServiceAccountIdentityInterface::RefreshInProgress; // manual set, instead of via setState() which filters if invalid.
+        status = ServiceAccountIdentityInterface::Initializing; // manual set, instead of via setState() which filters if invalid.
         error = ServiceAccountIdentityInterface::NoError;
         errorMessage = QString();
-        availableMethods = QStringList();
+        methodMechanisms = QMap<QString, QStringList>();
+        currentMethod = QString();
+        currentMechanism = QString();
 
         // trigger refresh
-        identity->queryAvailableMethods();
+        identity->queryInfo();
 
         if (emitSignals) { // don't want to emit during ctor.
             emit q->statusChanged();
             emit q->errorChanged();
             emit q->errorMessageChanged();
-            emit q->availableMethodsChanged();
+            emit q->methodsChanged();
         }
     } else {
         setStatus(ServiceAccountIdentityInterface::Invalid); // not valid if 0.
     }
 }
 
-void ServiceAccountIdentityInterfacePrivate::setStatus(ServiceAccountIdentityInterface::Status newStatus)
+void ServiceAccountIdentityInterfacePrivate::setStatus(ServiceAccountIdentityInterface::Status newStatus, const QString &message)
 {
     if (status == ServiceAccountIdentityInterface::Invalid)
         return;
 
-    if (status != newStatus) {
+    bool sne = (status != newStatus);
+    bool smne = (statusMessage != message);
+    if (sne)
         status = newStatus;
+    if (smne)
+        statusMessage = message;
+    if (sne)
         emit q->statusChanged();
-    }
+    if (smne)
+        emit q->statusMessageChanged();
 }
 
-void ServiceAccountIdentityInterfacePrivate::handleError(SignOn::Error err)
+void ServiceAccountIdentityInterfacePrivate::handleError(const SignOn::Error &err)
 {
     error = static_cast<ServiceAccountIdentityInterface::ErrorType>(err.type());
     errorMessage = err.message();
@@ -124,18 +137,47 @@ void ServiceAccountIdentityInterfacePrivate::handleRemoved()
     setStatus(ServiceAccountIdentityInterface::Invalid);
 }
 
-void ServiceAccountIdentityInterfacePrivate::handleMethodsAvailable(const QStringList &methods)
+void ServiceAccountIdentityInterfacePrivate::handleInfo(const SignOn::IdentityInfo &info)
 {
-    availableMethods = methods;
-    emit q->availableMethodsChanged();
-    if (status == ServiceAccountIdentityInterface::RefreshInProgress) {
-        if (!finishedInitialization) {
-            finishedInitialization = true;
-            setStatus(ServiceAccountIdentityInterface::Initialized);
-        } else {
-            setStatus(ServiceAccountIdentityInterface::Synced);
-        }
+    // in ServiceAccountIdentityInterface we only use info to get the methods + mechanisms.
+    // XXX TODO: only populate with the methods/mechanisms applicable to the service.
+    QMap<QString, QStringList> infoMethodMechs;
+    QStringList infoMeths = info.methods();
+    foreach (const QString &method, infoMeths)
+        infoMethodMechs.insert(method, info.mechanisms(method));
+    if (methodMechanisms != infoMethodMechs) {
+        methodMechanisms = infoMethodMechs;
+        emit q->methodsChanged();
     }
+
+    finishedInitialization = true;
+    if (status == ServiceAccountIdentityInterface::Initializing)
+        setStatus(ServiceAccountIdentityInterface::Initialized); // don't overwrite if error.
+}
+
+// AuthSession response
+void ServiceAccountIdentityInterfacePrivate::handleResponse(const SignOn::SessionData &sd)
+{
+    // XXX TODO: should we pass back a SessionDataInterface ptr instead?  Ownership concerns?
+    QVariantMap dataMap;
+    QStringList keys = sd.propertyNames();
+    foreach (const QString &key, keys)
+        dataMap.insert(key, sd.getProperty(key));
+    emit q->responseReceived(dataMap);
+}
+
+// AuthSession status
+void ServiceAccountIdentityInterfacePrivate::handleStateChanged(SignOn::AuthSession::AuthSessionState newState, const QString &message)
+{
+    setStatus(static_cast<ServiceAccountIdentityInterface::Status>(newState), message);
+}
+
+void ServiceAccountIdentityInterfacePrivate::setUpSessionSignals()
+{
+    connect(session, SIGNAL(error(SignOn::Error)), this, SLOT(handleError(SignOn::Error)));
+    connect(session, SIGNAL(response(SignOn::SessionData)), this, SLOT(handleResponse(SignOn::SessionData)));
+    connect(session, SIGNAL(stateChanged(AuthSession::AuthSessionState, QString)),
+            this, SLOT(handleStateChanged(AuthSession::AuthSessionState, QString)));
 }
 
 //--------------------------
@@ -166,29 +208,26 @@ void ServiceAccountIdentityInterfacePrivate::handleMethodsAvailable(const QStrin
         id: root
 
         property int serviceAccountIdentityIdentifier // retrieved from a ServiceAccount
-        property QtObject sessionData // retrieved from a ServiceAccount (parameters)
-        property QtObject session
+        property variant sessionData // retrieved from a ServiceAccount (authData.parameters)
 
         ServiceAccountIdentity {
             id: ident
             identifier: serviceAccountIdentityIdentifier
+
+            onResponseReceived: {
+                // enumerate signon tokens from the returned session data, etc.
+                // then continue sign on with updated session data, or perform API calls, etc.
+                sessionData = {"Auth": data["Auth"]}
+                process(sessionData)
+            }
+
             onStatusChanged: {
-                if (status == ServiceAccountIdentity.Error) {
-                    console.log("Error occurred during authentication: " + error)
+                if (status == ServiceAccountIdentity.Initialized) {
+                    signIn("password", "ClientLogin", sessionData)
+                } else if (status == ServiceAccountIdentity.Error) {
+                    console.log("Error (" + error + ") occurred during authentication: " + errorMessage)
                 }
             }
-        }
-
-        function signon() {
-            if (ident.status == ServiceAccountIdentity.Initialized) {
-                session = ident.createSession("password") // method = password
-                session.response.connect(handleResponse)
-                session.process(sessionData, "ClientLogin") // mechanism = ClientLogin, retrieved from ServiceAccount's AuthData
-            }
-        }
-
-        function handleResponse(sessionData) {
-            // enumerate signon tokens from the returned session data, etc.
         }
     }
     \endqml
@@ -201,22 +240,6 @@ ServiceAccountIdentityInterface::ServiceAccountIdentityInterface(SignOn::Identit
 
 ServiceAccountIdentityInterface::~ServiceAccountIdentityInterface()
 {
-}
-
-/*!
-    \qmlmethod void ServiceAccountIdentity::refreshAvailableMehods()
-
-    Triggers refresh of the available methods which may be used during signon
-    with the identity and service encapsulated by the ServiceAccountIdentity.
-    When refresh completes, the availableMethodsChanged() signal will be
-    emitted even if no changes to the content of the availableMethods property
-    occur.
-*/
-void ServiceAccountIdentityInterface::refreshAvailableMethods()
-{
-    if (d->status == ServiceAccountIdentityInterface::Invalid)
-        return;
-    d->identity->queryAvailableMethods();
 }
 
 /*!
@@ -286,53 +309,84 @@ void ServiceAccountIdentityInterface::verifyUser(const QVariantMap &params)
 }
 
 /*!
-    \qmlmethod AuthSession* ServiceAccountIdentity::createSession(const QString &methodName, QObject *parent)
+    \qmlmethod bool ServiceAccountIdentity::signIn(const QString &method, const QString &mechanism, const QVariantMap &sessionData)
 
-    Creates and returns an authentication session which uses the given \a methodName.
-    The AuthSession returned will have the specified \a parent unless no
-    parent is specified (in which case the ServiceAccountIdentity will own
-    the AuthSession and delete it on destruction).
+    Begins sign-in to the service via the specified \a method and
+    \a mechanism, using the given \a sessionData parameters.
+    Returns true if the session could be created.
+    Once the sign-in request has been processed successfully, the
+    responseReceived() signal will be emitted.  If sign-in occurs
+    in multiple stages (for example, via token swapping), you must
+    call process() to progress the sign-in operation.
+
+    Only one sign-in session may exist for a ServiceAccountIdentity at any
+    time.  To start a new sign-in session, you must signOut() of the
+    current sign-in session, if one exists, prior to calling signIn().
+
+    Usually only one single method and one single mechanism will be valid
+    to sign in with, and these can be retrieved from the \c authData of the
+    \c ServiceAccount with which this \c ServiceAccountIdentity is associated.
 */
-AuthSessionInterface *ServiceAccountIdentityInterface::createSession(const QString &methodName, QObject *parent)
+bool ServiceAccountIdentityInterface::signIn(const QString &method, const QString &mechanism, const QVariantMap &sessionData)
 {
-    if (d->status == ServiceAccountIdentityInterface::Invalid)
-        return 0;
+    if (d->status == ServiceAccountIdentityInterface::Invalid
+            || d->status == ServiceAccountIdentityInterface::Initializing
+            || !d->finishedInitialization) {
+        return false;
+    }
 
-    SignOn::AuthSession *session = d->identity->createSession(methodName);
-    if (!session)
-        return 0;
+    if (d->session) {
+        qWarning() << Q_FUNC_INFO << "Sign-in requested while previous sign-in session exists!";
+        return false; // not a continuation.  they need to sign out first.
+    }
 
-    AuthSessionInterface *sif = 0;
-    if (parent != 0)
-        sif = new AuthSessionInterface(session, parent);
-    else
-        sif = new AuthSessionInterface(session, this);
-    return sif;
+    // beginning new sign-on
+    d->session = d->identity->createSession(method);
+
+    if (!d->session) {
+        qWarning() << Q_FUNC_INFO << "Failed to create sign-in session.";
+        return false;
+    }
+
+    d->currentMethod = method;
+    d->currentMechanism = mechanism;
+    d->setUpSessionSignals();
+    d->session->process(SignOn::SessionData(sessionData), mechanism);
+    return true;
 }
 
 /*!
-    \qmlmethod void ServiceAccountIdentity::destroySession(AuthSession *session)
-
-    Destroys the given AuthSession \a session.  This will sign the identity
-    out of the service for which the AuthSession was created.
+    \qmlmethod void ServiceAccountIdentity::process(const QVariantMap &sessionData)
+    Processes the session request defined by the given \a sessionData in order
+    to progress a multi-stage sign-in operation.
 */
-void ServiceAccountIdentityInterface::destroySession(AuthSessionInterface *session)
+void ServiceAccountIdentityInterface::process(const QVariantMap &sessionData)
 {
     if (d->status == ServiceAccountIdentityInterface::Invalid)
         return;
-    if (session)
-        d->identity->destroySession(session->authSession());
+
+    if (d->session)
+        d->session->process(SignOn::SessionData(sessionData), d->currentMechanism);
 }
 
 /*!
     \qmlmethod void ServiceAccountIdentity::signOut()
-    Signs the identity out of every service associated with this identity.
+    Signs out of the service, if a sign-in process has been initiated.
+    The status of the ServiceAccountIdentity will be set to \c NotStarted.
 */
 void ServiceAccountIdentityInterface::signOut()
 {
     if (d->status == ServiceAccountIdentityInterface::Invalid)
         return;
-    d->identity->signOut();
+
+    if (d->session) {
+        SignOn::AuthSession *temp = d->session;
+        d->session = 0;
+        d->currentMethod = QString();
+        d->currentMechanism = QString();
+        d->identity->destroySession(temp);
+        d->setStatus(ServiceAccountIdentityInterface::NotStarted);
+    }
 }
 
 /*!
@@ -342,13 +396,22 @@ void ServiceAccountIdentityInterface::signOut()
     The ServiceAccountIdentity will have a status of Invalid
     until its identifier is set to the identifier of a valid
     Identity in the database.
+
+    Once set, you may not change the identifier.
 */
 
 void ServiceAccountIdentityInterface::setIdentifier(int identityId)
 {
-    SignOn::Identity *ident = SignOn::Identity::existingIdentity(identityId, d);
-    d->setIdentity(ident, true, true);
-    emit identifierChanged();
+    // XXX TODO: make this more robust using QDeclarativeParserStatus / Initializing.
+    if (identityId == 0)
+        return;
+
+    if (!d->startedInitialization) {
+        d->startedInitialization = true;
+        SignOn::Identity *ident = SignOn::Identity::existingIdentity(identityId, d);
+        d->setIdentity(ident, true, true);
+        emit identifierChanged();
+    }
 }
 
 int ServiceAccountIdentityInterface::identifier() const
@@ -395,11 +458,33 @@ ServiceAccountIdentityInterface::Status ServiceAccountIdentityInterface::status(
 }
 
 /*!
-    \qmlproperty QStringList ServiceAccountIdentity::availableMethods()
-    Contains the list of methods which are available to be used to create authentication sessions
+    \qmlproperty QString ServiceAccountIdentity::statusMessage
+    Contains the message associated with the status of the service account identity,
+    if an associated message exists.
 */
-QStringList ServiceAccountIdentityInterface::availableMethods() const
+
+QString ServiceAccountIdentityInterface::statusMessage() const
 {
-    return d->availableMethods;
+    return d->statusMessage;
+}
+
+/*!
+    \qmlproperty QStringList ServiceAccountIdentity::methods()
+    Contains the list of methods which are available to be used to sign on to the service
+    with this identity.
+*/
+QStringList ServiceAccountIdentityInterface::methods() const
+{
+    return d->methodMechanisms.keys();
+}
+
+/*!
+    \qmlproperty QStringList ServiceAccountIdentity::methodMechanisms(const QString &methodName)
+    Contains the list of mechanisms which are valid for the method with
+    the given \a methodName.
+*/
+QStringList ServiceAccountIdentityInterface::methodMechanisms(const QString &methodName) const
+{
+    return d->methodMechanisms.value(methodName);
 }
 

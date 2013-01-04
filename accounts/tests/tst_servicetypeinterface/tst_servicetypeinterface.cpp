@@ -29,43 +29,58 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
+#include <QObject>
+#include <QtTest>
 
-#include "identityinterface.h"
-#include "identitymanagerinterface.h"
-#include "serviceaccountidentityinterface.h"
-#include "sessiondatainterface.h"
+#include "servicetypeinterface.h"
 
-class Q_DECL_EXPORT NemoSignonPlugin : public QDeclarativeExtensionPlugin
+#include "accountmanagerinterface.h"
+
+//libaccounts-qt
+#include <Accounts/Manager>
+#include <Accounts/Account>
+
+// Will try to wait for the condition while allowing event processing
+#define QTRY_VERIFY(__expr) \
+    do { \
+        const int __step = 50; \
+        const int __timeout = 5000; \
+        if (!(__expr)) { \
+            QTest::qWait(0); \
+        } \
+        for (int __i = 0; __i < __timeout && !(__expr); __i+=__step) { \
+            QTest::qWait(__step); \
+        } \
+        QVERIFY(__expr); \
+    } while (0)
+
+class tst_ServiceTypeInterface : public QObject
 {
-public:
-    virtual ~NemoSignonPlugin() { }
+    Q_OBJECT
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
-        Q_UNUSED(engine)
-        Q_UNUSED(uri)
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
-
-        QString m2 = QLatin1String("Retrieve from ServiceAccountIdentity");
-
-        // Types which should be exposed to "normal" applications:
-        qmlRegisterType<ServiceAccountIdentityInterface>(uri, 1, 0, "ServiceAccountIdentity");
-        qmlRegisterType<SessionDataInterface>(uri, 1, 0, "SessionData");
-
-        // Types which should be exposed to "settings" application:
-        qmlRegisterType<IdentityManagerInterface>(uri, 1, 0, "IdentityManager");
-        qmlRegisterType<IdentityInterface>(uri, 1, 0, "Identity");
-    }
+private slots:
+    //properties
+    void properties();
 };
 
-Q_EXPORT_PLUGIN2(nemosignon, NemoSignonPlugin);
+void tst_ServiceTypeInterface::properties()
+{
+    QPointer<ServiceTypeInterface> si;
+    {
+        QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
+        m->classBegin();
+        m->componentComplete();
+        ServiceTypeInterface *srv = m->serviceType("test-service-type");
+        QVERIFY(srv);
+        QCOMPARE(srv->name(), QString(QLatin1String("test-service-type")));
+        QCOMPARE(srv->displayName(), QString(QLatin1String("Test IM")));
+        QCOMPARE(srv->iconName(), QString(QLatin1String("message")));
+        QVERIFY(srv->tags().contains(QString(QLatin1String("testing"))));
+        si = srv;
+        QVERIFY(!si.isNull());
+    }
+    QTRY_VERIFY(si.isNull());
+}
 
+#include "tst_servicetypeinterface.moc"
+QTEST_MAIN(tst_ServiceTypeInterface)

@@ -38,6 +38,8 @@
 #include "accountinterface.h"
 #include "serviceaccountinterface.h"
 
+#include <QtDebug>
+
 //libaccounts-qt
 #include <Accounts/Manager>
 
@@ -221,10 +223,12 @@ void AccountManagerInterface::setServiceTypeFilter(const QString &stname)
 {
     if (stname != d->serviceTypeFilter) {
         d->serviceTypeFilter = stname;
-        if (d->componentComplete)
+        if (d->componentComplete) {
             d->constructNewManager();
-        else
+            emit serviceTypeFilterChanged();
+        } else {
             d->mustConstructManager = true;
+        }
     }
 }
 
@@ -305,8 +309,7 @@ void AccountManagerInterface::removeAccount(AccountInterface *account)
     if (!account || !account->account())
         return;
 
-    account->account()->remove();
-    account->account()->sync(); // remove only occurs on sync.
+    account->remove();
 }
 
 /*!
@@ -351,29 +354,15 @@ ProviderInterface *AccountManagerInterface::provider(const QString &providerName
 
 /*!
     \qmlmethod Account* AccountManager::account(const QString &accountIdentifier)
-
-    Returns the account identified by the given \a accountIdentifier.
-    The AccountManager has ownership of the Account adapter, and will
-    delete it automatically on destruction.
-
-    Returns null if no such account exists.
+    \overload
 */
 AccountInterface *AccountManagerInterface::account(const QString &accountIdentifier) const
 {
     bool ok = false;
-    Accounts::AccountId id = accountIdentifier.toUInt(&ok);
+    Accounts::AccountId id = accountIdentifier.toInt(&ok);
     if (!ok)
         return 0;
-
-    Accounts::Account *existingAccount = d->manager->account(id);
-    if (!existingAccount)
-        return 0;
-
-    AccountManagerInterface *parentPtr = const_cast<AccountManagerInterface*>(this);
-    AccountInterface *newAI = new AccountInterface(existingAccount, parentPtr);
-    newAI->classBegin();
-    newAI->componentComplete();
-    return newAI;
+    return account(id);
 }
 
 /*!
@@ -400,33 +389,17 @@ AccountInterface *AccountManagerInterface::account(int accountIdentifier) const
 
 /*!
     \qmlmethod ServiceAccount* AccountManager::serviceAccount(const QString &accountIdentifier, const QString &serviceName)
-
-    Returns the ServiceAccount identified by the given \a accountIdentifier
-    which may be used with the service identified by the given \a serviceName.
-    The AccountManager has ownership of the ServiceAccount adapter, and will
-    delete it automatically on destruction.
-
-    Returns null if no such account exists.
+    \overload
 */
 ServiceAccountInterface *AccountManagerInterface::serviceAccount(const QString &accountIdentifier, const QString &serviceName) const
 {
     bool ok = false;
-    Accounts::AccountId id = accountIdentifier.toUInt(&ok);
-    if (!ok)
+    Accounts::AccountId id = accountIdentifier.toInt(&ok);
+    if (!ok) {
+        qWarning() << Q_FUNC_INFO << "Not a valid account identifier:" << accountIdentifier;
         return 0;
-
-    Accounts::Account *existingAccount = d->manager->account(id);
-    if (!existingAccount)
-        return 0;
-
-    Accounts::Service srv = d->manager->service(serviceName);
-    if (!srv.isValid())
-        return 0;
-
-    AccountManagerInterface *parentPtr = const_cast<AccountManagerInterface*>(this);
-    Accounts::AccountService *srvAcc = new Accounts::AccountService(existingAccount, srv);
-    ServiceAccountInterface *newSAI = new ServiceAccountInterface(srvAcc, ServiceAccountInterface::HasOwnership, parentPtr);
-    return newSAI;
+    }
+    return serviceAccount(id, serviceName);
 }
 
 /*!
@@ -442,15 +415,24 @@ ServiceAccountInterface *AccountManagerInterface::serviceAccount(const QString &
 ServiceAccountInterface *AccountManagerInterface::serviceAccount(int accountIdentifier, const QString &serviceName) const
 {
     Accounts::Account *existingAccount = d->manager->account(accountIdentifier);
-    if (!existingAccount)
+    if (!existingAccount) {
+        qWarning() << Q_FUNC_INFO << "Not a valid account identifier:" << accountIdentifier;
         return 0;
+    }
 
     Accounts::Service srv = d->manager->service(serviceName);
-    if (!srv.isValid())
+    if (!srv.isValid()) {
+        qWarning() << Q_FUNC_INFO << "Not a valid service:" << serviceName;
         return 0;
+    }
 
     AccountManagerInterface *parentPtr = const_cast<AccountManagerInterface*>(this);
     Accounts::AccountService *srvAcc = new Accounts::AccountService(existingAccount, srv);
+    if (!srvAcc) {
+        qWarning() << Q_FUNC_INFO << "Account not able to be used with the given service:" << serviceName;
+        return 0;
+    }
+
     ServiceAccountInterface *newSAI = new ServiceAccountInterface(srvAcc, ServiceAccountInterface::HasOwnership, parentPtr);
     return newSAI;
 }
