@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testdefinition version="1.0">
+   <suite name="alarms-tests" domain="mw">
+       <description>Alarms QML plugin automatic tests</description>
+       <set name="unit-tests" feature="QML Alarms">
+           <description>Alarms QML plugin automatic tests</description>
+           <case manual="false" name="alarmsbackendmodel">
+               <step>/opt/tests/nemo-qml-plugins/accounts/tst_alarmsbackendmodel</step>
+           </case>
+       </set>
+   </suite>
+</testdefinition>
