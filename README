@@ -22,3 +22,6 @@ current plugins:
 - configuration: offers ConfigurationValue, a QML object interacting with dconf.
 
 - email: offers a QML-friendly email API using Qt Messaging Framework as a backend.
+
+- time: provides WallClock element useful for clock displays, including keeping
+  time in sync with system time changes.

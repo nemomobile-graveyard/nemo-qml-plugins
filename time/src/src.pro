@@ -9,11 +9,8 @@ HEADERS += nemowallclock.h \
 
 LIBS += -ltimed
 
-#linux-g++-maemo {
-    QT += dbus
-    SOURCES += nemowallclock_meego.cpp
-#} else {
+QT += dbus
+SOURCES += nemowallclock_meego.cpp
 #    SOURCES += nemowallclock_generic.cpp
-#}
 
 include(../../plugin.pri)
