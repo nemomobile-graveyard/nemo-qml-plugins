@@ -7,4 +7,5 @@ SUBDIRS += thumbnailer \
            email \
            messages \
            signon \
-           accounts
+           accounts \
+           alarms
