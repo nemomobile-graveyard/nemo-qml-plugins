@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +29,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#include <QtGlobal>
+#include <QtDeclarative>
+#include <QDeclarativeEngine>
+#include <QDeclarativeExtensionPlugin>
 
-#include "configurationvalue.h"
+#include "identityinterface.h"
+#include "identitymanagerinterface.h"
+#include "serviceaccountidentityinterface.h"
+#include "sessiondatainterface.h"
 
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+class Q_DECL_EXPORT NemoSignonPlugin : public QDeclarativeExtensionPlugin
 {
-}
+public:
+    virtual ~NemoSignonPlugin() { }
 
-QString ConfigurationValue::key() const
-{
-    if (!mItem)
-        return QString();
+    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
+    {
+        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
+        Q_UNUSED(engine)
+        Q_UNUSED(uri)
+    }
 
-    return mItem->key();
-}
+    void registerTypes(const char *uri)
+    {
+        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
 
-void ConfigurationValue::setKey(const QString &key)
-{
-    QVariant oldValue;
+        QString m2 = QLatin1String("Retrieve from ServiceAccountIdentity");
 
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
+        // Types which should be exposed to "normal" applications:
+        qmlRegisterType<ServiceAccountIdentityInterface>(uri, 1, 0, "ServiceAccountIdentity");
+        qmlRegisterType<SessionDataInterface>(uri, 1, 0, "SessionData");
 
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
+        // Types which should be exposed to "settings" application:
+        qmlRegisterType<IdentityManagerInterface>(uri, 1, 0, "IdentityManager");
+        qmlRegisterType<IdentityInterface>(uri, 1, 0, "Identity");
+    }
+};
 
-    emit keyChanged();
+Q_EXPORT_PLUGIN2(nemosignon, NemoSignonPlugin);
 
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
-}
-
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
-
-    return mItem->value(mDefaultValue);
-}
-
-void ConfigurationValue::setValue(const QVariant &value)
-{
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
-}
-
-QVariant ConfigurationValue::defaultValue() const
-{
-    return mDefaultValue;
-}
-
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}

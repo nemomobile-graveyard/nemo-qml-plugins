@@ -6,4 +6,7 @@ SUBDIRS += thumbnailer \
            configuration \
            email \
            messages \
+           signon \
+           accounts \
+           alarms \
            time

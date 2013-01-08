@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -143,7 +144,7 @@ void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
     emit messagesDeleted(ids);
 }
 
-void EmailAgent::createFolder (const QString &name, QVariant mailAccountId, QVariant parentFolderId)
+void EmailAgent::createFolder(const QString &name, QVariant mailAccountId, QVariant parentFolderId)
 {
     
     Q_ASSERT(!name.isEmpty());
@@ -175,6 +176,19 @@ void EmailAgent::renameFolder(QVariant folderId, const QString &name)
     m_storageAction->onlineRenameFolder(id, name);
 }
 
+void EmailAgent::retrieveFolderList(QVariant accountId, QVariant folderId, bool descending)
+{
+    QMailAccountId acctId = accountId.value<QMailAccountId>();
+    QMailFolderId foldId = folderId.value<QMailFolderId>();
+
+    if (!isSynchronizing() && acctId.isValid()) {
+        emit syncBegin();
+        m_cancelling = false;
+        m_retrieving = true;
+        m_retrievalAction->retrieveFolderList(acctId, foldId, descending);
+    }
+}
+
 void EmailAgent::synchronize(QVariant id)
 {
     QMailAccountId accountId = id.value<QMailAccountId>();
@@ -183,8 +197,20 @@ void EmailAgent::synchronize(QVariant id)
         emit syncBegin();
         m_cancelling = false;
         m_retrieving = true;
-        //m_retrievalAction->retrieveAll(accountId);
         m_retrievalAction->synchronize(accountId, 20);
+    }
+}
+
+void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, uint minimum)
+{
+    QMailAccountId acctId = accountId.value<QMailAccountId>();
+    QMailFolderId foldId = folderId.value<QMailFolderId>();
+
+    if (!isSynchronizing() && acctId.isValid()) {
+        emit syncBegin();
+        m_cancelling = false;
+        m_retrieving = true;
+        m_retrievalAction->retrieveMessageList(acctId, foldId, minimum);
     }
 }
 
@@ -261,6 +287,7 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
         }
 
         if (!isSynchronizing()) {
+            qDebug() << "Sync completed.";
             emit syncCompleted();
         }
 

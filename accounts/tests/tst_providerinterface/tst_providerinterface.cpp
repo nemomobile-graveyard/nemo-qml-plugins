@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +29,59 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#include <QObject>
+#include <QtTest>
 
-#include "configurationvalue.h"
+#include "providerinterface.h"
 
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+#include "accountmanagerinterface.h"
+#include "accountinterface.h"
+
+//libaccounts-qt
+#include <Accounts/Manager>
+#include <Accounts/Account>
+
+// Will try to wait for the condition while allowing event processing
+#define QTRY_VERIFY(__expr) \
+    do { \
+        const int __step = 50; \
+        const int __timeout = 5000; \
+        if (!(__expr)) { \
+            QTest::qWait(0); \
+        } \
+        for (int __i = 0; __i < __timeout && !(__expr); __i+=__step) { \
+            QTest::qWait(__step); \
+        } \
+        QVERIFY(__expr); \
+    } while (0)
+
+class tst_ProviderInterface : public QObject
 {
+    Q_OBJECT
+
+private slots:
+    //properties
+    void properties();
+};
+
+void tst_ProviderInterface::properties()
+{
+    QPointer<ProviderInterface> pi;
+    {
+        QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
+        m->classBegin();
+        m->componentComplete();
+        ProviderInterface *prv = m->provider("test-provider");
+        QVERIFY(prv);
+        QCOMPARE(prv->name(), QString(QLatin1String("test-provider")));
+        QCOMPARE(prv->displayName(), QString(QLatin1String("Provider(test)")));
+        QCOMPARE(prv->iconName(), QString(QLatin1String("icon-l-google")));
+        QVERIFY(prv->serviceNames().contains(QString(QLatin1String("test-service"))));
+        pi = prv;
+        QVERIFY(!pi.isNull());
+    }
+    QTRY_VERIFY(pi.isNull());
 }
 
-QString ConfigurationValue::key() const
-{
-    if (!mItem)
-        return QString();
-
-    return mItem->key();
-}
-
-void ConfigurationValue::setKey(const QString &key)
-{
-    QVariant oldValue;
-
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
-
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
-
-    emit keyChanged();
-
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
-}
-
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
-
-    return mItem->value(mDefaultValue);
-}
-
-void ConfigurationValue::setValue(const QVariant &value)
-{
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
-}
-
-QVariant ConfigurationValue::defaultValue() const
-{
-    return mDefaultValue;
-}
-
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}
+#include "tst_providerinterface.moc"
+QTEST_MAIN(tst_ProviderInterface)

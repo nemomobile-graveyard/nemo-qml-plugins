@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -22,6 +23,7 @@ EmailAccountListModel::EmailAccountListModel(QObject *parent) :
     roles.insert(MailServer, "mailServer");
     roles.insert(UnreadCount, "unreadCount");
     roles.insert(MailAccountId, "mailAccountId");
+    roles.insert(LastSynchronized, "lastSynchronized");
     setRoleNames(roles);
 
     connect (QMailStore::instance(), SIGNAL(accountsAdded(const QMailAccountIdList &)), this,
@@ -81,6 +83,10 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
 
     if (role == MailAccountId) {
         return accountId;
+    }
+
+    if(role == LastSynchronized) {
+        return account.lastSynchronized().toLocalTime();
     }
 
     return QVariant();

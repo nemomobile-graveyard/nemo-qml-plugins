@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +29,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#ifndef SERVICEACCOUNTINTERFACE_P_H
+#define SERVICEACCOUNTINTERFACE_P_H
 
-#include "configurationvalue.h"
+#include <QtCore/QObject>
+#include <QtCore/QVariantMap>
 
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+//libaccounts-qt
+#include <Accounts/AccountService>
+
+class AuthDataInterface;
+class ServiceInterface;
+class ProviderInterface;
+class ServiceAccountInterface;
+
+class ServiceAccountInterfacePrivate : public QObject
 {
-}
+    Q_OBJECT
 
-QString ConfigurationValue::key() const
-{
-    if (!mItem)
-        return QString();
+public:
+    ServiceAccountInterfacePrivate(ServiceAccountInterface *parent, Accounts::AccountService *s, bool ownsAccountService);
+    ~ServiceAccountInterfacePrivate();
 
-    return mItem->key();
-}
+    ServiceAccountInterface *q;
+    Accounts::AccountService *serviceAccount;
+    QVariantMap configurationValues;
 
-void ConfigurationValue::setKey(const QString &key)
-{
-    QVariant oldValue;
+    AuthDataInterface *authDataInterface;
+    ServiceInterface *serviceInterface;
+    ProviderInterface *providerInterface;
 
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
+    bool hasOwnership;
 
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
+public Q_SLOTS:
+    void updateConfigurationValues();
+};
 
-    emit keyChanged();
-
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
-}
-
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
-
-    return mItem->value(mDefaultValue);
-}
-
-void ConfigurationValue::setValue(const QVariant &value)
-{
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
-}
-
-QVariant ConfigurationValue::defaultValue() const
-{
-    return mDefaultValue;
-}
-
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}
+#endif

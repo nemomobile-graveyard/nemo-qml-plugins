@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Intel Corporation.
+ * Copyright (C) 2012 Jolla Ltd.
  *
  * This program is licensed under the terms and conditions of the
  * Apache License, version 2.0.  The full text of the Apache License is at 	
@@ -38,7 +39,8 @@ public:
         MessageCcRole,                                         // returns a list of Cc (email + displayName)
         MessageBccRole,                                        // returns a list of Bcc (email + displayName)
         MessageTimeStampRole,                                  // returns timestamp in QDateTime format
-        MessageSelectModeRole                                  // returns the select mode
+        MessageSelectModeRole,                                 // returns the select mode
+        MessagePreviewRole                                     // returns message preview if available
     };
 
 
@@ -60,6 +62,7 @@ public slots:
     Q_INVOKABLE void sortByDate (int key);
     Q_INVOKABLE void sortByAttachment (int key);
     Q_INVOKABLE void setSearch(const QString search);
+    Q_INVOKABLE void setCombinedInbox(bool unread = false);
 
     Q_INVOKABLE QVariant indexFromMessageId(QString msgId);
     Q_INVOKABLE QVariant messageId (int index);
@@ -76,6 +79,7 @@ public slots:
     Q_INVOKABLE QVariant bccList (int index);
     Q_INVOKABLE QVariant toList (int index);
     Q_INVOKABLE QVariant messageRead (int index);
+    Q_INVOKABLE QVariant isCombinedInbox();
     Q_INVOKABLE int messagesCount ();
     Q_INVOKABLE void deSelectAllMessages();
     Q_INVOKABLE void selectMessage( int index );
@@ -100,6 +104,7 @@ private:
     QString m_search;
     QMailMessageKey m_key;                  // key set externally other than search
     QList<QMailMessageId> m_selectedMsgIds;
+    bool combinedInbox;
 };
 
 #endif

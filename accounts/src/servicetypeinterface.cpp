@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +29,74 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#include "servicetypeinterface.h"
 
-#include "configurationvalue.h"
-
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+class ServiceTypeInterfacePrivate
 {
+public:
+    Accounts::ServiceType serviceType;
+};
+
+/*!
+    \qmltype ServiceType
+    \instantiates ServiceTypeInterface
+    \inqmlmodule org.nemomobile.accounts 1
+    \brief Reports information about a particular service type
+
+    This type provides information about a particular service type
+    of a service provided by a provider.
+*/
+
+ServiceTypeInterface::ServiceTypeInterface(const Accounts::ServiceType &serviceType, QObject *parent)
+    : QObject(parent), d(new ServiceTypeInterfacePrivate)
+{
+    d->serviceType = serviceType;
 }
 
-QString ConfigurationValue::key() const
+ServiceTypeInterface::~ServiceTypeInterface()
 {
-    if (!mItem)
-        return QString();
-
-    return mItem->key();
+    delete d;
 }
 
-void ConfigurationValue::setKey(const QString &key)
+/*!
+    \qmlproperty string Service::name
+    This property holds the name of the service
+*/
+
+QString ServiceTypeInterface::name() const
 {
-    QVariant oldValue;
-
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
-
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
-
-    emit keyChanged();
-
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
+    return d->serviceType.name();
 }
 
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
+/*!
+    \qmlproperty string Service::displayName
+    This property holds the display name of the service.
+    This display name can be displayed in lists or
+    dialogues in the UI of applications.
+*/
 
-    return mItem->value(mDefaultValue);
+QString ServiceTypeInterface::displayName() const
+{
+    return d->serviceType.displayName();
 }
 
-void ConfigurationValue::setValue(const QVariant &value)
+/*!
+    \qmlproperty string Service::iconName
+    This property holds the name of the icon associated with the service
+*/
+
+QString ServiceTypeInterface::iconName() const
 {
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
+    return d->serviceType.iconName();
 }
 
-QVariant ConfigurationValue::defaultValue() const
+/*!
+    \qmlproperty QStringList Service::tags
+    This property holds the tags which have been associated with the service.
+*/
+
+QStringList ServiceTypeInterface::tags() const
 {
-    return mDefaultValue;
+    return d->serviceType.tags().toList();
 }
 
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +29,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#ifndef SESSIONDATAINTERFACE_H
+#define SESSIONDATAINTERFACE_H
 
-#include "configurationvalue.h"
+#include <QtCore/QObject>
+#include <QtCore/QVariantMap>
 
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+//libsignon-qt
+#include <SignOn/SessionData>
+
+class SessionDataInterfacePrivate;
+class AuthSessionInterface;
+
+/*
+ * SessionDataInterface
+ *
+ * Lightweight QML interface for libsignon-qt's SessionData.
+ * The session data is a simple dictionary of key/value pairs.
+ * It is used as the container for authentication session
+ * parameters and results.
+ *
+ * It is intended for use by 3rd party application developers.
+ */
+class SessionDataInterface : public QObject
 {
-}
+    Q_OBJECT
 
-QString ConfigurationValue::key() const
-{
-    if (!mItem)
-        return QString();
+    Q_PROPERTY(QStringList accessControlTokens READ accessControlTokens CONSTANT)
+    Q_PROPERTY(QVariantMap properties READ properties WRITE setProperties NOTIFY propertiesChanged)
 
-    return mItem->key();
-}
+public:
+    SessionDataInterface(SignOn::SessionData data = SignOn::SessionData(), QObject *parent = 0);
+    ~SessionDataInterface();
 
-void ConfigurationValue::setKey(const QString &key)
-{
-    QVariant oldValue;
+    // property accessors
+    QStringList accessControlTokens();
+    QVariantMap properties() const;
+    void setProperties(const QVariantMap &data);
 
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
+Q_SIGNALS:
+    void propertiesChanged();
 
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
+private:
+    SignOn::SessionData sessionData() const;
+    friend class AuthSessionInterface;
 
-    emit keyChanged();
+private:
+    SessionDataInterfacePrivate *d;
+    friend class SessionDataInterfacePrivate;
+};
 
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
-}
-
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
-
-    return mItem->value(mDefaultValue);
-}
-
-void ConfigurationValue::setValue(const QVariant &value)
-{
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
-}
-
-QVariant ConfigurationValue::defaultValue() const
-{
-    return mDefaultValue;
-}
-
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}
+#endif

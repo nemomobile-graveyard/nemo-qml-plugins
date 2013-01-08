@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <robin.burchell@jollamobile.com>
+ * Copyright (C) 2012 Jolla Ltd.
+ * Contact: John Brooks <john.brooks@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,74 +30,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QDirIterator>
-#include <QDir>
-#include <QDebug>
-#include <QDateTime>
-#include <QUrl>
+#ifndef ALARMSBACKENDMODEL_P_H
+#define ALARMSBACKENDMODEL_P_H
 
-#include "configurationvalue.h"
+#include "alarmsbackendmodel.h"
 
-ConfigurationValue::ConfigurationValue(QObject *parent)
-    : QObject(parent)
-    , mItem(0)
+class AlarmObject;
+class QDBusPendingCallWatcher;
+
+class AlarmsBackendModelPriv : public QObject
 {
-}
+    Q_OBJECT
 
-QString ConfigurationValue::key() const
-{
-    if (!mItem)
-        return QString();
+public:
+    AlarmsBackendModel *q;
+    QList<AlarmObject*> alarms;
+    bool populated;
 
-    return mItem->key();
-}
+    AlarmsBackendModelPriv(AlarmsBackendModel *q);
 
-void ConfigurationValue::setKey(const QString &key)
-{
-    QVariant oldValue;
+public slots:
+    void alarmUpdated();
+    void alarmUpdated(AlarmObject *alarm);
+    void alarmDeleted();
+    void alarmDeleted(AlarmObject *alarm);
 
-    // don't emit valueChanged unless absolutely necessary
-    if (mItem)
-        oldValue = mItem->value(mDefaultValue);
+private slots:
+    void queryReply(QDBusPendingCallWatcher *w);
+    void attributesReply(QDBusPendingCallWatcher *w);
 
-    delete mItem;
-    mItem = new MGConfItem(key, this);
-    connect(mItem, SIGNAL(valueChanged()), this, SIGNAL(valueChanged()));
+private:
+    void populate();
+};
 
-    emit keyChanged();
+#endif
 
-    // we deleted the old item, so we must emit ourselves in this case
-    if (oldValue != mItem->value(mDefaultValue))
-        emit valueChanged();
-}
-
-QVariant ConfigurationValue::value() const
-{
-    if (!mItem)
-        return QVariant();
-
-    return mItem->value(mDefaultValue);
-}
-
-void ConfigurationValue::setValue(const QVariant &value)
-{
-    if (mItem)
-        mItem->set(value); // TODO: setValue once we change MGConfItem API
-    // MGConfItem will emit valueChanged for us
-}
-
-QVariant ConfigurationValue::defaultValue() const
-{
-    return mDefaultValue;
-}
-
-void ConfigurationValue::setDefaultValue(const QVariant &value)
-{
-    QVariant oldValue = this->value();
-    mDefaultValue = value;
-    emit defaultValueChanged();
-
-    // if changing the default changed the value, emit valueChanged
-    if (value != oldValue)
-        emit valueChanged();
-}
