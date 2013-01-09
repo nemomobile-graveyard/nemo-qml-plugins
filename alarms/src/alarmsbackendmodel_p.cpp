@@ -121,7 +121,7 @@ void AlarmsBackendModelPriv::attributesReply(QDBusPendingCallWatcher *call)
 
     foreach (const attributes &data, reply.value()) {
         AlarmObject *alarm = new AlarmObject(data, this);
-        connect(alarm, SIGNAL(saved()), SLOT(alarmUpdated()));
+        connect(alarm, SIGNAL(updated()), SLOT(alarmUpdated()));
         connect(alarm, SIGNAL(deleted()), SLOT(alarmDeleted()));
         alarms.append(alarm);
     }

@@ -178,8 +178,8 @@ void AlarmObject::save()
             w = new QDBusPendingCallWatcher(timed->add_event_async(ev), this);
         connect(w, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(saveReply(QDBusPendingCallWatcher*)));
 
-        // Emit the saved signal immediately to update UI
-        emit saved();
+        // Emit the updated signal immediately to update UI
+        emit updated();
     } catch (Maemo::Timed::Exception &e) {
         qWarning() << "org.nemomobile.alarms: Cannot sync alarm to timed:" << e.what();
     }
@@ -197,6 +197,7 @@ void AlarmObject::saveReply(QDBusPendingCallWatcher *w)
 
     m_cookie = reply.value();
     emit idChanged();
+    emit saved();
 }
 
 void AlarmObject::deleteAlarm()
