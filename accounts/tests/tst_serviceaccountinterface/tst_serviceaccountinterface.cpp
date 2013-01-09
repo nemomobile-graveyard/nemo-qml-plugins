@@ -101,7 +101,7 @@ void tst_ServiceAccountInterface::enabled()
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
 
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -109,12 +109,12 @@ void tst_ServiceAccountInterface::enabled()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QCOMPARE(sai->enabled(), true);
     }
 
-    account->disableWithService("test-service");
+    account->disableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -122,7 +122,7 @@ void tst_ServiceAccountInterface::enabled()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QCOMPARE(sai->enabled(), false);
     }
@@ -141,7 +141,7 @@ void tst_ServiceAccountInterface::identifier()
     QCOMPARE(account->identifier(), 0);
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -149,7 +149,7 @@ void tst_ServiceAccountInterface::identifier()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QCOMPARE(sai->identifier(), account->identifier());
     }
@@ -168,7 +168,7 @@ void tst_ServiceAccountInterface::authData()
     QCOMPARE(account->identifier(), 0);
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -176,7 +176,7 @@ void tst_ServiceAccountInterface::authData()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         AuthDataInterface *adi = sai->authData();
         QVERIFY(adi != 0);
@@ -200,7 +200,7 @@ void tst_ServiceAccountInterface::service()
     QCOMPARE(account->identifier(), 0);
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -208,10 +208,10 @@ void tst_ServiceAccountInterface::service()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QVERIFY(sai->service());
-        QCOMPARE(sai->service()->name(), QString(QLatin1String("test-service")));
+        QCOMPARE(sai->service()->name(), QString(QLatin1String("test-service2")));
     }
 
     // cleanup.
@@ -228,7 +228,7 @@ void tst_ServiceAccountInterface::provider()
     QCOMPARE(account->identifier(), 0);
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
 
@@ -236,7 +236,7 @@ void tst_ServiceAccountInterface::provider()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QVERIFY(sai->provider());
         QCOMPARE(sai->provider()->name(), QString(QLatin1String("test-provider")));
@@ -256,7 +256,7 @@ void tst_ServiceAccountInterface::configurationValues()
     QCOMPARE(account->identifier(), 0);
     account->componentComplete(); // will construct new account.
     QTRY_VERIFY(account->identifier() > 0);
-    account->enableWithService("test-service");
+    account->enableWithService("test-service2");
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     account->setConfigurationValue(QString(QLatin1String("unrelated")), QVariant(QString(QLatin1String("testvalue"))));
@@ -268,7 +268,7 @@ void tst_ServiceAccountInterface::configurationValues()
         Accounts::Manager m;
         Accounts::Account *a = m.account(account->identifier());
         QVERIFY(a);
-        Accounts::AccountService as(a, m.service("test-service"));
+        Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QSignalSpy spy(sai.data(), SIGNAL(configurationValuesChanged()));
         QTest::qWait(2000); // after 2 seconds, it should have "stabilised".

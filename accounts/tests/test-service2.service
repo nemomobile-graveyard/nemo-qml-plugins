@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<service id="test-service">
-  <type>test-service-type</type>
+<service id="test-service2">
+  <type>test-service-type2</type>
   <provider>test-provider</provider>
   <name>Test Service</name>
   <icon>test</icon>

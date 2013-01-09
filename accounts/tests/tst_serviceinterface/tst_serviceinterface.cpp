@@ -71,10 +71,10 @@ void tst_ServiceInterface::properties()
         QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
         m->classBegin();
         m->componentComplete();
-        ServiceInterface *srv = m->service("test-service");
+        ServiceInterface *srv = m->service("test-service2");
         QVERIFY(srv);
-        QCOMPARE(srv->name(), QString(QLatin1String("test-service")));
-        QCOMPARE(srv->serviceType(), QString(QLatin1String("test-service-type")));
+        QCOMPARE(srv->name(), QString(QLatin1String("test-service2")));
+        QCOMPARE(srv->serviceType(), QString(QLatin1String("test-service-type2")));
         QCOMPARE(srv->displayName(), QString(QLatin1String("Test Service")));
         QCOMPARE(srv->providerName(), QString(QLatin1String("test-provider")));
         QCOMPARE(srv->iconName(), QString(QLatin1String("test")));

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<service-type id="test-service-type">
+<service-type id="test-service-type2">
   <name>Test IM</name>
   <description>Instant messaging for testing</description>
   <icon>message</icon>

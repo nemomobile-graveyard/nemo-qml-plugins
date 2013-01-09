@@ -17,12 +17,12 @@ tests_provider.files = test-provider.provider
 tests_provider.path = /usr/share/accounts/providers
 INSTALLS += tests_provider
 
-tests_service.target = test-service.service
-tests_service.files = test-service.service
+tests_service.target = test-service2.service
+tests_service.files = test-service2.service
 tests_service.path = /usr/share/accounts/services
 INSTALLS += tests_service
 
-tests_service_type.target = test-service-type.service-type
-tests_service_type.files = test-service-type.service-type
+tests_service_type.target = test-service-type2.service-type
+tests_service_type.files = test-service-type2.service-type
 tests_service_type.path = /usr/share/accounts/service_types
 INSTALLS += tests_service_type
