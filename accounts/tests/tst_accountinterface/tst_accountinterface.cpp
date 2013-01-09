@@ -125,34 +125,30 @@ void tst_AccountInterface::identifier()
 
 void tst_AccountInterface::identityIdentifiers()
 {
-    QVariantMap testData;
-    testData.insert(QString(), 0); // no credentials for global account
-    testData.insert("test-service", 0); // no credentials for test-service
-
     QScopedPointer<AccountInterface> account(new AccountInterface);
     QSignalSpy spy(account.data(), SIGNAL(identityIdentifiersChanged()));
     account->classBegin();
     account->setProviderName("test-provider");
     account->componentComplete(); // will construct new account.
 
-    QTRY_COMPARE(account->identityIdentifiers(), testData);
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(account->identityIdentifier(), 0);
+    QTRY_COMPARE(account->identityIdentifiers().value("test-service2").toInt(), 0);
+    int sigCount = spy.count();
 
-    account->setIdentityIdentifier(5, "test-service");
-    testData.insert(QString(QLatin1String("test-service")), 5);
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(account->identityIdentifier("test-service"), 5);
-    QCOMPARE(account->identityIdentifiers(), testData);
+    account->setIdentityIdentifier(5, "test-service2");
+    sigCount++;
+    QCOMPARE(spy.count(), sigCount);
+    QCOMPARE(account->identityIdentifier("test-service2"), 5);
+    QCOMPARE(account->identityIdentifiers().value("test-service2").toInt(), 5);
 
     account->setIdentityIdentifier(6);
-    testData.insert(QString(), 6);
-    QCOMPARE(spy.count(), 3);
+    sigCount++;
+    QCOMPARE(spy.count(), sigCount);
     QCOMPARE(account->identityIdentifier(), 6);
-    QCOMPARE(account->identityIdentifiers(), testData);
 
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced); // wait for sync.
-    QCOMPARE(account->identityIdentifier("test-service"), 5); // shouldn't have changed...
+    QCOMPARE(account->identityIdentifier("test-service2"), 5); // shouldn't have changed...
     // the "global" credentials id might have changed, if it can't be stored.  Skip testing that.
 
     account->remove();
@@ -195,7 +191,7 @@ void tst_AccountInterface::supportedServiceNames()
     account->classBegin();
     account->setProviderName("test-provider");
     account->componentComplete(); // will construct new account.
-    QTRY_COMPARE(account->supportedServiceNames(), QStringList() << QString(QLatin1String("test-service")));
+    QTRY_VERIFY(account->supportedServiceNames().contains(QString(QLatin1String("test-service2"))));
     account->remove();
 }
 
@@ -210,14 +206,14 @@ void tst_AccountInterface::enabledServiceNames()
     account->componentComplete(); // will construct new account.
     QCOMPARE(account->enabledServiceNames(), QStringList());
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
-    account->enableWithService(QString(QLatin1String("test-service")));
+    account->enableWithService(QString(QLatin1String("test-service2")));
     QCOMPARE(account->status(), AccountInterface::Modified);
     account->sync();
     // note: the change signal can be emitted an arbitrary number of times,
     // depending on how many signals the backend emits (one by one).
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
-    QCOMPARE(account->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service")));
-    account->disableWithService(QString(QLatin1String("test-service")));
+    QCOMPARE(account->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service2")));
+    account->disableWithService(QString(QLatin1String("test-service2")));
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     QCOMPARE(account->enabledServiceNames(), QStringList());
@@ -388,7 +384,7 @@ void tst_AccountInterface::expectedUsage()
     newAccount->classBegin();
     newAccount->setProviderName("test-provider");
     newAccount->setDisplayName("test-account");
-    newAccount->enableWithService("test-service");
+    newAccount->enableWithService("test-service2");
     QCOMPARE(newAccount->status(), AccountInterface::Initializing);
     newAccount->componentComplete();
     QTRY_COMPARE(newAccount->status(), AccountInterface::Modified); // outstanding modifications.
@@ -397,7 +393,7 @@ void tst_AccountInterface::expectedUsage()
     QCOMPARE(newAccount->providerName(), QString(QLatin1String("test-provider")));
     QCOMPARE(newAccount->displayName(), QString(QLatin1String("test-account")));
     QCOMPARE(newAccount->enabled(), true); // enabled by default.
-    QCOMPARE(newAccount->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service")));
+    QCOMPARE(newAccount->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service2")));
     QVERIFY(newAccount->identifier() > 0); // saved; valid id.
 
     // second, as an "existing" account.  Valid identifier.

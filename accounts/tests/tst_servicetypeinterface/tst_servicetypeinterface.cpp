@@ -70,9 +70,9 @@ void tst_ServiceTypeInterface::properties()
         QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
         m->classBegin();
         m->componentComplete();
-        ServiceTypeInterface *srv = m->serviceType("test-service-type");
+        ServiceTypeInterface *srv = m->serviceType("test-service-type2");
         QVERIFY(srv);
-        QCOMPARE(srv->name(), QString(QLatin1String("test-service-type")));
+        QCOMPARE(srv->name(), QString(QLatin1String("test-service-type2")));
         QCOMPARE(srv->displayName(), QString(QLatin1String("Test IM")));
         QCOMPARE(srv->iconName(), QString(QLatin1String("message")));
         QVERIFY(srv->tags().contains(QString(QLatin1String("testing"))));
