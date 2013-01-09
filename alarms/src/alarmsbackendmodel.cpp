@@ -56,7 +56,7 @@ AlarmsBackendModel::~AlarmsBackendModel()
 AlarmObject *AlarmsBackendModel::createAlarm()
 {
     AlarmObject *alarm = new AlarmObject(this);
-    connect(alarm, SIGNAL(saved()), priv, SLOT(alarmUpdated()));
+    connect(alarm, SIGNAL(updated()), priv, SLOT(alarmUpdated()));
     connect(alarm, SIGNAL(deleted()), priv, SLOT(alarmDeleted()));
     return alarm;
 }
