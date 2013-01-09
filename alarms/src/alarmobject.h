@@ -124,15 +124,17 @@ public:
     QDateTime createdDate() const { return m_createdDate; }
 
     /*!
-     *  \qmlmethod void save()
+     *  \qmlmethod void Alarm::save()
      *
      *  Commit changes to the object to the backend. No modifications, including \a enabled,
      *  take effect until this method is called.
+     *  
+     *  \sa updated, saved
      */
     Q_INVOKABLE void save();
 
     /*!
-     *  \qmlmethod void deleteAlarm()
+     *  \qmlmethod void Alarm::deleteAlarm()
      *
      *  Remove this alarm from the backend.
      */
@@ -144,7 +146,31 @@ signals:
     void daysOfWeekChanged();
     void enabledChanged();
     void idChanged();
+
+    /*!
+     *  \qmlsignal Alarm::updated()
+     *
+     *  Emitted at the beginning of a save operation, indicating that the data is updated.
+     *
+     *  \sa saved
+     */
+    void updated();
+    /*!
+     *  \qmlsignal Alarm::saved()
+     *
+     *  Emitted when changes have been recorded to the backend.
+     *
+     *  \sa updated
+     */
     void saved();
+    /*!
+     *  \qmlsignal Alarm::deleted()
+     *
+     *  Emitted after a call to deleteAlarm(), indicating that this object should be removed
+     *  and no longer used.
+     *
+     *  \sa deleteAlarm
+     */
     void deleted();
 
 private slots:
