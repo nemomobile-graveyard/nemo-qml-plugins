@@ -76,7 +76,7 @@ void tst_ProviderInterface::properties()
         QCOMPARE(prv->name(), QString(QLatin1String("test-provider")));
         QCOMPARE(prv->displayName(), QString(QLatin1String("Provider(test)")));
         QCOMPARE(prv->iconName(), QString(QLatin1String("icon-l-google")));
-        QVERIFY(prv->serviceNames().contains(QString(QLatin1String("test-service"))));
+        QVERIFY(prv->serviceNames().contains(QString(QLatin1String("test-service2"))));
         pi = prv;
         QVERIFY(!pi.isNull());
     }

@@ -110,22 +110,22 @@ void tst_AccountManagerInterface::serviceTypeFilter()
     QCOMPARE(m->serviceTypeFilter(), QString()); // default - no filter
     m->componentComplete();
     QSignalSpy spy(m.data(), SIGNAL(serviceTypeFilterChanged()));
-    QVERIFY(m->serviceNames().contains("test-service"));
-    QVERIFY(m->serviceTypeNames().contains("test-service-type"));
+    QVERIFY(m->serviceNames().contains("test-service2"));
+    QVERIFY(m->serviceTypeNames().contains("test-service-type2"));
     QVERIFY(m->providerNames().contains("test-provider"));
     m->setServiceTypeFilter("email");
     QTRY_COMPARE(spy.count(), 1);
     QCOMPARE(m->serviceTypeFilter(), QString("email"));
-    QVERIFY(m->serviceTypeNames().contains("test-service-type")); // shouldn't change - it's what we use to filter.
-    QVERIFY(!m->serviceNames().contains("test-service")); // should change, depending on filter.
+    QVERIFY(m->serviceTypeNames().contains("test-service-type2")); // shouldn't change - it's what we use to filter.
+    QVERIFY(!m->serviceNames().contains("test-service2")); // should change, depending on filter.
     if (m->providerNames().contains("test-provider"))
         qWarning() << "FIXME: providers are not being filtered correctly!"; // XXX TODO: fixme.
     else QVERIFY(!m->providerNames().contains("test-provider")); // should change, depending on filter.
-    m->setServiceTypeFilter("test-service-type");
+    m->setServiceTypeFilter("test-service-type2");
     QTRY_COMPARE(spy.count(), 2);
-    QCOMPARE(m->serviceTypeFilter(), QString("test-service-type"));
-    QVERIFY(m->serviceNames().contains("test-service"));
-    QVERIFY(m->serviceTypeNames().contains("test-service-type"));
+    QCOMPARE(m->serviceTypeFilter(), QString("test-service-type2"));
+    QVERIFY(m->serviceNames().contains("test-service2"));
+    QVERIFY(m->serviceTypeNames().contains("test-service-type2"));
     QVERIFY(m->providerNames().contains("test-provider"));
 }
 
@@ -135,7 +135,7 @@ void tst_AccountManagerInterface::serviceTypeNames()
     QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
     m->classBegin();
     m->componentComplete();
-    QVERIFY(m->serviceTypeNames().contains("test-service-type"));
+    QVERIFY(m->serviceTypeNames().contains("test-service-type2"));
 }
 
 void tst_AccountManagerInterface::providerNames()
@@ -153,7 +153,7 @@ void tst_AccountManagerInterface::serviceNames()
     QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
     m->classBegin();
     m->componentComplete();
-    QVERIFY(m->serviceNames().contains("test-service"));
+    QVERIFY(m->serviceNames().contains("test-service2"));
 }
 
 void tst_AccountManagerInterface::accountIdentifiers()
@@ -167,7 +167,7 @@ void tst_AccountManagerInterface::accountIdentifiers()
     Accounts::Manager am;
     QScopedPointer<Accounts::Account> a(am.createAccount("test-provider"));
     a->setDisplayName("test-account");
-    a->selectService(am.service("test-service"));
+    a->selectService(am.service("test-service2"));
     a->setEnabled(true);
     a->selectService(Accounts::Service());
     a->sync();
@@ -221,7 +221,7 @@ void tst_AccountManagerInterface::accounts()
 
         // sync account to write it to db
         acc->setDisplayName("test-account");
-        acc->enableWithService("test-service");
+        acc->enableWithService("test-service2");
         acc->sync();
         QTRY_COMPARE(spy.count(), 1);
         QString newAccountId = QString::number(acc->identifier());
@@ -237,10 +237,10 @@ void tst_AccountManagerInterface::accounts()
         returnedAcc = tempAcc;
 
         // now ensure that service account retrieval works.
-        ServiceAccountInterface *tempSrvAcc = m->serviceAccount(newAccountId, "test-service");
+        ServiceAccountInterface *tempSrvAcc = m->serviceAccount(newAccountId, "test-service2");
         QVERIFY(tempSrvAcc);
         QTRY_COMPARE(tempSrvAcc->identifier(), acc->identifier());
-        tempSrvAcc = m->serviceAccount(acc->identifier(), "test-service");
+        tempSrvAcc = m->serviceAccount(acc->identifier(), "test-service2");
         QVERIFY(tempSrvAcc);
         QTRY_COMPARE(tempSrvAcc->identifier(), acc->identifier());
         returnedServiceAcc = tempSrvAcc;
@@ -265,10 +265,10 @@ void tst_AccountManagerInterface::services()
         QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
         m->classBegin();
         m->componentComplete();
-        ServiceTypeInterface *retSti = m->serviceType("test-service-type");
+        ServiceTypeInterface *retSti = m->serviceType("test-service-type2");
         QVERIFY(retSti);
         sti = retSti; // guard.
-        QCOMPARE(sti->name(), QString("test-service-type"));
+        QCOMPARE(sti->name(), QString("test-service-type2"));
         QVERIFY(sti->tags().contains("testing"));
     }
     QTRY_VERIFY(sti.isNull()); // manager owns returned service type interface.
@@ -278,12 +278,12 @@ void tst_AccountManagerInterface::services()
         QScopedPointer<AccountManagerInterface> m(new AccountManagerInterface);
         m->classBegin();
         m->componentComplete();
-        ServiceInterface *retSi = m->service("test-service");
+        ServiceInterface *retSi = m->service("test-service2");
         QVERIFY(retSi);
         si = retSi; // guard.
-        QCOMPARE(si->name(), QString("test-service"));
+        QCOMPARE(si->name(), QString("test-service2"));
         QCOMPARE(si->providerName(), QString("test-provider"));
-        QCOMPARE(si->serviceType(), QString("test-service-type"));
+        QCOMPARE(si->serviceType(), QString("test-service-type2"));
     }
     QTRY_VERIFY(si.isNull()); // manager owns returned service interface.
 
@@ -317,7 +317,7 @@ void tst_AccountManagerInterface::providers()
         QVERIFY(retPi);
         pi = retPi; // guard.
         QCOMPARE(pi->name(), QString("test-provider"));
-        QCOMPARE(pi->serviceNames(), QStringList() << QString("test-service"));
+        QVERIFY(pi->serviceNames().contains(QString("test-service2"))); // it may contain other (old test) services
     }
     QTRY_VERIFY(pi.isNull()); // manager owns returned provider interface.
 
