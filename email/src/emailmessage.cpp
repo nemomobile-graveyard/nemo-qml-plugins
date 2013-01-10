@@ -141,7 +141,7 @@ void EmailMessage::saveDraft()
         if (saved) {
             EmailAgent::instance()->flagMessages(QMailMessageIdList() << m_msg.id(),
                 QMailMessage::Draft, 0);
-            EmailAgent::instance()->exportAccountChanges(m_msg.parentAccountId());
+            EmailAgent::instance()->exportUpdates(m_msg.parentAccountId());
         }
     }
 }
