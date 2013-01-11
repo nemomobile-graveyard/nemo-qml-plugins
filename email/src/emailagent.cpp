@@ -19,17 +19,15 @@
 #include <qmailstore.h>
 
 #include "emailagent.h"
+#include "emailaction.h"
 
 namespace {
-
-int sRetrievedMinimum = 0;
 
 QMailAccountId accountForMessageId(const QMailMessageId &msgId)
 {
     QMailMessageMetaData metaData(msgId);
     return metaData.parentAccountId();
 }
-
 }
 
 EmailAgent *EmailAgent::m_instance = 0;
@@ -43,38 +41,46 @@ EmailAgent *EmailAgent::instance()
 
 EmailAgent::EmailAgent(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
+    , m_actionCount(0)
     , m_retrieving(false)
     , m_transmitting(false)
-    , m_exporting(false)
     , m_cancelling(false)
+    , m_synchronizing(false)
     , m_retrievalAction(new QMailRetrievalAction(this))
     , m_storageAction(new QMailStorageAction(this))
     , m_transmitAction(new QMailTransmitAction(this))
-    , m_exportAction(new QMailRetrievalAction(this))
 #ifdef HAS_MLITE
     , m_confirmDeleteMail(new MGConfItem("/apps/meego-app-email/confirmdeletemail"))
 #endif
 {
     initMailServer(); 
 
-    connect(m_retrievalAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
+    connect(m_transmitAction.data(), SIGNAL(progressChanged(uint, uint)),
+            this, SLOT(progressChanged(uint,uint)));
+
+    connect(m_retrievalAction.data(), SIGNAL(activityChanged(QMailServiceAction::Activity)),
             this, SLOT(activityChanged(QMailServiceAction::Activity)));
 
-    connect(m_transmitAction, SIGNAL(progressChanged(uint, uint)),
-            this, SLOT(progressChanged(uint,uint)));
-    connect(m_transmitAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
+    connect(m_storageAction.data(), SIGNAL(activityChanged(QMailServiceAction::Activity)),
             this, SLOT(activityChanged(QMailServiceAction::Activity)));
-    connect(m_exportAction, SIGNAL(activityChanged(QMailServiceAction::Activity)),
-            this, SLOT(exportActivityChanged(QMailServiceAction::Activity)));
+
+    connect(m_transmitAction.data(), SIGNAL(activityChanged(QMailServiceAction::Activity)),
+            this, SLOT(activityChanged(QMailServiceAction::Activity)));
+
 
     connect (QMailStore::instance(), SIGNAL(foldersAdded(const QMailFolderIdList &)), this,
              SLOT(onFoldersAdded(const QMailFolderIdList &)));
 
-    // Set the default interval as 2 secs
-    m_exportTimer.setInterval(2000);
-    connect(&m_exportTimer, SIGNAL(timeout()), this, SLOT(exportAccounts()));
-
     m_instance = this;
+}
+
+EmailAgent::~EmailAgent()
+{
+}
+
+quint64 EmailAgent::newAction()
+{
+    return quint64(++m_actionCount);
 }
 
 void EmailAgent::initMailServer()
@@ -94,98 +100,168 @@ void EmailAgent::initMailServer()
     return;
 }
 
-EmailAgent::~EmailAgent()
+void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
 {
-    delete m_retrievalAction;
-    delete m_storageAction;
-    delete m_transmitAction;
+    QMailServiceAction *action = static_cast<QMailServiceAction*>(sender());
+    const QMailServiceAction::Status status(action->status());
+
+    switch (activity) {
+    case QMailServiceAction::Failed:
+        //TODO: coordinate with stop logic
+        // don't try to synchronise extra accounts if the user cancelled the sync
+        if (m_cancelling) {
+            m_synchronizing = false;
+            _actionQueue.clear();
+            emit error(status.accountId, status.text, status.errorCode);
+            break;
+        } else {
+            // Report the error
+            dequeue();
+             _currentAction = getNext();
+            emit error(status.accountId, status.text, status.errorCode);
+
+            if (_currentAction.isNull()) {
+                qDebug() << "Sync completed with Errors!!!.";
+                m_synchronizing = false;
+                emit syncCompleted();
+            }
+            else {
+                executeCurrent();
+            }
+            break;
+        }
+
+    case QMailServiceAction::Successful:
+        dequeue();
+        //TODO
+        //more than one send action can occur at time
+        //sendCompleted should also have accountId
+        if (action == m_transmitAction.data()) {
+            m_transmitting = false;
+            emit sendCompleted();
+        }
+
+        _currentAction = getNext();
+
+        if (_currentAction.isNull()) {
+            qDebug() << "Sync completed.";
+            m_synchronizing = false;
+            emit syncCompleted();
+        }
+        else {
+            executeCurrent();
+        }
+        break;
+
+    default:
+        //emit acctivity changed here
+        qDebug() << "Activity State Changed:" << activity;
+        break;
+    }
 }
 
-void EmailAgent::accountsSync()
+bool EmailAgent::isSynchronizing() const
 {
-    if (!isSynchronizing()) {
-        // First we need to ensure that account lists are empty
-        m_retrieveAccounts.clear();
-        m_transmitAccounts.clear();
-
-        // Get keys to avoid errors
-        QMailAccountKey enabledKey(QMailAccountKey::status(QMailAccount::Enabled, QMailDataComparator::Includes));
-        QMailAccountKey retrieveKey(QMailAccountKey::status(QMailAccount::CanRetrieve, QMailDataComparator::Includes));
-        QMailAccountKey transmitKey(QMailAccountKey::status(QMailAccount::CanTransmit, QMailDataComparator::Includes));
-
-        // Query accounts by capabilities
-        m_retrieveAccounts = QMailStore::instance()->queryAccounts(enabledKey & retrieveKey);
-        m_transmitAccounts = QMailStore::instance()->queryAccounts(enabledKey & transmitKey);
-    }
-
-    // Trigger accounts retrieving first
-    if (!m_retrieveAccounts.isEmpty()) {
-        synchronize(m_retrieveAccounts.takeFirst());
-    }
-    else {
-         emit syncCompleted();
-     }
+    return m_synchronizing;
 }
 
+/*
+  Actions
+*/
+
+//Sync all accounts (both ways)
+void EmailAgent::accountsSync(const bool syncOnlyInbox, const uint minimum)
+{
+    m_enabledAccounts.clear();
+    QMailAccountKey enabledAccountKey = QMailAccountKey::status(QMailAccount::Enabled |
+                                                         QMailAccount::CanRetrieve |
+                                                         QMailAccount::CanTransmit,
+                                                         QMailDataComparator::Includes);
+    m_enabledAccounts = QMailStore::instance()->queryAccounts(enabledAccountKey);
+
+    foreach (QMailAccountId accountId, m_enabledAccounts) {
+        if (syncOnlyInbox) {
+            QMailAccount account(accountId);
+            QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+            if (foldId.isValid()) {
+                enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
+                enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
+                enqueue(new RetrieveMessageList(m_retrievalAction.data(), accountId, foldId, minimum));
+            }
+            else {
+                qDebug() << "Error: Inbox folder not found for account:" << accountId.toULongLong();
+            }
+        }
+        else {
+            enqueue(new Synchronize(m_retrievalAction.data(), accountId));
+        }
+    }
+}
+
+//Add logic to move to trash only and fully delete from trash
 void EmailAgent::deleteMessage(QVariant id)
 {
     QMailMessageId msgId = id.value<QMailMessageId>();
     QMailMessageIdList msgIdList;
     msgIdList << msgId;
-    exportAccountChanges(accountForMessageId(msgId));
-    return deleteMessages (msgIdList);
+    deleteMessages (msgIdList);
 }
 
 void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
 {
     Q_ASSERT(!ids.empty());
-
-    m_storageAction->deleteMessages(ids);
-    emit messagesDeleted(ids);
+    enqueue(new DeleteMessages(m_storageAction.data(), ids));
 }
 
 void EmailAgent::createFolder(const QString &name, QVariant mailAccountId, QVariant parentFolderId)
 {
     
-    Q_ASSERT(!name.isEmpty());
+    if(!name.isEmpty()) {
+        qDebug() << "Error: Can't create a folder with empty name";
+    }
 
-    QMailAccountId accountId = mailAccountId.value<QMailAccountId>();
-    Q_ASSERT(accountId.isValid());
+    else {
+        QMailAccountId accountId = mailAccountId.value<QMailAccountId>();
+        Q_ASSERT(accountId.isValid());
 
-    QMailFolderId parentId = parentFolderId.value<QMailFolderId>();
+        QMailFolderId parentId = parentFolderId.value<QMailFolderId>();
 
-    m_storageAction->onlineCreateFolder(name, accountId, parentId);
+        enqueue(new OnlineCreateFolder(m_storageAction.data(), name, accountId, parentId));
+    }
 }
 
 void EmailAgent::deleteFolder(QVariant folderId)
-{
-    
+{    
     QMailFolderId id = folderId.value<QMailFolderId>();
     Q_ASSERT(id.isValid());
 
-    m_storageAction->onlineDeleteFolder(id);
+    enqueue(new OnlineDeleteFolder(m_storageAction.data(),id));
 }
 
 void EmailAgent::renameFolder(QVariant folderId, const QString &name)
 {
-    Q_ASSERT(!name.isEmpty());
+    if(!name.isEmpty()) {
+        qDebug() << "Error: Can't rename a folder to a empty name";
+    }
 
-    QMailFolderId id = folderId.value<QMailFolderId>();
-    Q_ASSERT(id.isValid());
+    else{
+        QMailFolderId id = folderId.value<QMailFolderId>();
+        Q_ASSERT(id.isValid());
 
-    m_storageAction->onlineRenameFolder(id, name);
+        enqueue(new OnlineRenameFolder(m_storageAction.data(),id, name));
+    }
 }
 
-void EmailAgent::retrieveFolderList(QVariant accountId, QVariant folderId, bool descending)
+void EmailAgent::retrieveFolderList(QVariant accountId, QVariant folderId, const bool descending)
 {
     QMailAccountId acctId = accountId.value<QMailAccountId>();
     QMailFolderId foldId = folderId.value<QMailFolderId>();
 
-    if (!isSynchronizing() && acctId.isValid()) {
-        emit syncBegin();
+    if (acctId.isValid()) {
+        emit syncBegin(); //check
         m_cancelling = false;
         m_retrieving = true;
-        m_retrievalAction->retrieveFolderList(acctId, foldId, descending);
+        enqueue(new RetrieveFolderList(m_retrievalAction.data(),acctId, foldId, descending));
     }
 }
 
@@ -194,49 +270,50 @@ void EmailAgent::synchronize(QVariant id)
     QMailAccountId accountId = id.value<QMailAccountId>();
 
     if (!isSynchronizing() && accountId.isValid()) {
-        emit syncBegin();
+        emit syncBegin(); //check
         m_cancelling = false;
         m_retrieving = true;
-        m_retrievalAction->synchronize(accountId, 20);
+        enqueue(new Synchronize(m_retrievalAction.data(), accountId));
     }
 }
 
-void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, uint minimum)
+void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, const uint minimum)
 {
     QMailAccountId acctId = accountId.value<QMailAccountId>();
     QMailFolderId foldId = folderId.value<QMailFolderId>();
 
-    if (!isSynchronizing() && acctId.isValid()) {
-        emit syncBegin();
-        m_cancelling = false;
-        m_retrieving = true;
-        m_retrievalAction->retrieveMessageList(acctId, foldId, minimum);
+    if (acctId.isValid()) {
+        emit syncBegin(); //check
+        m_cancelling = false; //check
+        m_retrieving = true; //check
+        enqueue(new RetrieveMessageList(m_retrievalAction.data(),acctId, foldId, minimum));
     }
 }
 
-void EmailAgent::getMoreMessages(QVariant vFolderId)
+void EmailAgent::getMoreMessages(QVariant vFolderId, uint minimum)
 {
     QMailFolderId folderId = vFolderId.value<QMailFolderId>();
-    if (!isSynchronizing() && folderId.isValid()) {
-        emit syncBegin();
+    if (folderId.isValid()) {
+        emit syncBegin(); //check
+        m_cancelling = false; //check
+        m_retrieving = true; //check
         QMailFolder folder(folderId);
         QMailMessageKey countKey(QMailMessageKey::parentFolderId(folderId));
         countKey &= ~QMailMessageKey::status(QMailMessage::Temporary);
-        sRetrievedMinimum = QMailStore::instance()->countMessages(countKey);
-        sRetrievedMinimum += 20;
-        m_cancelling = false;
-        m_retrieving = true;
-        //m_retrievalAction->retrieveMessageList(folder.parentAccountId(), folderId, sRetrievedMinimum);
-        m_retrievalAction->synchronize(folder.parentAccountId(), sRetrievedMinimum);
+        minimum += QMailStore::instance()->countMessages(countKey);
+        enqueue(new RetrieveMessageList(m_retrievalAction.data(), folder.parentAccountId(), folderId, minimum));
     }
 }
 
+//messages should be moved to outbox, and marked as local only
+//since device can be offline at the point user tries to send
+//the mail.
 void EmailAgent::sendMessages(const QMailAccountId &id)
 {
-    if (!isSynchronizing() && id.isValid()) {
-        m_cancelling = false;
-        m_transmitting = true;
-        m_transmitAction->transmitMessages(id);
+    if (id.isValid()) {
+        m_cancelling = false; //check
+        m_transmitting = true; //check
+        enqueue(new TransmitMessages(m_transmitAction.data(),id));
     }
 }
 
@@ -247,74 +324,21 @@ void EmailAgent::progressChanged(uint value, uint total)
     emit progressUpdate (percent);
 }
 
-void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
-{
-    QMailServiceAction *action = static_cast<QMailServiceAction*>(sender());
-    const QMailServiceAction::Status status(action->status());
-
-    switch (activity) {
-    case QMailServiceAction::Failed:
-        // don't try to synchronise extra accounts if the user cancelled the sync
-        if (m_cancelling) {
-            m_retrieving = false;
-            m_transmitting = false;
-            emit error(status.accountId, status.text, status.errorCode);
-            return;
-        } else {
-            // Report the error
-            emit error(status.accountId, status.text, status.errorCode);
-        }
-        // fallthrough; if this wasn't a fatal error, try sync again
-    case QMailServiceAction::Successful:
-        if (action == m_retrievalAction) {
-            m_retrieving = false;
-            if (m_retrieveAccounts.isEmpty()) {
-                emit retrievalCompleted();
-                // If there's no account to retrieve let's start sending msgs
-                if (!m_transmitAccounts.isEmpty())
-                    sendMessages(m_transmitAccounts.takeFirst());
-            }
-            else
-                synchronize(m_retrieveAccounts.takeFirst());
-        }
-        else if (action == m_transmitAction) {
-            m_transmitting = false;
-            if (m_transmitAccounts.isEmpty()) {
-                emit sendCompleted();
-            }
-            else
-                sendMessages(m_transmitAccounts.takeFirst());
-        }
-
-        if (!isSynchronizing()) {
-            qDebug() << "Sync completed.";
-            emit syncCompleted();
-        }
-
-    default:
-        qDebug() << "Activity State Changed:" << activity;
-        break;
-    }
-}
-
-bool EmailAgent::isSynchronizing() const
-{
-    return (m_retrieving || m_transmitting);
-}
-
 void EmailAgent::cancelSync()
 {
     if (!isSynchronizing())
         return;
 
     m_cancelling = true;
-    // there's an assert on isValid (essentially is running) inside
-    // QMailServiceAction. we should fix this there, but for now, work around
-    // it.
-    if (m_transmitAction->isRunning())
-        m_transmitAction->cancelOperation();
-    if (m_retrievalAction->isRunning())
-        m_retrievalAction->cancelOperation();
+
+    //clear the actions queue
+    _actionQueue.clear();
+
+    //cancel running action
+    if (((_currentAction->serviceAction)->activity() == QMailServiceAction::Pending ||
+        (_currentAction->serviceAction)->activity() == QMailServiceAction::InProgress)) {
+        (_currentAction->serviceAction)->cancelOperation();
+    }
 }
 
 void EmailAgent::markMessageAsRead(QVariant msgId)
@@ -322,7 +346,7 @@ void EmailAgent::markMessageAsRead(QVariant msgId)
     QMailMessageId id = msgId.value<QMailMessageId>();
     quint64 status(QMailMessage::Read);
     QMailStore::instance()->updateMessagesMetaData(QMailMessageKey::id(id), status, true);
-    exportAccountChanges(accountForMessageId(id));
+    exportUpdates(accountForMessageId(id));
 }
 
 void EmailAgent::markMessageAsUnread(QVariant msgId)
@@ -330,7 +354,7 @@ void EmailAgent::markMessageAsUnread(QVariant msgId)
     QMailMessageId id = msgId.value<QMailMessageId>();
     quint64 status(QMailMessage::Read);
     QMailStore::instance()->updateMessagesMetaData(QMailMessageKey::id(id), status, false);
-    exportAccountChanges(accountForMessageId(id));
+    exportUpdates(accountForMessageId(id));
 }
 
 QString EmailAgent::getSignatureForAccount(QVariant vMailAccountId)
@@ -352,60 +376,18 @@ bool EmailAgent::confirmDeleteMail()
 #endif
 }
 
-void EmailAgent::exportAccountChanges(const QMailAccountId id)
+void EmailAgent::exportUpdates(const QMailAccountId id)
 {
-    // Only add the account to the list if it's not
-    // already there.
-    if (id.isValid() && !m_exportAccounts.contains(id)) {
-
-        // Add account to the list
-        m_exportAccounts.append(id);
-
-        // Start the timer!
-        if (!m_exportTimer.isActive() && !m_exporting)
-            m_exportTimer.start();
-    }
+    enqueue(new ExportUpdates(m_retrievalAction.data(),id));
 }
-
-void EmailAgent::exportAccounts()
-{
-
-    // Mark as exporting if it's not
-    if (!m_exporting) {
-        m_exporting = true;
-        m_exportTimer.stop();
-    }
-
-    // Export message updates
-    if (!m_exportAccounts.isEmpty())
-        m_exportAction->exportUpdates(m_exportAccounts.first());
-}
-
-void EmailAgent::exportActivityChanged(QMailServiceAction::Activity  activity)
-{
-    QMailServiceAction *action = static_cast<QMailServiceAction*>(sender());
-    const QMailServiceAction::Status status(action->status());
-
-    if (action && m_exporting) {
-        if (activity == QMailServiceAction::Successful) {
-            m_exporting = false;
-            m_exportAccounts.removeFirst();
-
-            // Check if there's more accounts to export
-            if (!m_exportAccounts.isEmpty())
-                exportAccounts();
-        }
-    }
-}
-
 
 // callback function to handle foldersAdded signal
 void EmailAgent::onFoldersAdded (const QMailFolderIdList & folderIdList)
 {
     QMailFolder folder(folderIdList[0]);
     QMailAccountId accountId = folder.parentAccountId();
-
-    synchronize (accountId);
+    //TODO: Check if this is necessary here
+    synchronize(accountId);
 }
 
 void EmailAgent::downloadAttachment(QVariant vMsgId, const QString & attachmentDisplayName)
@@ -525,7 +507,7 @@ void EmailAgent::flagMessages(const QMailMessageIdList &ids, quint64 setMask,
 {
     Q_ASSERT(!ids.empty());
 
-    m_storageAction->flagMessages(ids, setMask, unsetMask);
+    enqueue(new FlagMessages(m_storageAction.data(), ids, setMask, unsetMask));
 }
 
 QString EmailAgent::getMessageBodyFromFile (const QString& bodyFilePath)
@@ -537,3 +519,82 @@ QString EmailAgent::getMessageBodyFromFile (const QString& bodyFilePath)
     QString data = f.readAll();
     return data;
 }
+
+/*
+  Queue of actions
+*/
+
+void EmailAgent::enqueue(EmailAction *actionPointer)
+{
+    Q_ASSERT(actionPointer);
+    QSharedPointer<EmailAction> action(actionPointer);
+    bool foundAction = actionInQueue(action);
+
+   // Add checks for network availablity if online action
+
+    if (!foundAction) {
+        // It's a new action.
+        action->id = newAction();
+        _actionQueue.append(action);
+
+        if (_currentAction.isNull()) {
+            // Nothin is running, start this one immdetiately.
+            _currentAction = action;
+            executeCurrent();
+        }
+    }
+    else {
+        qWarning() << "This request already exists in the queue: " << action->description();
+        qDebug() << "Number of actions in the queue: " << _actionQueue.size();
+    }
+}
+
+void EmailAgent::dequeue()
+{
+    if(_actionQueue.isEmpty()) {
+        qDebug() << "Error: can't dequeue emtpy list";
+    }
+    else {
+        _actionQueue.removeFirst();
+    }
+}
+
+bool EmailAgent::actionInQueue(QSharedPointer<EmailAction> action) const
+{
+    //check current first, there's chances that
+    //user taps same action several times.
+    if (!_currentAction.isNull()
+        && *(_currentAction.data()) == *(action.data())) {
+        return true;
+    }
+    else {
+        foreach (const QSharedPointer<EmailAction> &a, _actionQueue) {
+            if (*(a.data()) == *(action.data())) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void EmailAgent::executeCurrent()
+{
+    Q_ASSERT (!_currentAction.isNull());
+
+    if(!m_synchronizing)
+        m_synchronizing = true;
+
+    //add network and qCop checks here.
+    qDebug() << "Executing " << _currentAction->description();
+
+    _currentAction->execute();
+}
+
+QSharedPointer<EmailAction> EmailAgent::getNext()
+{
+    if(_actionQueue.isEmpty())
+        return QSharedPointer<EmailAction>();
+
+    return _actionQueue.first();
+}
+
