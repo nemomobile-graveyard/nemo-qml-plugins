@@ -6,6 +6,8 @@ QT += testlib
 TEMPLATE = app
 CONFIG -= app_bundle
 
+DEFINES += USE_VOLAND_TEST_INTERFACE
+
 CONFIG += link_pkgconfig
 PKGCONFIG += \
     QtDeclarative

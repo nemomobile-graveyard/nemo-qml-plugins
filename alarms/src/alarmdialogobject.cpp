@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd.
+ * Copyright (C) 2013 Jolla Ltd.
  * Contact: John Brooks <john.brooks@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -30,43 +30,65 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include "alarmsbackendmodel.h"
-#include "alarmobject.h"
-#include "alarmhandlerinterface.h"
 #include "alarmdialogobject.h"
+#include <timed-voland/reminder>
 #include <timed/interface>
+#include <QDBusPendingReply>
+#include <QDBusPendingCallWatcher>
 
-Maemo::Timed::Interface *timed = 0;
+extern Maemo::Timed::Interface *timed;
 
-class Q_DECL_EXPORT NemoAlarmsPlugin : public QDeclarativeExtensionPlugin
+AlarmDialogObject::AlarmDialogObject(QObject *parent)
+    : AlarmObject(parent), m_hideSnooze(false), m_hideDismiss(false), m_missed(false)
 {
-public:
-    NemoAlarmsPlugin()
-    {
-        timed = new Maemo::Timed::Interface();
-    }
+}
 
-    virtual ~NemoAlarmsPlugin()
-    {
-        delete timed;
-        timed = 0;
-    }
+AlarmDialogObject::AlarmDialogObject(const Maemo::Timed::Voland::Reminder &data, QObject *parent)
+    : AlarmObject(data.attributes(), parent),
+      m_hideSnooze(data.hideSnoozeButton1()),
+      m_hideDismiss(data.hideCancelButton2()),
+      m_missed(data.isMissed())
+{
+    // Reminders mysteriously do not contain the 'COOKIE' attribute. Set it here.
+    m_cookie = data.cookie();
+}
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.alarms"));
-    }
+void AlarmDialogObject::snooze()
+{
+    sendResponse(-1);
+}
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.alarms"));
-        qmlRegisterType<AlarmsBackendModel>(uri, 1, 0, "AlarmsModel");
-        qmlRegisterUncreatableType<AlarmObject>(uri, 1, 0, "Alarm", "Create Alarm via AlarmsModel");
-        qmlRegisterType<AlarmHandlerInterface>(uri, 1, 0, "AlarmHandler");
-    }
-};
+void AlarmDialogObject::dismiss()
+{
+    sendResponse(-2);
+}
 
-Q_EXPORT_PLUGIN2(nemoalarms, NemoAlarmsPlugin);
+void AlarmDialogObject::close()
+{
+    sendResponse(0);
+}
+
+void AlarmDialogObject::closedExternally()
+{
+    // Closed by external forces, don't send a response, just emit
+    emit closed(this);
+}
+
+void AlarmDialogObject::sendResponse(int code)
+{
+    QDBusPendingCallWatcher *w = new QDBusPendingCallWatcher(timed->dialog_response_async(id(), code), this);
+    connect(w, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(responseReply(QDBusPendingCallWatcher*)));
+
+    // Close dialog
+    emit closed(this);
+}
+
+void AlarmDialogObject::responseReply(QDBusPendingCallWatcher *w)
+{
+    QDBusPendingReply<bool> reply = *w;
+    w->deleteLater();
+
+    if (reply.isError())
+        qWarning() << "org.nemomobile.alarms: Error from sending alarm dialog response:" << reply.error();
+}
 
