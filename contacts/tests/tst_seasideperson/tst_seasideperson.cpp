@@ -32,8 +32,18 @@
 #include <QObject>
 #include <QtTest>
 
-#include <QContactFavorite>
+#include <QContactAvatar>
+#include <QContactBirthday>
+#include <QContactAnniversary>
 #include <QContactName>
+#include <QContactNickname>
+#include <QContactFavorite>
+#include <QContactPhoneNumber>
+#include <QContactEmailAddress>
+#include <QContactAddress>
+#include <QContactOnlineAccount>
+#include <QContactOrganization>
+#include <QContactUrl>
 
 #include "seasideperson.h"
 
@@ -46,9 +56,12 @@ class tst_SeasidePerson : public QObject
 private slots:
     void firstName();
     void lastName();
+    void middleName();
     void displayLabel();
     void sectionBucket();
     void companyName();
+    void nickname();
+    void title();
     void favorite();
     void avatarPath();
     void phoneNumbers();
@@ -72,6 +85,8 @@ void tst_SeasidePerson::firstName()
     person->setFirstName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->firstName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("firstName").toString(), person->firstName());
+    QVERIFY(person->hasDetail(SeasidePerson::FirstNameType));
 }
 
 void tst_SeasidePerson::lastName()
@@ -82,6 +97,20 @@ void tst_SeasidePerson::lastName()
     person->setLastName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->lastName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("lastName").toString(), person->lastName());
+    QVERIFY(person->hasDetail(SeasidePerson::LastNameType));
+}
+
+void tst_SeasidePerson::middleName()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->middleName(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(middleNameChanged()));
+    person->setMiddleName("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->middleName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("middleName").toString(), person->middleName());
+    QVERIFY(person->hasDetail(SeasidePerson::MiddleNameType));
 }
 
 void tst_SeasidePerson::displayLabel()
@@ -94,6 +123,21 @@ void tst_SeasidePerson::displayLabel()
     QCOMPARE(person->firstName(), QString::fromLatin1("Test"));
     QCOMPARE(person->lastName(), QString::fromLatin1("Last"));
     QCOMPARE(person->displayLabel(), QString::fromLatin1("Test Last"));
+
+    // nickname is preferred for display label, if available
+    person->setNickname("my nickname");
+    QCOMPARE(person->displayLabel(), QString::fromLatin1("my nickname"));
+    QCOMPARE(spy.count(), 3);
+    person->setNickname("");
+    QCOMPARE(person->displayLabel(), QString::fromLatin1("Test Last"));
+    QCOMPARE(spy.count(), 4);
+
+    person->setMiddleName("Middle");
+    QCOMPARE(person->displayLabel(), QString::fromLatin1("Test Last"));
+    QCOMPARE(spy.count(), 4);
+    person->setFirstName("");
+    QCOMPARE(person->displayLabel(), QString::fromLatin1("Middle Last"));
+    QCOMPARE(spy.count(), 5);
 
     // TODO: test additional cases for displayLabel:
     // - email/IM id
@@ -131,6 +175,32 @@ void tst_SeasidePerson::companyName()
     person->setCompanyName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->companyName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("companyName").toString(), person->companyName());
+    QVERIFY(person->hasDetail(SeasidePerson::CompanyType));
+}
+
+void tst_SeasidePerson::nickname()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->nickname(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(nicknameChanged()));
+    person->setNickname("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->nickname(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("nickname").toString(), person->nickname());
+    QVERIFY(person->hasDetail(SeasidePerson::NickType));
+}
+
+void tst_SeasidePerson::title()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->title(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(titleChanged()));
+    person->setTitle("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->title(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("title").toString(), person->title());
+    QVERIFY(person->hasDetail(SeasidePerson::TitleType));
 }
 
 void tst_SeasidePerson::favorite()
@@ -140,6 +210,7 @@ void tst_SeasidePerson::favorite()
     QSignalSpy spy(person.data(), SIGNAL(favoriteChanged()));
     person->setFavorite(true);
     QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->property("favorite").toBool(), person->favorite());
     QVERIFY(person->favorite());
 }
 
@@ -151,6 +222,7 @@ void tst_SeasidePerson::avatarPath()
     person->setAvatarPath(QUrl("http://test.com"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->avatarPath(), QUrl("http://test.com"));
+    QCOMPARE(person->property("avatarPath").toUrl(), person->avatarPath());
 }
 
 void tst_SeasidePerson::phoneNumbers()
@@ -161,6 +233,7 @@ void tst_SeasidePerson::phoneNumbers()
     person->setPhoneNumbers(QStringList() << "1234" << "5678" << "9101112");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
+    QCOMPARE(person->property("phoneNumbers").toStringList(), person->phoneNumbers());
 }
 
 void tst_SeasidePerson::phoneTypes()
@@ -174,7 +247,7 @@ void tst_SeasidePerson::phoneTypes()
 
     QSignalSpy spy(person.data(), SIGNAL(phoneNumberTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> phoneTypes;
+    QList<SeasidePerson::DetailType> phoneTypes;
     phoneTypes.append(SeasidePerson::PhoneHomeType);
     phoneTypes.append(SeasidePerson::PhoneWorkType);
     phoneTypes.append(SeasidePerson::PhoneMobileType);
@@ -185,10 +258,11 @@ void tst_SeasidePerson::phoneTypes()
     QCOMPARE(numbers.count(), 5);
     for (int i=0; i<numbers.count(); i++) {
         person->setPhoneNumberType(i, phoneTypes.at(i));
+        QVERIFY(person->hasDetail(phoneTypes.at(i)));
     }
 
     // Test that we don't crash here even if we set the type out of bounds.
-    // We will get a warning printed to the console.
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for phone number: invalid index specified. Aborting. ");
     person->setPhoneNumberType(numbers.length(), phoneTypes.at(phoneTypes.length() - 1));
 
     QCOMPARE(spy.count(), 5);
@@ -199,6 +273,7 @@ void tst_SeasidePerson::phoneTypes()
     for (int i=0; i<contactsPhoneTypes.count(); i++) {
         QVERIFY(contactsPhoneTypes.at(i) == phoneTypes.at(i));
     }
+    QCOMPARE(person->property("phoneNumbers").toStringList(), person->phoneNumbers());
 }
 
 void tst_SeasidePerson::emailTypes()
@@ -211,7 +286,7 @@ void tst_SeasidePerson::emailTypes()
     person->setEmailAddresses(QStringList() << "foo@bar" << "bar@foo"<< "foo@baz");
     QSignalSpy spy(person.data(), SIGNAL(emailAddressTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> emailTypes;
+    QList<SeasidePerson::DetailType> emailTypes;
     emailTypes.append(SeasidePerson::EmailHomeType);
     emailTypes.append(SeasidePerson::EmailWorkType);
     emailTypes.append(SeasidePerson::EmailOtherType);
@@ -220,10 +295,11 @@ void tst_SeasidePerson::emailTypes()
     QCOMPARE(emails.count(), 3);
     for (int i=0; i<emails.count(); i++) {
         person->setEmailAddressType(i, emailTypes.at(i));
+        QVERIFY(person->hasDetail(emailTypes.at(i)));
     }
 
     // Test that we don't crash here even if we set the type out of bounds.
-    // We will get a warning printed to the console.
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for email address: invalid index specified. Aborting. ");
     person->setEmailAddressType(emails.length(), emailTypes.at(emailTypes.length() - 1));
 
     QCOMPARE(spy.count(), 3);
@@ -244,6 +320,7 @@ void tst_SeasidePerson::emailAddresses()
     person->setEmailAddresses(QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->emailAddresses(), QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+    QCOMPARE(person->property("emailAddresses").toStringList(), person->emailAddresses());
 }
 
 void tst_SeasidePerson::websites()
@@ -254,6 +331,7 @@ void tst_SeasidePerson::websites()
     person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->websites(), QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
+    QCOMPARE(person->property("websites").toStringList(), person->websites());
 }
 
 void tst_SeasidePerson::websiteTypes()
@@ -266,7 +344,7 @@ void tst_SeasidePerson::websiteTypes()
     person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
     QSignalSpy spy(person.data(), SIGNAL(websiteTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> websiteTypes;
+    QList<SeasidePerson::DetailType> websiteTypes;
     websiteTypes.append(SeasidePerson::WebsiteHomeType);
     websiteTypes.append(SeasidePerson::WebsiteWorkType);
     websiteTypes.append(SeasidePerson::WebsiteOtherType);
@@ -275,6 +353,7 @@ void tst_SeasidePerson::websiteTypes()
     QCOMPARE(websites.count(), 3);
     for (int i = 0; i<websites.count(); i++) {
         person->setWebsiteType(i, websiteTypes.at(i));
+        QVERIFY(person->hasDetail(websiteTypes.at(i)));
     }
 
     QCOMPARE(spy.count(), 3);
@@ -285,7 +364,6 @@ void tst_SeasidePerson::websiteTypes()
     for (int i=0; i<contactsWebsiteTypes.count(); i++) {
         QVERIFY(contactsWebsiteTypes.at(i) == websiteTypes.at(i));
     }
-
 }
 
 void tst_SeasidePerson::birthday()
@@ -296,6 +374,8 @@ void tst_SeasidePerson::birthday()
     person->setBirthday(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QVERIFY(person->hasDetail(SeasidePerson::BirthdayType));
+    QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
 }
 
 void tst_SeasidePerson::anniversary()
@@ -306,6 +386,8 @@ void tst_SeasidePerson::anniversary()
     person->setAnniversary(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->anniversary(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QVERIFY(person->hasDetail(SeasidePerson::AnniversaryType));
+    QCOMPARE(person->property("anniversary").toDateTime(), person->anniversary());
 }
 
 void tst_SeasidePerson::address()
@@ -331,11 +413,16 @@ void tst_SeasidePerson::address()
 
     person->setAddressType(0, SeasidePerson::AddressHomeType);
     person->setAddressType(1, SeasidePerson::AddressWorkType);
+
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for address: invalid index specified. Aborting. ");
     person->setAddressType(2, SeasidePerson::AddressWorkType);  // Invalid, should not crash.
 
     QCOMPARE(person->addressTypes().count(), 2);
     QCOMPARE(person->addressTypes().at(0), (int)SeasidePerson::AddressHomeType);
     QCOMPARE(person->addressTypes().at(1), (int)SeasidePerson::AddressWorkType);
+
+    QVERIFY(person->hasDetail(SeasidePerson::AddressHomeType));
+    QVERIFY(person->hasDetail(SeasidePerson::AddressWorkType));
 }
 
 
@@ -371,28 +458,86 @@ void tst_SeasidePerson::setContact()
 
     QContact contact;
 
-    {
-        QContactName nameDetail;
-        nameDetail.setFirstName("Hello");
-        nameDetail.setLastName("World");
-        contact.saveDetail(&nameDetail);
+    QContactName nameDetail;
+    nameDetail.setFirstName("Hello");
+    nameDetail.setLastName("World");
+    nameDetail.setMiddleName("End of the");
+    nameDetail.setPrefix("Dr");
+    contact.saveDetail(&nameDetail);
+
+    QContactNickname nickDetail;
+    nickDetail.setNickname("a nick");
+    contact.saveDetail(&nickDetail);
+
+    QContactOrganization orgDetail;
+    orgDetail.setName("a company");
+    contact.saveDetail(&orgDetail);
+
+    QContactAvatar avatarDetail;
+    avatarDetail.setImageUrl(QUrl("an image"));
+    contact.saveDetail(&avatarDetail);
+
+    QStringList numbers = (QStringList() << "1" << "2" << "3");
+    QContactPhoneNumber numDetail;
+    foreach (const QString &num, numbers) {
+        numDetail.setNumber(num);
+    }
+    contact.saveDetail(&numDetail);
+
+    QStringList emails = (QStringList() << "a@" << "b@" << "c@");
+    foreach (const QString &email, emails) {
+        QContactEmailAddress emailDetail;
+        emailDetail.setEmailAddress(email);
+        contact.saveDetail(&emailDetail);
     }
 
-    {
-        QSignalSpy spy(person.data(), SIGNAL(firstNameChanged()));
-        QSignalSpy spyTwo(person.data(), SIGNAL(lastNameChanged()));
-        QSignalSpy spyThree(person.data(), SIGNAL(displayLabelChanged()));
-        person->setContact(contact);
-        QCOMPARE(spy.count(), 1);
-        QCOMPARE(spyTwo.count(), 1);
-        QCOMPARE(spyThree.count(), 1);
+    QContactAddress addrDetail;
+    addrDetail.setStreet("number 1");
+    contact.saveDetail(&addrDetail);
 
-        // change them again, nothing should emit
-        person->setContact(contact);
-        QCOMPARE(spy.count(), 1);
-        QCOMPARE(spyTwo.count(), 1);
-        QCOMPARE(spyThree.count(), 1);
+    QStringList websites = (QStringList() << "a:" << "b:" << "c:");
+    foreach (const QString &website, websites) {
+        QContactUrl websiteDetail;
+        websiteDetail.setUrl(website);
+        contact.saveDetail(&websiteDetail);
     }
+
+    QContactBirthday birthdayDetail;
+    birthdayDetail.setDateTime(QDateTime::currentDateTime());
+    contact.saveDetail(&birthdayDetail);
+
+    QContactAnniversary annDetail;
+    annDetail.setOriginalDateTime(QDateTime::currentDateTime().addDays(1));
+    contact.saveDetail(&annDetail);
+
+    QList<QSignalSpy *> spies;
+    spies << new QSignalSpy(person.data(), SIGNAL(firstNameChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(lastNameChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(middleNameChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(displayLabelChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(companyNameChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(nicknameChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(titleChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(avatarPathChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(phoneNumbersChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(phoneNumberTypesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(emailAddressesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(emailAddressTypesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(addressesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(addressTypesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(websitesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(websiteTypesChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(birthdayChanged()))
+        << new QSignalSpy(person.data(), SIGNAL(anniversaryChanged()));
+
+    person->setContact(contact);
+    for (int i=0; i<spies.count(); i++)
+        QCOMPARE(spies[i]->count(), 1);
+
+    // change them again, nothing should emit
+    person->setContact(contact);
+    for (int i=0; i<spies.count(); i++)
+        QCOMPARE(spies[i]->count(), 1);
 }
 
 

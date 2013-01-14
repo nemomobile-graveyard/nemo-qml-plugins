@@ -35,6 +35,7 @@
 #include <QContactBirthday>
 #include <QContactAnniversary>
 #include <QContactName>
+#include <QContactNickname>
 #include <QContactFavorite>
 #include <QContactPhoneNumber>
 #include <QContactEmailAddress>
@@ -69,6 +70,67 @@ int SeasidePerson::id() const
     return mContact.id().localId();
 }
 
+bool SeasidePerson::hasDetail(DetailType detail) const
+{
+    switch (detail) {
+    case FirstNameType:
+        return mContact.detail<QContactName>().hasValue(QContactName::FieldFirstName);
+    case LastNameType:
+        return mContact.detail<QContactName>().hasValue(QContactName::FieldLastName);
+    case MiddleNameType:
+        return mContact.detail<QContactName>().hasValue(QContactName::FieldMiddleName);
+    case CompanyType:
+        return mContact.detail<QContactOrganization>().hasValue(QContactOrganization::FieldName);
+    case TitleType:
+        return mContact.detail<QContactName>().hasValue(QContactName::FieldPrefix);
+    case NickType:
+        return mContact.detail<QContactNickname>().hasValue(QContactNickname::FieldNickname);
+    case PhoneHomeType:
+        return hasPhoneType(QContactDetail::ContextHome, QContactPhoneNumber::SubTypeLandline);
+    case PhoneWorkType:
+        return hasPhoneType(QContactDetail::ContextWork, QContactPhoneNumber::SubTypeLandline);
+    case PhoneMobileType:
+        return hasPhoneType(QContactDetail::ContextHome, QContactPhoneNumber::SubTypeMobile);
+    case PhoneFaxType:
+        return hasPhoneType(QContactDetail::ContextHome, QContactPhoneNumber::SubTypeFax);
+    case PhonePagerType:
+        return hasPhoneType(QContactDetail::ContextHome, QContactPhoneNumber::SubTypePager);
+    case EmailHomeType:
+        return hasEmailType(QContactDetail::ContextHome);
+    case EmailWorkType:
+        return hasEmailType(QContactDetail::ContextWork);
+    case EmailOtherType:
+        return hasEmailType(QContactDetail::ContextOther);
+    case AddressHomeType:
+        return hasAddressType(QContactDetail::ContextHome);
+    case AddressWorkType:
+        return hasAddressType(QContactDetail::ContextWork);
+    case AddressOtherType:
+        return hasAddressType(QContactDetail::ContextOther);
+    case WebsiteHomeType:
+        return hasWebsiteType(QContactDetail::ContextHome);
+    case WebsiteWorkType:
+        return hasWebsiteType(QContactDetail::ContextWork);
+    case WebsiteOtherType:
+        return hasWebsiteType(QContactDetail::ContextOther);
+    case BirthdayType:
+        return mContact.detail<QContactBirthday>().hasValue(QContactBirthday::FieldBirthday);
+    case AnniversaryType:
+        return mContact.detail<QContactAnniversary>().hasValue(QContactAnniversary::FieldOriginalDate);
+
+    // XXX move these address types to an "address sub-type" enum
+    case AddressStreetType:
+    case AddressLocalityType:
+    case AddressRegionType:
+    case AddressPostcodeType:
+    case AddressCountryType:
+    case AddressPOBoxType:
+        return false;
+    }
+
+    return false;
+}
+
 QString SeasidePerson::firstName() const
 {
     QContactName nameDetail = mContact.detail<QContactName>();
@@ -99,6 +161,21 @@ void SeasidePerson::setLastName(const QString &name)
     recalculateDisplayLabel();
 }
 
+QString SeasidePerson::middleName() const
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    return nameDetail.middleName();
+}
+
+void SeasidePerson::setMiddleName(const QString &name)
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    nameDetail.setMiddleName(name);
+    mContact.saveDetail(&nameDetail);
+    emit middleNameChanged();
+    recalculateDisplayLabel();
+}
+
 // small helper to avoid inconvenience
 static QString generateDisplayLabel(QContact mContact)
 {
@@ -106,15 +183,22 @@ static QString generateDisplayLabel(QContact mContact)
     QString displayLabel;
     QContactName name = mContact.detail<QContactName>();
     QString nameStr1 = name.firstName();
-    QString nameStr2 = name.lastName();
+    QString nameStr2 = name.middleName();
+    QString nameStr3 = name.lastName();
 
-    if (!nameStr1.isNull())
+    if (!nameStr1.isEmpty())
         displayLabel.append(nameStr1);
 
-    if (!nameStr2.isNull()) {
+    if (nameStr1.isEmpty() && !nameStr2.isEmpty()) {
         if (!displayLabel.isEmpty())
             displayLabel.append(" ");
         displayLabel.append(nameStr2);
+    }
+
+    if (!nameStr3.isEmpty()) {
+        if (!displayLabel.isEmpty())
+            displayLabel.append(" ");
+        displayLabel.append(nameStr3);
     }
 
     if (!displayLabel.isEmpty())
@@ -144,10 +228,11 @@ static QString generateDisplayLabel(QContact mContact)
 
 void SeasidePerson::recalculateDisplayLabel()
 {
-    QString oldDisplayLabel = displayLabel();
-    QString newDisplayLabel = generateDisplayLabel(mContact);
+    // prefer user-set nickname over generated display label
+    QString nick = nickname();
+    QString oldDisplayLabel = mDisplayLabel;
+    QString newDisplayLabel = nick.isEmpty() ? generateDisplayLabel(mContact) : nick;
 
-    // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
         mDisplayLabel = newDisplayLabel;
         emit displayLabelChanged();
@@ -186,6 +271,35 @@ void SeasidePerson::setCompanyName(const QString &name)
     companyNameDetail.setName(name);
     mContact.saveDetail(&companyNameDetail);
     emit companyNameChanged();
+}
+
+QString SeasidePerson::nickname() const
+{
+    QContactNickname nameDetail = mContact.detail<QContactNickname>();
+    return nameDetail.nickname();
+}
+
+void SeasidePerson::setNickname(const QString &name)
+{
+    QContactNickname nameDetail = mContact.detail<QContactNickname>();
+    nameDetail.setNickname(name);
+    mContact.saveDetail(&nameDetail);
+    emit nicknameChanged();
+    recalculateDisplayLabel();
+}
+
+QString SeasidePerson::title() const
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    return nameDetail.prefix();
+}
+
+void SeasidePerson::setTitle(const QString &name)
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    nameDetail.setPrefix(name);
+    mContact.saveDetail(&nameDetail);
+    emit titleChanged();
 }
 
 bool SeasidePerson::favorite() const
@@ -286,6 +400,17 @@ void SeasidePerson::setPhoneNumbers(const QStringList &phoneNumbers)
     emit phoneNumbersChanged();
 }
 
+bool SeasidePerson::hasPhoneType(const QString &context, const QString &subType) const
+{
+    const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
+    for (int i=0; i<numbers.count(); i++) {
+        if (numbers[i].contexts().contains(context) && numbers[i].subTypes().contains(subType)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 QList<int> SeasidePerson::phoneNumberTypes() const
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
@@ -316,7 +441,7 @@ QList<int> SeasidePerson::phoneNumberTypes() const
     return types;
 }
 
-void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
     if (which >= numbers.length()) {
@@ -359,6 +484,17 @@ void SeasidePerson::setEmailAddresses(const QStringList &emailAddresses)
     emit emailAddressesChanged();
 }
 
+bool SeasidePerson::hasEmailType(const QString &context) const
+{
+    const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
+    for (int i=0; i<emails.count(); i++) {
+        if (emails[i].contexts().contains(context)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 QList<int> SeasidePerson::emailAddressTypes() const
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
@@ -380,7 +516,7 @@ QList<int> SeasidePerson::emailAddressTypes() const
     return types;
 }
 
-void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
 
@@ -473,6 +609,17 @@ void SeasidePerson::setAddresses(const QStringList &addresses)
     emit addressesChanged();
 }
 
+bool SeasidePerson::hasAddressType(const QString &context) const
+{
+    const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
+    for (int i=0; i<addresses.count(); i++) {
+        if (addresses[i].contexts().contains(context)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 QList<int> SeasidePerson::addressTypes() const
 {
     const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
@@ -494,7 +641,7 @@ QList<int> SeasidePerson::addressTypes() const
     return types;
 }
 
-void SeasidePerson::setAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
 
@@ -529,6 +676,17 @@ void SeasidePerson::setWebsites(const QStringList &websites)
     emit websitesChanged();
 }
 
+bool SeasidePerson::hasWebsiteType(const QString &context) const
+{
+    const QList<QContactUrl> &websites = mContact.details<QContactUrl>();
+    for (int i=0; i<websites.count(); i++) {
+        if (websites[i].contexts().contains(context)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 QList<int> SeasidePerson::websiteTypes() const
 {
     const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
@@ -550,7 +708,7 @@ QList<int> SeasidePerson::websiteTypes() const
     return types;
 }
 
-void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
 
@@ -632,37 +790,61 @@ void SeasidePerson::setContact(const QContact &contact)
 
     QContactName oldName = oldContact.detail<QContactName>();
     QContactName newName = mContact.detail<QContactName>();
-
     if (oldName.firstName() != newName.firstName())
         emit firstNameChanged();
-
     if (oldName.lastName() != newName.lastName())
         emit lastNameChanged();
+    if (oldName.middleName() != newName.middleName())
+        emit middleNameChanged();
+    if (oldName.prefix() != newName.prefix())
+        emit titleChanged();
 
-    QContactOrganization oldCompany = oldContact.detail<QContactOrganization>();
-    QContactOrganization newCompany = mContact.detail<QContactOrganization>();
+    recalculateDisplayLabel();
 
-    if (oldCompany.name() != newCompany.name())
+    if (oldContact.detail<QContactOrganization>().name() != mContact.detail<QContactOrganization>().name())
         emit companyNameChanged();
+
+    if (oldContact.detail<QContactNickname>().nickname() != mContact.detail<QContactNickname>().nickname())
+        emit nicknameChanged();
+
+    if (oldContact.details<QContactPhoneNumber>() != mContact.details<QContactPhoneNumber>()) {
+        emit phoneNumbersChanged();
+        emit phoneNumberTypesChanged();
+    }
+
+    if (oldContact.details<QContactEmailAddress>() != mContact.details<QContactEmailAddress>()) {
+        emit emailAddressesChanged();
+        emit emailAddressTypesChanged();
+    }
+
+    if (oldContact.details<QContactAddress>() != mContact.details<QContactAddress>()) {
+        emit addressesChanged();
+        emit addressTypesChanged();
+    }
+
+    if (oldContact.details<QContactUrl>() != mContact.details<QContactUrl>()) {
+        emit websitesChanged();
+        emit websiteTypesChanged();
+    }
+
+    if (oldContact.detail<QContactBirthday>().dateTime() != mContact.detail<QContactBirthday>().dateTime())
+        emit birthdayChanged();
+
+    if (oldContact.detail<QContactAnniversary>().originalDateTime() != mContact.detail<QContactAnniversary>().originalDateTime())
+        emit anniversaryChanged();
 
     QContactFavorite oldFavorite = oldContact.detail<QContactFavorite>();
     QContactFavorite newFavorite = mContact.detail<QContactFavorite>();
-
     if (oldFavorite.isFavorite() != newFavorite.isFavorite())
         emit favoriteChanged();
 
     QContactAvatar oldAvatar = oldContact.detail<QContactAvatar>();
     QContactAvatar newAvatar = mContact.detail<QContactAvatar>();
-
     if (oldAvatar.imageUrl() != newAvatar.imageUrl())
         emit avatarPathChanged();
 
     // TODO: differencing of list type details
-    emit phoneNumbersChanged();
-    emit emailAddressesChanged();
     emit accountUrisChanged();
     emit accountPathsChanged();
-
-    recalculateDisplayLabel();
 }
 
