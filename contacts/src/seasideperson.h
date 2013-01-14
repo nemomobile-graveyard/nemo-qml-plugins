@@ -74,6 +74,7 @@ public:
         AddressHomeType,
         AddressWorkType,
         AddressOtherType,
+        // XXX move these address types to an "address sub-type" enum
         AddressStreetType,
         AddressLocalityType,
         AddressRegionType,
@@ -83,14 +84,20 @@ public:
         // Website
         WebsiteHomeType,
         WebsiteWorkType,
-        WebsiteOtherType
+        WebsiteOtherType,
+        // Dates
+        BirthdayType,
+        AnniversaryType
     };
+    Q_DECLARE_FLAGS(DetailTypes, DetailType)
 
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
 
     Q_PROPERTY(int id READ id)
     int id() const;
+
+    bool hasDetail(DetailType detail) const;
 
     Q_PROPERTY(QString firstName READ firstName WRITE setFirstName NOTIFY firstNameChanged)
     QString firstName() const;
@@ -100,6 +107,10 @@ public:
     QString lastName() const;
     void setLastName(const QString &name);
 
+    Q_PROPERTY(QString middleName READ middleName WRITE setMiddleName NOTIFY middleNameChanged)
+    QString middleName() const;
+    void setMiddleName(const QString &name);
+
     Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
     QString sectionBucket() const;
     Q_PROPERTY(QString displayLabel READ displayLabel NOTIFY displayLabelChanged)
@@ -108,6 +119,14 @@ public:
     Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
     QString companyName() const;
     void setCompanyName(const QString &name);
+
+    Q_PROPERTY(QString nickname READ nickname WRITE setNickname NOTIFY nicknameChanged)
+    QString nickname() const;
+    void setNickname(const QString &name);
+
+    Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
+    QString title() const;
+    void setTitle(const QString &name);
 
     Q_PROPERTY(bool favorite READ favorite WRITE setFavorite NOTIFY favoriteChanged)
     bool favorite() const;
@@ -175,8 +194,11 @@ signals:
     void contactRemoved();
     void firstNameChanged();
     void lastNameChanged();
+    void middleNameChanged();
     void displayLabelChanged();
     void companyNameChanged();
+    void nicknameChanged();
+    void titleChanged();
     void favoriteChanged();
     void avatarPathChanged();
     void phoneNumbersChanged();
@@ -195,13 +217,19 @@ signals:
 private:
     // TODO: private class
     explicit SeasidePerson(const QContact &contact, QObject *parent = 0);
+    bool hasPhoneType(const QString &context, const QString &subType) const;
+    bool hasAddressType(const QString &context) const;
+    bool hasEmailType(const QString &context) const;
+    bool hasWebsiteType(const QString &context) const;
     QContact mContact;
     QString mDisplayLabel;
+    DetailTypes mDetailTypes;
 
     friend class tst_SeasidePerson;
     friend class SeasidePeopleModelPriv;
 };
 
 Q_DECLARE_METATYPE(SeasidePerson *);
+Q_DECLARE_OPERATORS_FOR_FLAGS(SeasidePerson::DetailTypes)
 
 #endif // SEASIDEPERSON_H
