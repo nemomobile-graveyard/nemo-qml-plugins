@@ -17,6 +17,8 @@
 #include <qmailstore.h>
 #include <qmailserviceaction.h>
 
+#include "emailaction.h"
+
 #ifdef HAS_MLITE
 #include <mgconfitem.h>
 #endif
@@ -34,22 +36,23 @@ public:
     void sendMessages (const QMailAccountId &id);
     bool isSynchronizing() const;
 
-    void exportAccountChanges(const QMailAccountId id);
+    void exportUpdates(const QMailAccountId id);
     void flagMessages(const QMailMessageIdList &ids, quint64 setMask, quint64 unsetMask);
+    quint64 newAction();
 
-    Q_INVOKABLE void accountsSync();
+    Q_INVOKABLE void accountsSync(const bool syncOnlyInbox = false, const uint minimum = 20);
     Q_INVOKABLE void deleteMessage(QVariant id);
     Q_INVOKABLE void deleteMessages(const QMailMessageIdList &ids);
     Q_INVOKABLE void createFolder(const QString &name, QVariant vMailAccountId, QVariant vParentFolderId);
     Q_INVOKABLE void deleteFolder(QVariant vFolderId);
     Q_INVOKABLE void renameFolder(QVariant vFolderId, const QString &name);
-    Q_INVOKABLE void retrieveFolderList(QVariant vMailAccountId, QVariant vFolderId = 0, bool descending = true);
+    Q_INVOKABLE void retrieveFolderList(QVariant vMailAccountId, QVariant vFolderId = 0, const bool descending = true);
     Q_INVOKABLE void synchronize(QVariant vMailAccountId);
-    Q_INVOKABLE void retrieveMessageList(QVariant vMailAccountId, QVariant vFolderId, uint minimum = 0);
+    Q_INVOKABLE void retrieveMessageList(QVariant vMailAccountId, QVariant vFolderId, const uint minimum = 20);
     Q_INVOKABLE void cancelSync();
     Q_INVOKABLE void markMessageAsRead(QVariant vMsgId);
     Q_INVOKABLE void markMessageAsUnread(QVariant vMsgId);
-    Q_INVOKABLE void getMoreMessages(QVariant vFolderId);
+    Q_INVOKABLE void getMoreMessages(QVariant vFolderId, uint minimum = 20);
     Q_INVOKABLE QString getSignatureForAccount(QVariant vMailAccountId);
     Q_INVOKABLE bool confirmDeleteMail();
     Q_INVOKABLE void downloadAttachment(QVariant vMailMessage, const QString& attachmentDisplayName);
@@ -57,13 +60,11 @@ public:
     Q_INVOKABLE void openBrowser(const QString& url);
     Q_INVOKABLE QString getMessageBodyFromFile(const QString& bodyFilePath);
 
-
 signals:
     void retrievalCompleted();
     void sendCompleted();
     void syncCompleted();
     void syncBegin();
-    void messagesDeleted(QMailMessageIdList);
     void error(const QMailAccountId &id, const QString &msg, int code);
     void attachmentDownloadStarted();
     void attachmentDownloadCompleted();
@@ -73,34 +74,37 @@ private slots:
     void progressChanged(uint value, uint total);
     void activityChanged(QMailServiceAction::Activity activity);
     void attachmentDownloadActivityChanged(QMailServiceAction::Activity activity);
-    void exportActivityChanged(QMailServiceAction::Activity activity);
-    void exportAccounts();
     void initMailServer();
     void onFoldersAdded (const QMailFolderIdList &);
 
 private:
     static EmailAgent *m_instance;
 
+    uint m_actionCount;
     bool m_retrieving;
     bool m_transmitting;
-    bool m_exporting;
     bool m_cancelling;
+    bool m_synchronizing;
 
-    QMailAccountIdList m_retrieveAccounts;
-    QMailAccountIdList m_transmitAccounts;
-    QMailAccountIdList m_exportAccounts;
+    QMailAccountIdList m_enabledAccounts;
 
-    QMailRetrievalAction *const m_retrievalAction;
-    QMailStorageAction *const m_storageAction;
-    QMailTransmitAction *const m_transmitAction;
-    QMailRetrievalAction *const m_exportAction;
+    QScopedPointer<QMailRetrievalAction> const m_retrievalAction;
+    QScopedPointer<QMailStorageAction> const m_storageAction;
+    QScopedPointer<QMailTransmitAction> const m_transmitAction;
     QMailRetrievalAction *m_attachmentRetrievalAction;
     QMailMessageId m_messageId;
     QMailMessagePart m_attachmentPart;
 
     QProcess m_messageServerProcess;
 
-    QTimer m_exportTimer;
+    void enqueue(EmailAction *action);
+    void dequeue();
+    bool actionInQueue(QSharedPointer<EmailAction> action) const;
+    void executeCurrent();
+    QSharedPointer<EmailAction> getNext();
+
+    QList<QSharedPointer<EmailAction> > _actionQueue;
+    QSharedPointer<EmailAction> _currentAction;
 
 #ifdef HAS_MLITE
     MGConfItem *m_confirmDeleteMail;
