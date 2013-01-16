@@ -207,25 +207,52 @@ void ServiceAccountIdentityInterfacePrivate::setUpSessionSignals()
     Item {
         id: root
 
-        property int serviceAccountIdentityIdentifier // retrieved from a ServiceAccount
-        property variant sessionData // retrieved from a ServiceAccount (authData.parameters)
+        property QtObject serviceAccount // retrieved from AccountManager or ServiceAccountModel
+
+        SignOnUiContainer {
+            id: container
+            anchors.fill: parent
+        }
 
         ServiceAccountIdentity {
             id: ident
-            identifier: serviceAccountIdentityIdentifier
-
-            onResponseReceived: {
-                // enumerate signon tokens from the returned session data, etc.
-                // then continue sign on with updated session data, or perform API calls, etc.
-                sessionData = {"Auth": data["Auth"]}
-                process(sessionData)
-            }
+            identifier: serviceAccount.authData.identityIdentifier
+            property bool _done: false
 
             onStatusChanged: {
                 if (status == ServiceAccountIdentity.Initialized) {
-                    signIn("password", "ClientLogin", sessionData)
+                    // Begin sign-on, using the auth data specified in the service account.
+                    // In this example, I assume oauth2 + user_agent authentication,
+                    // which requires the extra ClientId and ClientSecret parameters.
+                    // The WindowId parameter is also passed for smoother UI flow.
+                    var sessionData = serviceAccount.authData.parameters
+                    sessionData["ClientId"] = "0123456789"
+                    sessionData["ClientSecret"] = "0123456789abcdef"
+                    sessionData["WindowId"] = container.windowId()
+                    container.show()
+                    signIn(serviceAccount.authData.method,
+                           serviceAccount.authData.mechanism,
+                           sessionData)
                 } else if (status == ServiceAccountIdentity.Error) {
                     console.log("Error (" + error + ") occurred during authentication: " + errorMessage)
+                }
+            }
+
+            onResponseReceived: {
+                // Enumerate signon tokens / results from the response data
+                console.log("Got response:")
+                for (var i in data)
+                    console.log("    " + i + " = " + data[i])
+
+                // Then continue sign on with updated session data,
+                // if required (usually, this won't be required).
+                if (!_done) {
+                    _done = true;
+                    var sessionData = {"AccessToken": data["AccessToken"], "RequestToken": "post_message"}
+                    process(sessionData) // exchange the access token for the "post_message" capability token.
+                } else {
+                    // When finished, sign out.
+                    signOut()
                 }
             }
         }
@@ -326,6 +353,60 @@ void ServiceAccountIdentityInterface::verifyUser(const QVariantMap &params)
     Usually only one single method and one single mechanism will be valid
     to sign in with, and these can be retrieved from the \c authData of the
     \c ServiceAccount with which this \c ServiceAccountIdentity is associated.
+
+    The \a sessionData should be retrieved from the \c authData of the
+    \c ServiceAccount and augmented with any application-specific values
+    which are required for sign on.  In particular, it is often useful or
+    necessary to provide one or more of the following keys:
+
+    \table
+        \header
+            \li Key
+            \li Value
+            \li When
+        \row
+            \li WindowId
+            \li You may call the \c windowId() function of the \c WindowIdHelper
+                type to retrieve the window id.  Alternatively, it may be
+                accessed from the top-level QDeclarativeView or QWidget.
+            \li All applications should provide a \c WindowId in order to
+                ensure that any UI spawned by the sign-on UI daemon will
+                belong to the correct window.
+        \row
+            \li Embedded
+            \li Either \c true or \c false.  It is \c false by default.
+            \li If you wish to embed the UI spawned by the sign-on UI daemon
+                into a SignOnUiContainer, this value should be set to \c true.
+        \row
+            \li Title
+            \li A translated string
+            \li The title will be displayed in any UI element spawned by the
+                sign-on UI daemon.
+        \row
+            \li ClientId
+            \li OAuth2 application client id provided to you by the service
+                (eg, Facebook, GMail, etc)
+            \li Services which use the \c oauth2 method with the \c user_agent
+                mechanism require this key to be provided
+        \row
+            \li ClientSecret
+            \li OAuth2 application client secret provided to you by the service
+                (eg, Facebook, GMail, etc)
+            \li Services which use the \c oauth2 method with the \c user_agent
+                mechanism require this key to be provided
+        \row
+            \li ConsumerKey
+            \li OAuth1.0a application consumer key provided to you by the service
+                (eg, Flickr, Twitter, etc)
+            \li Services which use the \c oauth1.0a or \c oauth2 method with the \c HMAC-SHA1
+                mechanism require this key to be provided
+        \row
+            \li ConsumerSecret
+            \li OAuth1.0a application consumer secret provided to you by the service
+                (eg, Flickr, Twitter, etc)
+            \li Services which use the \c oauth1.0a or \c oauth2 method with the \c HMAC-SHA1
+                mechanism require this key to be provided
+    \endtable
 */
 bool ServiceAccountIdentityInterface::signIn(const QString &method, const QString &mechanism, const QVariantMap &sessionData)
 {
