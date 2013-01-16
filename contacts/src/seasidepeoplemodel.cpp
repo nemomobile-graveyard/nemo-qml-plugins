@@ -74,6 +74,7 @@
 SeasidePeopleModel::SeasidePeopleModel(QObject *parent)
     : QAbstractListModel(parent)
     , priv(new SeasidePeopleModelPriv(this))
+    , currentSortByField(SeasideProxyModel::FirstNameFirst)
 {
     QHash<int, QByteArray> roles;
     roles.insert(Qt::DisplayRole, "display");
@@ -82,6 +83,9 @@ SeasidePeopleModel::SeasidePeopleModel(QObject *parent)
     roles.insert(SectionBucketRole, "sectionBucket");
     roles.insert(PersonRole, "person");
     setRoleNames(roles);
+
+    connect(this, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
+            this, SLOT(onSortByFieldChanged(SeasideProxyModel::SortByField)));
 }
 
 SeasidePeopleModel::~SeasidePeopleModel()
@@ -281,5 +285,17 @@ bool SeasidePeopleModel::populated() const
 QContactManager *SeasidePeopleModel::manager() const
 {
     return priv->manager;
+}
+
+SeasideProxyModel::SortByField SeasidePeopleModel::sortByField() const
+{
+    return currentSortByField;
+}
+
+void SeasidePeopleModel::onSortByFieldChanged(SeasideProxyModel::SortByField sortBy)
+{
+    if (sortBy != currentSortByField) {
+        currentSortByField = sortBy;
+    }
 }
 

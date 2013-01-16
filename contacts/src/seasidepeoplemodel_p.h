@@ -19,6 +19,7 @@
 #include "seasidepeoplemodel.h"
 #include "localeutils_p.h"
 
+class MGConfItem;
 class SeasidePeopleModelPriv : public QObject
 {
     Q_OBJECT
@@ -44,6 +45,8 @@ public:
     LocaleUtils *localeHelper;
     QContactGuid currentGuid;
     QList<QContact> contactsPendingSave;
+    MGConfItem *sortByFieldConf;
+    SeasideProxyModel::SortByField personSortByField;
 
     static QString normalizePhoneNumber(const QString &msisdn);
 
@@ -64,6 +67,8 @@ private slots:
 
     void contactsAdded(const QList<QContactLocalId>& contactIds);
     void contactsChanged(const QList<QContactLocalId>& contactIds);
+
+    void onSortByConfChanged();
 
 private:
     Q_DISABLE_COPY(SeasidePeopleModelPriv);

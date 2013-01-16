@@ -55,7 +55,6 @@ SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(contact)
 {
-    recalculateDisplayLabel();
 }
 
 SeasidePerson::~SeasidePerson()
@@ -100,13 +99,21 @@ void SeasidePerson::setLastName(const QString &name)
 }
 
 // small helper to avoid inconvenience
-static QString generateDisplayLabel(QContact mContact)
+static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
     QString displayLabel;
     QContactName name = mContact.detail<QContactName>();
-    QString nameStr1 = name.firstName();
-    QString nameStr2 = name.lastName();
+
+    QString nameStr1;
+    QString nameStr2;
+    if (sortBy == SeasideProxyModel::LastNameFirst) {
+        nameStr1 = name.lastName();
+        nameStr2 = name.firstName();
+    } else {
+        nameStr1 = name.firstName();
+        nameStr2 = name.lastName();
+    }
 
     if (!nameStr1.isNull())
         displayLabel.append(nameStr1);
@@ -142,10 +149,10 @@ static QString generateDisplayLabel(QContact mContact)
     return "(unnamed)"; // TODO: localisation
 }
 
-void SeasidePerson::recalculateDisplayLabel()
+void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy)
 {
-    QString oldDisplayLabel = displayLabel();
-    QString newDisplayLabel = generateDisplayLabel(mContact);
+    QString oldDisplayLabel = mDisplayLabel;
+    QString newDisplayLabel = generateDisplayLabel(mContact, sortBy);
 
     // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
@@ -154,12 +161,16 @@ void SeasidePerson::recalculateDisplayLabel()
     }
 }
 
-QString SeasidePerson::displayLabel() const
+QString SeasidePerson::displayLabel()
 {
+    if (mDisplayLabel.isEmpty()) {
+        recalculateDisplayLabel();
+    }
+
     return mDisplayLabel;
 }
 
-QString SeasidePerson::sectionBucket() const
+QString SeasidePerson::sectionBucket()
 {
     if (displayLabel().isEmpty())
         return QString();

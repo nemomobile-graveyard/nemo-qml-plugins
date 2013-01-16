@@ -10,19 +10,21 @@
 #define SEASIDEPROXYMODEL_H
 
 #include <QSortFilterProxyModel>
-#include "seasidepeoplemodel.h"
-
 #include <QDeclarativeParserStatus>
 
+class SeasidePerson;
 class SeasideProxyModelPriv;
-
+class SeasidePeopleModel;
 class SeasideProxyModel : public QSortFilterProxyModel, public QDeclarativeParserStatus
 {
     Q_OBJECT
     Q_PROPERTY(bool populated READ populated NOTIFY populatedChanged)
     Q_PROPERTY(FilterType filterType READ filterType WRITE setFilter NOTIFY filterTypeChanged)
     Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
+    Q_PROPERTY(SortByField sortByField READ sortByField WRITE setSortByField NOTIFY sortByFieldChanged(SeasideProxyModel::SortByField))
+
     Q_ENUMS(FilterType)
+    Q_ENUMS(SortByField)
 
 public:
     SeasideProxyModel(QObject *parent = 0);
@@ -31,12 +33,17 @@ public:
     enum FilterType {
         FilterNone,
         FilterAll,
-        FilterFavorites,
+        FilterFavorites
+    };
+
+    enum SortByField {
+        FirstNameFirst,
+        LastNameFirst
     };
 
     enum StringType {
         Primary,
-        Secondary,
+        Secondary
     };
 
     void classBegin();
@@ -45,8 +52,12 @@ public:
     bool populated() const;
 
     FilterType filterType() const;
-    Q_INVOKABLE virtual void setFilter(FilterType filter);
     QString filterPattern() const;
+    void setSortByField(SortByField sortByField);
+
+    SortByField sortByField();
+
+    Q_INVOKABLE virtual void setFilter(FilterType filter);
     Q_INVOKABLE void setFilterPattern(const QString &pattern);
     Q_INVOKABLE void search(const QString &pattern) { setFilterPattern(pattern); }
 
@@ -54,42 +65,13 @@ public:
     Q_INVOKABLE QVariantMap get(int row) const;
 
     // API
-    Q_INVOKABLE bool savePerson(SeasidePerson *person)
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->savePerson(person);
-    }
-    Q_INVOKABLE SeasidePerson *personByRow(int row) const
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        int sourceRow = mapToSource(index(row, 0)).row();
-        return model->personByRow(sourceRow);
-    }
-    Q_INVOKABLE SeasidePerson *personById(int id) const
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->personById(id);
-    }
-    Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel*>(sourceModel());
-        return model->personByPhoneNumber(msisdn);
-    }
-    Q_INVOKABLE void removePerson(SeasidePerson *person)
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        model->removePerson(person);
-    }
-    Q_INVOKABLE int importContacts(const QString &path)
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->importContacts(path);
-    }
-    Q_INVOKABLE QString exportContacts()
-    {
-        SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
-        return model->exportContacts();
-    }
+    Q_INVOKABLE bool savePerson(SeasidePerson *person);
+    Q_INVOKABLE SeasidePerson *personByRow(int row) const;
+    Q_INVOKABLE SeasidePerson *personById(int id) const;
+    Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const;
+    Q_INVOKABLE void removePerson(SeasidePerson *person);
+    Q_INVOKABLE int importContacts(const QString &path);
+    Q_INVOKABLE QString exportContacts();
 
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     int count() const;
@@ -99,6 +81,7 @@ signals:
     void countChanged();
     void filterTypeChanged();
     void filterPatternChanged();
+    void sortByFieldChanged(SeasideProxyModel::SortByField);
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
@@ -109,6 +92,7 @@ private:
 
     friend class tst_SeasideProxyModel;
     SeasideProxyModelPriv *priv;
+    SeasideProxyModel::SortByField mSortByField;
     Q_DISABLE_COPY(SeasideProxyModel)
 };
 

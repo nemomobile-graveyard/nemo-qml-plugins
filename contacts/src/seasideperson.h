@@ -39,6 +39,9 @@
 // Mobility
 #include <QContact>
 
+// Seaside
+#include "seasideproxymodel.h"
+
 QTM_USE_NAMESPACE
 
 Q_DECLARE_METATYPE(QContact)
@@ -101,9 +104,10 @@ public:
     void setLastName(const QString &name);
 
     Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
-    QString sectionBucket() const;
+    QString sectionBucket();
+
     Q_PROPERTY(QString displayLabel READ displayLabel NOTIFY displayLabelChanged)
-    QString displayLabel() const;
+    QString displayLabel();
 
     Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
     QString companyName() const;
@@ -169,8 +173,6 @@ public:
     Q_INVOKABLE QVariant contactData() const { return QVariant::fromValue(contact()); }
     Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
 
-    void recalculateDisplayLabel();
-
 signals:
     void contactRemoved();
     void firstNameChanged();
@@ -191,6 +193,9 @@ signals:
     void anniversaryChanged();
     void accountUrisChanged();
     void accountPathsChanged();
+
+public slots:
+    void recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst);
 
 private:
     // TODO: private class

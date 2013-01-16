@@ -11,9 +11,10 @@
 
 #include <QStringList>
 
-#include "seasideperson.h"
-#include "seasideproxymodel.h"
 #include "localeutils_p.h"
+#include "seasideperson.h"
+#include "seasidepeoplemodel.h"
+#include "seasideproxymodel.h"
 
 class SeasideProxyModelPriv
 {
@@ -34,6 +35,7 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
     Q_UNUSED(parent);
     priv = new SeasideProxyModelPriv;
     priv->filterType = FilterAll;
+    mSortByField = FirstNameFirst;
     priv->localeHelper = LocaleUtils::self();
     setDynamicSortFilter(true);
     setFilterKeyColumn(-1);
@@ -45,7 +47,8 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
             SIGNAL(countChanged()));
 
     connect(this, SIGNAL(layoutChanged()),
-            SIGNAL(countChanged()));
+            SIGNAL(countChanged()));       
+
 }
 
 SeasideProxyModel::~SeasideProxyModel()
@@ -68,6 +71,13 @@ void SeasideProxyModel::componentComplete()
 
     connect(sourceModel, SIGNAL(populatedChanged()),
             this, SIGNAL(populatedChanged()));
+
+    connect(this, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
+            sourceModel, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)));
+
+    if (mSortByField != FirstNameFirst) {
+        emit sortByFieldChanged(mSortByField);
+    }
 }
 
 bool SeasideProxyModel::populated() const
@@ -109,6 +119,20 @@ void SeasideProxyModel::setFilterPattern(const QString &pattern)
         if (priv->componentComplete)
             invalidateFilter();
         emit filterPatternChanged();
+    }
+}
+
+SeasideProxyModel::SortByField SeasideProxyModel::sortByField()
+{
+    return mSortByField;
+}
+
+void SeasideProxyModel::setSortByField(SortByField sortByField)
+{
+    if (sortByField != mSortByField) {
+        mSortByField = sortByField;
+        invalidate();
+        emit sortByFieldChanged(sortByField);
     }
 }
 
@@ -183,7 +207,7 @@ bool SeasideProxyModel::filterAcceptsRow(int source_row,
 }
 
 bool SeasideProxyModel::lessThan(const QModelIndex& left,
-                          const QModelIndex& right) const
+                                 const QModelIndex& right) const
 {
     SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
 
@@ -206,6 +230,46 @@ QVariantMap SeasideProxyModel::get(int row) const
     SeasidePerson *p = personByRow(row);
     m["sectionBucket"] = p->sectionBucket();
     return m;
+}
+
+bool SeasideProxyModel::savePerson(SeasidePerson *person)
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    return model->savePerson(person);
+}
+
+SeasidePerson* SeasideProxyModel::personByRow(int row) const {
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    int sourceRow = mapToSource(index(row, 0)).row();
+    return model->personByRow(sourceRow);
+}
+
+SeasidePerson * SeasideProxyModel::personById(int id) const
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    return model->personById(id);
+}
+SeasidePerson * SeasideProxyModel::personByPhoneNumber(const QString &msisdn) const
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel*>(sourceModel());
+    return model->personByPhoneNumber(msisdn);
+}
+void SeasideProxyModel::removePerson(SeasidePerson *person)
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    model->removePerson(person);
+}
+
+int SeasideProxyModel::importContacts(const QString &path)
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    return model->importContacts(path);
+}
+
+QString SeasideProxyModel::exportContacts()
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    return model->exportContacts();
 }
 
 int SeasideProxyModel::count() const
