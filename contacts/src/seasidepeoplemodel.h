@@ -36,10 +36,10 @@
 
 #include <QUuid>
 #include <QContactManagerEngine>
+#include "seasideproxymodel.h"
 
 class SeasidePerson;
 class SeasidePeopleModelPriv;
-
 QTM_USE_NAMESPACE
 
 class SeasidePeopleModel: public QAbstractListModel
@@ -76,15 +76,20 @@ public:
     Q_INVOKABLE QString exportContacts() const;
 
     bool populated() const;
-
     QContactManager *manager() const;
+    SeasideProxyModel::SortByField sortByField() const;
+
+public slots:
+    void onSortByFieldChanged(SeasideProxyModel::SortByField sortBy);
 
 Q_SIGNALS:
     void populatedChanged();
+    void sortByFieldChanged(SeasideProxyModel::SortByField);
 
 private:
     SeasidePeopleModelPriv *priv;
     friend class SeasidePeopleModelPriv;
+    SeasideProxyModel::SortByField currentSortByField;
     Q_DISABLE_COPY(SeasidePeopleModel);
 };
 
