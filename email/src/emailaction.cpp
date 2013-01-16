@@ -9,12 +9,13 @@
 
 #include "emailaction.h"
 
-QString idListToString(const QMailMessageIdList &ids)
+template<typename T>
+QString idListToString(const QList<T> &ids)
 {
     QString idsList;
     int idsCount = ids.count();
     int interatorPos = 0;
-    foreach(QMailMessageId id, ids) {
+    foreach(const typename QList<T>::value_type &id, ids) {
         interatorPos++;
         if (interatorPos == idsCount) {
             idsList += QString("%1").arg(id.toULongLong());
@@ -24,6 +25,7 @@ QString idListToString(const QMailMessageIdList &ids)
         }
     }
     return idsList;
+
 }
 
 /*
@@ -139,6 +141,35 @@ QMailServiceAction* FlagMessages::serviceAction() const
 }
 
 /*
+  MoveToStandardFolder
+*/
+MoveToStandardFolder::MoveToStandardFolder(QMailStorageAction *storageAction,
+                                           const QMailMessageIdList &ids, QMailFolder::StandardFolder standardFolder)
+    : EmailAction()
+    , _storageAction(storageAction)
+    , _ids(ids)
+    , _standardFolder(standardFolder)
+{
+    QString idsList = idListToString(_ids);
+    _description =  QString("move-messages-to-standard-folder:message-ids=%1;standard-folder=%2").arg(idsList)
+            .arg(_standardFolder);
+}
+
+MoveToStandardFolder::~MoveToStandardFolder()
+{
+}
+
+void MoveToStandardFolder::execute()
+{
+    _storageAction->moveToStandardFolder(_ids, _standardFolder);
+}
+
+QMailServiceAction* MoveToStandardFolder::serviceAction() const
+{
+    return _storageAction;
+}
+
+/*
   OnlineCreateFolder
 */
 OnlineCreateFolder::OnlineCreateFolder(QMailStorageAction* storageAction, const QString &name
@@ -200,6 +231,35 @@ QMailServiceAction* OnlineDeleteFolder::serviceAction() const
 }
 
 /*
+  OnlineMoveMessages
+*/
+OnlineMoveMessages::OnlineMoveMessages(QMailStorageAction *storageAction, const QMailMessageIdList &ids,
+                                      const QMailFolderId &destinationId)
+    : EmailAction()
+    , _storageAction(storageAction)
+    , _ids(ids)
+    , _destinationId(destinationId)
+{
+    QString idsList = idListToString(_ids);
+    _description = QString("move-messages:message-ids=%1;destination-folder=%2").arg(idsList)
+            .arg(_destinationId.toULongLong());
+}
+
+OnlineMoveMessages::~OnlineMoveMessages()
+{
+}
+
+void OnlineMoveMessages::execute()
+{
+    _storageAction->onlineMoveMessages(_ids,_destinationId);
+}
+
+QMailServiceAction* OnlineMoveMessages::serviceAction() const
+{
+    return _storageAction;
+}
+
+/*
   OnlineRenameFolder
 */
 OnlineRenameFolder::OnlineRenameFolder(QMailStorageAction* storageAction, const QMailFolderId &folderId, const QString &name)
@@ -223,36 +283,6 @@ void OnlineRenameFolder::execute()
 QMailServiceAction* OnlineRenameFolder::serviceAction() const
 {
     return _storageAction;
-}
-
-/*
-  RetrieveMessageList
-*/
-RetrieveMessageList::RetrieveMessageList(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
-                    const QMailFolderId &folderId, uint minimum)
-    : EmailAction()
-    , _retrievalAction(retrievalAction)
-    , _accountId(id)
-    , _folderId(folderId)
-    , _minimum(minimum)
-{
-    _description = QString("retrieve-message-list:account-id=%1;folder-id=%2")
-            .arg(_accountId.toULongLong())
-            .arg(_folderId.toULongLong());
-}
-
-RetrieveMessageList::~RetrieveMessageList()
-{
-}
-
-void RetrieveMessageList::execute()
-{
-    _retrievalAction->retrieveMessageList(_accountId, _folderId, _minimum);
-}
-
-QMailServiceAction* RetrieveMessageList::serviceAction() const
-{
-    return _retrievalAction;
 }
 
 /*
@@ -288,6 +318,183 @@ void RetrieveFolderList::execute()
 }
 
 QMailServiceAction* RetrieveFolderList::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessageList
+*/
+RetrieveMessageList::RetrieveMessageList(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
+                    const QMailFolderId &folderId, uint minimum, const QMailMessageSortKey &sort)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _accountId(id)
+    , _folderId(folderId)
+    , _minimum(minimum)
+    , _sort(sort)
+{
+    _description = QString("retrieve-message-list:account-id=%1;folder-id=%2")
+            .arg(_accountId.toULongLong())
+            .arg(_folderId.toULongLong());
+}
+
+RetrieveMessageList::~RetrieveMessageList()
+{
+}
+
+void RetrieveMessageList::execute()
+{
+    _retrievalAction->retrieveMessageList(_accountId, _folderId, _minimum, _sort);
+}
+
+QMailServiceAction* RetrieveMessageList::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessageLists
+*/
+RetrieveMessageLists::RetrieveMessageLists(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
+                    const QMailFolderIdList &folderIds, uint minimum, const QMailMessageSortKey &sort)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _accountId(id)
+    , _folderIds(folderIds)
+    , _minimum(minimum)
+    , _sort(sort)
+{
+    QString ids = idListToString(_folderIds);
+    _description = QString("retrieve-message-lists:account-id=%1;folder-ids=%2")
+            .arg(_accountId.toULongLong())
+            .arg(ids);
+}
+
+RetrieveMessageLists::~RetrieveMessageLists()
+{
+}
+
+void RetrieveMessageLists::execute()
+{
+    _retrievalAction->retrieveMessageLists(_accountId, _folderIds, _minimum, _sort);
+}
+
+QMailServiceAction* RetrieveMessageLists::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessagePart
+*/
+RetrieveMessagePart::RetrieveMessagePart(QMailRetrievalAction *retrievalAction,
+                                         const QMailMessagePartContainer::Location &partLocation)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _partLocation(partLocation)
+{
+    _description = QString("retrieve-message-part:partLocation-id=%1")
+            .arg(_partLocation.toString(true));
+}
+
+RetrieveMessagePart::~RetrieveMessagePart()
+{
+}
+
+void RetrieveMessagePart::execute()
+{
+     _retrievalAction->retrieveMessagePart(_partLocation);
+}
+
+QMailServiceAction* RetrieveMessagePart::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessagePartRange
+*/
+RetrieveMessagePartRange::RetrieveMessagePartRange(QMailRetrievalAction *retrievalAction,
+                                         const QMailMessagePartContainer::Location &partLocation, uint minimum)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _partLocation(partLocation)
+    , _minimum(minimum)
+{
+    _description = QString("retrieve-message-part:partLocation-id=%1;minimumBytes=%2")
+            .arg(_partLocation.toString(true))
+            .arg(_minimum);
+}
+
+RetrieveMessagePartRange::~RetrieveMessagePartRange()
+{
+}
+
+void RetrieveMessagePartRange::execute()
+{
+     _retrievalAction->retrieveMessagePartRange(_partLocation, _minimum);
+}
+
+QMailServiceAction* RetrieveMessagePartRange::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessageRange
+*/
+RetrieveMessageRange::RetrieveMessageRange(QMailRetrievalAction *retrievalAction,
+                                         const QMailMessageId &messageId, uint minimum)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _messageId(messageId)
+    , _minimum(minimum)
+{
+    _description = QString("retrieve-message-range:message-id=%1;minimumBytes=%2")
+            .arg(_messageId.toULongLong())
+            .arg(_minimum);
+}
+
+RetrieveMessageRange::~RetrieveMessageRange()
+{
+}
+
+void RetrieveMessageRange::execute()
+{
+     _retrievalAction->retrieveMessageRange(_messageId, _minimum);
+}
+
+QMailServiceAction* RetrieveMessageRange::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+/*
+  RetrieveMessages
+*/
+RetrieveMessages::RetrieveMessages(QMailRetrievalAction *retrievalAction,
+                                   const QMailMessageIdList &messageIds,
+                                   QMailRetrievalAction::RetrievalSpecification spec)
+    : EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _messageIds(messageIds)
+    , _spec(spec)
+{
+    QString idsList = idListToString(_messageIds);
+    _description = QString("retrieve-messages:message-ids=%1").arg(idsList);
+}
+
+RetrieveMessages::~RetrieveMessages()
+{
+}
+
+void RetrieveMessages::execute()
+{
+    _retrievalAction->retrieveMessages(_messageIds, _spec);
+}
+
+QMailServiceAction* RetrieveMessages::serviceAction() const
 {
     return _retrievalAction;
 }

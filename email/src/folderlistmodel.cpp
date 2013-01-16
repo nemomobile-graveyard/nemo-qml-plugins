@@ -126,6 +126,10 @@ QVariant FolderListModel::folderServerCount(QVariant vFolderId)
     return (folder.serverCount());
 }
 
+//TODO: Remove
+//We can't assume that all create folder models will have an Inbox
+//E.g, list of childs under some particular folder
+//This can be get from the emailAgent
 QVariant FolderListModel::inboxFolderId()
 {
     for (int i = 0; i < m_mailFolderIds.size(); i++) {
@@ -136,6 +140,8 @@ QVariant FolderListModel::inboxFolderId()
     return QVariant();
 }
 
+//TODO: investigate if this is really needed
+//seems redundant
 QVariant FolderListModel::inboxFolderName()
 {
     for (int i = 0; i < m_mailFolderIds.size(); i++) {
