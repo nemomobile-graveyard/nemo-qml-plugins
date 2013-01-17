@@ -18,7 +18,7 @@ class EmailAction : public QObject
      Q_OBJECT
 
 protected:
-    EmailAction( bool onlineAction = true);
+    EmailAction(bool onlineAction = true);
 
 public:
     virtual ~EmailAction();
@@ -79,6 +79,21 @@ private:
     quint64 _unsetMask;
 };
 
+class MoveToStandardFolder : public EmailAction
+{
+public:
+    MoveToStandardFolder(QMailStorageAction *storageAction, const QMailMessageIdList &ids,
+                         QMailFolder::StandardFolder standardFolder);
+    ~MoveToStandardFolder();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailStorageAction* _storageAction;
+    QMailMessageIdList _ids;
+    QMailFolder::StandardFolder _standardFolder;
+};
+
 class OnlineCreateFolder : public EmailAction
 {
 public:
@@ -108,6 +123,21 @@ private:
     QMailFolderId _folderId;
 };
 
+class OnlineMoveMessages : public EmailAction
+{
+public:
+    OnlineMoveMessages(QMailStorageAction *storageAction, const QMailMessageIdList &ids,
+                       const QMailFolderId &destinationId);
+    ~OnlineMoveMessages();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailStorageAction* _storageAction;
+    QMailMessageIdList _ids;
+    QMailFolderId _destinationId;
+};
+
 class OnlineRenameFolder : public EmailAction
 {
 public:
@@ -122,27 +152,11 @@ private:
     QString _name;
 };
 
-class RetrieveMessageList : public EmailAction
-{
-public:
-    RetrieveMessageList(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
-                        const QMailFolderId &folderId, uint minimum);
-    ~RetrieveMessageList();
-    void execute();
-    QMailServiceAction* serviceAction() const;
-
-private:
-    QMailRetrievalAction* _retrievalAction;
-    QMailAccountId _accountId;
-    QMailFolderId _folderId;
-    uint _minimum;
-};
-
 class RetrieveFolderList : public EmailAction
 {
 public:
     RetrieveFolderList(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
-                        const QMailFolderId &folderId, uint descending);
+                        const QMailFolderId &folderId, uint descending = true);
     ~RetrieveFolderList();
     void execute();
     QMailServiceAction* serviceAction() const;
@@ -152,6 +166,102 @@ private:
     QMailAccountId _accountId;
     QMailFolderId _folderId;
     uint _descending;
+};
+
+class RetrieveMessageList : public EmailAction
+{
+public:
+    RetrieveMessageList(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
+                        const QMailFolderId &folderId, uint minimum,
+                        const QMailMessageSortKey &sort = QMailMessageSortKey());
+    ~RetrieveMessageList();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailAccountId _accountId;
+    QMailFolderId _folderId;
+    uint _minimum;
+    QMailMessageSortKey _sort;
+};
+
+class RetrieveMessageLists : public EmailAction
+{
+public:
+    RetrieveMessageLists(QMailRetrievalAction* retrievalAction, const QMailAccountId& id,
+                        const QMailFolderIdList & folderIds, uint minimum,
+                        const QMailMessageSortKey &sort = QMailMessageSortKey());
+    ~RetrieveMessageLists();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailAccountId _accountId;
+    QMailFolderIdList _folderIds;
+    uint _minimum;
+    QMailMessageSortKey _sort;
+};
+
+class RetrieveMessagePart : public EmailAction
+{
+public:
+    RetrieveMessagePart(QMailRetrievalAction* retrievalAction,
+                        const QMailMessagePart::Location &partLocation);
+    ~RetrieveMessagePart();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailMessagePart::Location _partLocation;
+};
+
+class RetrieveMessagePartRange : public EmailAction
+{
+public:
+    RetrieveMessagePartRange(QMailRetrievalAction* retrievalAction,
+                        const QMailMessagePart::Location &partLocation, uint minimum);
+    ~RetrieveMessagePartRange();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailMessagePart::Location _partLocation;
+    uint _minimum;
+};
+
+class RetrieveMessageRange : public EmailAction
+{
+public:
+    RetrieveMessageRange(QMailRetrievalAction* retrievalAction,
+                         const QMailMessageId &messageId, uint minimum);
+    ~RetrieveMessageRange();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailMessageId _messageId;
+    uint _minimum;
+};
+
+class RetrieveMessages : public EmailAction
+{
+public:
+    RetrieveMessages(QMailRetrievalAction* retrievalAction,
+                     const QMailMessageIdList & messageIds,
+                     QMailRetrievalAction::RetrievalSpecification spec = QMailRetrievalAction::MetaData);
+    ~RetrieveMessages();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailMessageIdList _messageIds;
+    QMailRetrievalAction::RetrievalSpecification _spec;
 };
 
 class Synchronize : public EmailAction

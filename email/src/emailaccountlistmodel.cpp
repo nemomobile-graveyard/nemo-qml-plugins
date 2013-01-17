@@ -16,7 +16,6 @@
 EmailAccountListModel::EmailAccountListModel(QObject *parent) :
     QMailAccountListModel(parent)
 {
-    qDebug() << "EmailAccountListModel constructor";
     QHash<int, QByteArray> roles;
     roles.insert(DisplayName, "displayName");
     roles.insert(EmailAddress, "emailAddress");
@@ -85,7 +84,7 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
         return accountId;
     }
 
-    if(role == LastSynchronized) {
+    if (role == LastSynchronized) {
         return account.lastSynchronized().toLocalTime();
     }
 
