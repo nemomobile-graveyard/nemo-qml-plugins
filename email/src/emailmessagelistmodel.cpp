@@ -18,6 +18,7 @@
 
 #include <qmailnamespace.h>
 
+#include "emailagent.h"
 #include "emailmessagelistmodel.h"
 
 QString EmailMessageListModel::bodyHtmlText(const QMailMessage &mailMsg) const
@@ -51,8 +52,7 @@ QString EmailMessageListModel::bodyPlainText(const QMailMessage &mailMsg) const
 //![0]
 EmailMessageListModel::EmailMessageListModel(QObject *parent)
     : QMailMessageListModel(parent),
-      m_retrievalAction(new QMailRetrievalAction(this)),
-      m_storageAction(new QMailStorageAction(this))
+      m_retrievalAction(new QMailRetrievalAction(this))
 {
     QHash<int, QByteArray> roles;
     roles[QMailMessageModelBase::MessageAddressTextRole] = "sender";
@@ -83,7 +83,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessagePreviewRole] = "preview";
     setRoleNames(roles);
 
-    initMailServer();
+    EmailAgent::instance()->initMailServer();
     m_mailAccountIds = QMailStore::instance()->queryAccounts(
             QMailAccountKey::status(QMailAccount::Enabled, QMailDataComparator::Includes),
             QMailAccountSortKey::name());
@@ -100,7 +100,6 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
 EmailMessageListModel::~EmailMessageListModel()
 {
     delete m_retrievalAction;
-    delete m_storageAction;
 }
 
 int EmailMessageListModel::rowCount(const QModelIndex & parent) const {
@@ -341,21 +340,6 @@ void EmailMessageListModel::sortByAttachment(int key)
     Q_UNUSED(key);
 }
 
-void EmailMessageListModel::initMailServer()
-{
-    QString lockfile = "messageserver-instance.lock";
-    int id = QMail::fileLock(lockfile);
-    if (id == -1) {
-        // Server is currently running
-        return;
-    }
-    QMail::fileUnlock(id);
-
-    m_messageServerProcess.start("/usr/bin/messageserver");
-    m_messageServerProcess.waitForStarted();
-    return;
-}
-
 QVariant EmailMessageListModel::indexFromMessageId (QString uuid)
 {
     quint64 id = uuid.toULongLong();
@@ -502,11 +486,10 @@ void EmailMessageListModel::moveSelectedMessageIds(QVariant vFolderId)
 
     QMailMessage const msg(m_selectedMsgIds[0]);
 
-    m_storageAction->onlineMoveMessages(m_selectedMsgIds, id);
+    EmailAgent::instance()->moveMessages(m_selectedMsgIds, id);
     m_selectedMsgIds.clear();
-    m_retrievalAction->exportUpdates(msg.parentAccountId());
+    EmailAgent::instance()->exportUpdates(msg.parentAccountId());
 }
-
 
 void EmailMessageListModel::deleteSelectedMessageIds()
 {
@@ -515,9 +498,9 @@ void EmailMessageListModel::deleteSelectedMessageIds()
 
     QMailMessage const msg(m_selectedMsgIds[0]);
 
-    m_storageAction->deleteMessages(m_selectedMsgIds);
+    EmailAgent::instance()->deleteMessages(m_selectedMsgIds);
     m_selectedMsgIds.clear();
-    m_retrievalAction->exportUpdates(msg.parentAccountId());
+    EmailAgent::instance()->exportUpdates(msg.parentAccountId());
 }
 
 void EmailMessageListModel::downloadActivityChanged(QMailServiceAction::Activity activity)

@@ -100,19 +100,22 @@ void EmailMessage::send()
 
     bool stored = false;
 
-    if (!m_msg.id().isValid())
+    if (!m_msg.id().isValid()) {
+        // Message present only on the local device until we externalise or send it
+        m_msg.setStatus(QMailMessage::LocalOnly, true);
         stored = QMailStore::instance()->addMessage(&m_msg);
-    else
+    }
+    else {
         stored = QMailStore::instance()->updateMessage(&m_msg);
+    }
 
     EmailAgent *emailAgent = EmailAgent::instance();
-    if (stored && !emailAgent->isSynchronizing()) {
+    if (stored) {
         connect(emailAgent, SIGNAL(sendCompleted()), this, SLOT(onSendCompleted()));
         emailAgent->sendMessages(m_msg.parentAccountId());
     }
     else
-       qDebug() << "Error queuing message, stored: " << stored << "isSynchronising: " << emailAgent->isSynchronizing();
-
+       qDebug() << "Error queuing message, stored: " << stored;
 }
 
 void EmailMessage::saveDraft()

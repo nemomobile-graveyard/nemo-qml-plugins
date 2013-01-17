@@ -93,14 +93,12 @@ private slots:
     void downloadActivityChanged(QMailServiceAction::Activity);
 
 private:
-    void initMailServer ();
-  
+
     QProcess m_msgAccount;
     QMailFolderId m_currentFolderId;
     QProcess m_messageServerProcess;
     QMailAccountIdList m_mailAccountIds;
     QMailRetrievalAction *m_retrievalAction;
-    QMailStorageAction *m_storageAction;
     QString m_search;
     QMailMessageKey m_key;                  // key set externally other than search
     QList<QMailMessageId> m_selectedMsgIds;

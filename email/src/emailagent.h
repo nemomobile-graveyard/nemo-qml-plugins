@@ -33,11 +33,13 @@ public:
     explicit EmailAgent (QDeclarativeItem *parent = 0);
     ~EmailAgent();
 
+    void initMailServer();
     void sendMessages (const QMailAccountId &id);
     bool isSynchronizing() const;
 
     void exportUpdates(const QMailAccountId id);
     void flagMessages(const QMailMessageIdList &ids, quint64 setMask, quint64 unsetMask);
+    void moveMessages(const QMailMessageIdList &ids, const QMailFolderId &destinationId);
     quint64 newAction();
 
     Q_INVOKABLE void accountsSync(const bool syncOnlyInbox = false, const uint minimum = 20);
@@ -49,6 +51,7 @@ public:
     Q_INVOKABLE void retrieveFolderList(QVariant vMailAccountId, QVariant vFolderId = 0, const bool descending = true);
     Q_INVOKABLE void synchronize(QVariant vMailAccountId);
     Q_INVOKABLE void retrieveMessageList(QVariant vMailAccountId, QVariant vFolderId, const uint minimum = 20);
+    Q_INVOKABLE void retrieveMessageRange(QVariant messageId, uint minimum);
     Q_INVOKABLE void cancelSync();
     Q_INVOKABLE void markMessageAsRead(QVariant vMsgId);
     Q_INVOKABLE void markMessageAsUnread(QVariant vMsgId);
@@ -59,6 +62,7 @@ public:
     Q_INVOKABLE bool openAttachment(const QString& attachmentDisplayName);
     Q_INVOKABLE void openBrowser(const QString& url);
     Q_INVOKABLE QString getMessageBodyFromFile(const QString& bodyFilePath);
+    Q_INVOKABLE QVariant inboxFolderId(QVariant vMailAccountId);
 
 signals:
     void retrievalCompleted();
@@ -74,7 +78,6 @@ private slots:
     void progressChanged(uint value, uint total);
     void activityChanged(QMailServiceAction::Activity activity);
     void attachmentDownloadActivityChanged(QMailServiceAction::Activity activity);
-    void initMailServer();
     void onFoldersAdded (const QMailFolderIdList &);
 
 private:

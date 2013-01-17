@@ -17,6 +17,7 @@
 #include <qmailnamespace.h>
 #include <qmailaccount.h>
 #include <qmailstore.h>
+#include <qmaildisconnected.h>
 
 #include "emailagent.h"
 #include "emailaction.h"
@@ -198,7 +199,6 @@ void EmailAgent::accountsSync(const bool syncOnlyInbox, const uint minimum)
     }
 }
 
-//Add logic to move to trash only and fully delete from trash
 void EmailAgent::deleteMessage(QVariant id)
 {
     QMailMessageId msgId = id.value<QMailMessageId>();
@@ -206,11 +206,46 @@ void EmailAgent::deleteMessage(QVariant id)
     msgIdList << msgId;
     deleteMessages (msgIdList);
 }
-
 void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
 {
-    Q_ASSERT(!ids.empty());
-    enqueue(new DeleteMessages(m_storageAction.data(), ids));
+    Q_ASSERT(ids.isEmpty());
+
+    QMailMessageId id(ids[0]);
+    QMailAccountId accountId = accountForMessageId(id);
+
+    //TODO: dont allow to delete outbox messages while send is ongoing
+   /* if (isSending()) {
+        // Do not delete messages from the outbox folder while we're sending
+        QMailMessageKey outboxFilter(QMailMessageKey::status(QMailMessage::Outbox));
+        if (QMailStore::instance()->countMessages(QMailMessageKey::id(deleteList) & outboxFilter)) {
+            //TODO: emit proper error
+            return;
+        }
+    }*/
+
+    // If any of these messages are not yet trash, then we're only moved to trash
+    QMailMessageKey idFilter(QMailMessageKey::id(ids));
+    QMailMessageKey notTrashFilter(QMailMessageKey::status(QMailMessage::Trash, QMailDataComparator::Excludes));
+
+    const bool deleting(QMailStore::instance()->countMessages(idFilter & notTrashFilter) == 0);
+
+    if (deleting) {
+        //delete LocalOnly messages clientside first
+        QMailMessageKey localOnlyKey(QMailMessageKey::id(ids) & QMailMessageKey::status(QMailMessage::LocalOnly));
+        QMailMessageIdList localOnlyIds(QMailStore::instance()->queryMessages(localOnlyKey));
+        QMailMessageIdList idsToRemove(ids);
+        if(!localOnlyIds.isEmpty()) {
+            QMailStore::instance()->removeMessages(QMailMessageKey::id(localOnlyIds));
+            idsToRemove = (ids.toSet().subtract(localOnlyIds.toSet())).toList();
+        }
+        if(!idsToRemove.isEmpty())
+            enqueue(new DeleteMessages(m_storageAction.data(), idsToRemove));
+    }
+    else {
+        enqueue(new MoveToStandardFolder(m_storageAction.data(), ids, QMailFolder::TrashFolder));
+        enqueue(new FlagMessages(m_storageAction.data(), ids, QMailMessage::Trash,0));
+        enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
+    }
 }
 
 void EmailAgent::createFolder(const QString &name, QVariant mailAccountId, QVariant parentFolderId)
@@ -290,6 +325,12 @@ void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, cons
     }
 }
 
+void EmailAgent::retrieveMessageRange(QVariant messageId, uint minimum)
+{
+    QMailMessageId id = messageId.value<QMailMessageId>();
+    enqueue(new RetrieveMessageRange(m_retrievalAction.data(), id, minimum));
+}
+
 void EmailAgent::getMoreMessages(QVariant vFolderId, uint minimum)
 {
     QMailFolderId folderId = vFolderId.value<QMailFolderId>();
@@ -305,9 +346,6 @@ void EmailAgent::getMoreMessages(QVariant vFolderId, uint minimum)
     }
 }
 
-//messages should be moved to outbox, and marked as local only
-//since device can be offline at the point user tries to send
-//the mail.
 void EmailAgent::sendMessages(const QMailAccountId &id)
 {
     if (id.isValid()) {
@@ -510,6 +548,13 @@ void EmailAgent::flagMessages(const QMailMessageIdList &ids, quint64 setMask,
     enqueue(new FlagMessages(m_storageAction.data(), ids, setMask, unsetMask));
 }
 
+void EmailAgent::moveMessages(const QMailMessageIdList &ids, const QMailFolderId &destinationId)
+{
+    Q_ASSERT(!ids.empty());
+
+    enqueue(new OnlineMoveMessages(m_storageAction.data(), ids, destinationId));
+}
+
 QString EmailAgent::getMessageBodyFromFile (const QString& bodyFilePath)
 {
     QFile f(bodyFilePath);
@@ -518,6 +563,24 @@ QString EmailAgent::getMessageBodyFromFile (const QString& bodyFilePath)
 
     QString data = f.readAll();
     return data;
+}
+
+QVariant EmailAgent::inboxFolderId(QVariant id)
+{
+    QMailAccountId accountId = id.value<QMailAccountId>();
+    Q_ASSERT(accountId.isValid());
+    QMailAccount account(accountId);
+    QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+
+    if (foldId.isValid()) {
+
+        return foldId;
+    }
+    else {
+
+        qDebug() << "Error: Inbox not found for account: " << accountId;
+        return QVariant();
+    }
 }
 
 /*
@@ -552,7 +615,7 @@ void EmailAgent::enqueue(EmailAction *actionPointer)
 void EmailAgent::dequeue()
 {
     if(_actionQueue.isEmpty()) {
-        qDebug() << "Error: can't dequeue emtpy list";
+        qDebug() << "Error: can't dequeue a emtpy list";
     }
     else {
         _actionQueue.removeFirst();
