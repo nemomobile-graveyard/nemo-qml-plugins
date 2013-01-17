@@ -85,7 +85,13 @@ QVariant EmailAccountListModel::data(const QModelIndex &index, int role) const
     }
 
     if (role == LastSynchronized) {
-        return account.lastSynchronized().toLocalTime();
+        if (account.lastSynchronized().isValid()) {
+            return account.lastSynchronized().toLocalTime();
+        }
+        else {
+            //Account was never synced, return zero
+            return 0;
+        }
     }
 
     return QVariant();

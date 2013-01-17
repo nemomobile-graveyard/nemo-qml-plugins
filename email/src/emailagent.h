@@ -50,6 +50,7 @@ public:
     Q_INVOKABLE void renameFolder(QVariant vFolderId, const QString &name);
     Q_INVOKABLE void retrieveFolderList(QVariant vMailAccountId, QVariant vFolderId = 0, const bool descending = true);
     Q_INVOKABLE void synchronize(QVariant vMailAccountId);
+    Q_INVOKABLE void synchronizeInbox(QVariant mailAccountId, const uint minimum = 20);
     Q_INVOKABLE void retrieveMessageList(QVariant vMailAccountId, QVariant vFolderId, const uint minimum = 20);
     Q_INVOKABLE void retrieveMessageRange(QVariant messageId, uint minimum);
     Q_INVOKABLE void cancelSync();
@@ -65,6 +66,7 @@ public:
     Q_INVOKABLE QVariant inboxFolderId(QVariant vMailAccountId);
 
 signals:
+    void standardFoldersCreated(const QMailAccountId &id);
     void retrievalCompleted();
     void sendCompleted();
     void syncCompleted();
@@ -79,6 +81,7 @@ private slots:
     void activityChanged(QMailServiceAction::Activity activity);
     void attachmentDownloadActivityChanged(QMailServiceAction::Activity activity);
     void onFoldersAdded (const QMailFolderIdList &);
+    void onStandardFoldersCreated(const QMailAccountId &accountId);
 
 private:
     static EmailAgent *m_instance;
