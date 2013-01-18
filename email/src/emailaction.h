@@ -17,24 +17,50 @@ class EmailAction : public QObject
 {
      Q_OBJECT
 
-protected:
-    EmailAction(bool onlineAction = true);
-
 public:
+    enum ActionType {
+        Export = 0,
+        Retrieve,
+        Send,
+        StandardFolders,
+        Storage,
+        Transmit
+    };
+
     virtual ~EmailAction();
     virtual void execute() = 0;
+    virtual QMailAccountId accountId() const;
     virtual QMailServiceAction* serviceAction() const = 0;
     bool operator==(const EmailAction &action) const;
     QString description() const;
-
-    quint64 id;
+    ActionType type() const;
+    quint64 id() const;
+    void setId(const quint64 id);
 
 protected:
+    EmailAction(bool onlineAction = true);
+
     QString _description;
+    ActionType _type;
+    quint64 _id;
 
 private:
     bool _onlineAction;
     bool needsNetworkConnection() const { return _onlineAction; }
+};
+
+class CreateStandardFolders : public EmailAction
+{
+public:
+    CreateStandardFolders(QMailRetrievalAction* retrievalAction, const QMailAccountId& id);
+    ~CreateStandardFolders();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+    QMailAccountId accountId() const;
+
+private:
+    QMailRetrievalAction* _retrievalAction;
+    QMailAccountId _accountId;
 };
 
 class DeleteMessages : public EmailAction
@@ -284,6 +310,7 @@ public:
     ~TransmitMessages();
     void execute();
     QMailServiceAction* serviceAction() const;
+    QMailAccountId accountId() const;
 
 private:
     QMailTransmitAction* _transmitAction;

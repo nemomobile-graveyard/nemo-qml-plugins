@@ -25,7 +25,6 @@ QString idListToString(const QList<T> &ids)
         }
     }
     return idsList;
-
 }
 
 /*
@@ -38,6 +37,11 @@ EmailAction::EmailAction(bool onlineAction)
 
 EmailAction::~EmailAction()
 {
+}
+
+QMailAccountId EmailAction::accountId() const
+{
+    return QMailAccountId();
 }
 
 bool EmailAction::operator==(const EmailAction &action) const
@@ -58,10 +62,55 @@ QString EmailAction::description() const
     return _description;
 }
 
+EmailAction::ActionType EmailAction::type() const
+{
+    return _type;
+}
+
+quint64 EmailAction::id() const
+{
+    return _id;
+}
+
+void EmailAction::setId(const quint64 id)
+{
+    _id = id;
+}
+
+/*
+  CreateStandardFolders
+*/
+CreateStandardFolders::CreateStandardFolders(QMailRetrievalAction *retrievalAction, const QMailAccountId &id)
+    :EmailAction()
+    , _retrievalAction(retrievalAction)
+    , _accountId(id)
+{
+    _description = QString("create-standard-folders:account-id=%1").arg(_accountId.toULongLong());
+    _type = EmailAction::StandardFolders;
+}
+
+CreateStandardFolders::~CreateStandardFolders()
+{
+}
+
+void CreateStandardFolders::execute()
+{
+    _retrievalAction->createStandardFolders(_accountId);
+}
+
+QMailServiceAction* CreateStandardFolders::serviceAction() const
+{
+    return _retrievalAction;
+}
+
+QMailAccountId CreateStandardFolders::accountId() const
+{
+    return _accountId;
+}
+
 /*
   DeleteMessages
 */
-
 DeleteMessages::DeleteMessages(QMailStorageAction* storageAction, const QMailMessageIdList &ids)
     : EmailAction()
     , _storageAction(storageAction)
@@ -69,6 +118,7 @@ DeleteMessages::DeleteMessages(QMailStorageAction* storageAction, const QMailMes
 {
     QString idsList = idListToString(_ids);
     _description = QString("delete-messages:message-ids=%1").arg(idsList);
+    _type = EmailAction::Storage;
 }
 
 DeleteMessages::~DeleteMessages()
@@ -94,6 +144,7 @@ ExportUpdates::ExportUpdates(QMailRetrievalAction *retrievalAction, const QMailA
     , _accountId(id)
 {
     _description = QString("exporting-updates:account-id=%1").arg(_accountId.toULongLong());
+    _type = EmailAction::Export;
 }
 
 ExportUpdates::~ExportUpdates()
@@ -124,6 +175,7 @@ FlagMessages::FlagMessages(QMailStorageAction* storageAction, const QMailMessage
     QString idsList = idListToString(_ids);
     _description =  QString("flag-messages:message-ids=%1;setMark=%2;unsetMark=%3").arg(idsList)
             .arg(_setMask).arg(_unsetMask);
+    _type = EmailAction::Storage;
 }
 
 FlagMessages::~FlagMessages()
@@ -153,6 +205,7 @@ MoveToStandardFolder::MoveToStandardFolder(QMailStorageAction *storageAction,
     QString idsList = idListToString(_ids);
     _description =  QString("move-messages-to-standard-folder:message-ids=%1;standard-folder=%2").arg(idsList)
             .arg(_standardFolder);
+    _type = EmailAction::Storage;
 }
 
 MoveToStandardFolder::~MoveToStandardFolder()
@@ -189,6 +242,7 @@ OnlineCreateFolder::OnlineCreateFolder(QMailStorageAction* storageAction, const 
     }
     _description = QString("create-folder:name=%1;account-id=%2;parent-id=%3").arg(_accountId.toULongLong())
             .arg(_name).arg(pId);
+    _type = EmailAction::Storage;
 }
 
 OnlineCreateFolder::~OnlineCreateFolder()
@@ -214,6 +268,7 @@ OnlineDeleteFolder::OnlineDeleteFolder(QMailStorageAction* storageAction, const 
     , _folderId(folderId)
 {
     _description = QString("delete-folder:folder-id=%1").arg(_folderId.toULongLong());
+    _type = EmailAction::Storage;
 }
 
 OnlineDeleteFolder::~OnlineDeleteFolder()
@@ -243,6 +298,7 @@ OnlineMoveMessages::OnlineMoveMessages(QMailStorageAction *storageAction, const 
     QString idsList = idListToString(_ids);
     _description = QString("move-messages:message-ids=%1;destination-folder=%2").arg(idsList)
             .arg(_destinationId.toULongLong());
+    _type = EmailAction::Storage;
 }
 
 OnlineMoveMessages::~OnlineMoveMessages()
@@ -269,6 +325,7 @@ OnlineRenameFolder::OnlineRenameFolder(QMailStorageAction* storageAction, const 
     , _name(name)
 {
     _description = QString("rename-folder:folder-id=%1;new-name=%2").arg(_folderId.toULongLong()).arg(_name);
+    _type = EmailAction::Storage;
 }
 
 OnlineRenameFolder::~OnlineRenameFolder()
@@ -306,6 +363,7 @@ RetrieveFolderList::RetrieveFolderList(QMailRetrievalAction* retrievalAction, co
     _description = QString("retrieve-folder-list:account-id=%1;folder-id=%2")
             .arg(_accountId.toULongLong())
             .arg(fId);
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveFolderList::~RetrieveFolderList()
@@ -337,6 +395,7 @@ RetrieveMessageList::RetrieveMessageList(QMailRetrievalAction* retrievalAction, 
     _description = QString("retrieve-message-list:account-id=%1;folder-id=%2")
             .arg(_accountId.toULongLong())
             .arg(_folderId.toULongLong());
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessageList::~RetrieveMessageList()
@@ -369,6 +428,7 @@ RetrieveMessageLists::RetrieveMessageLists(QMailRetrievalAction* retrievalAction
     _description = QString("retrieve-message-lists:account-id=%1;folder-ids=%2")
             .arg(_accountId.toULongLong())
             .arg(ids);
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessageLists::~RetrieveMessageLists()
@@ -396,6 +456,7 @@ RetrieveMessagePart::RetrieveMessagePart(QMailRetrievalAction *retrievalAction,
 {
     _description = QString("retrieve-message-part:partLocation-id=%1")
             .arg(_partLocation.toString(true));
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessagePart::~RetrieveMessagePart()
@@ -425,6 +486,7 @@ RetrieveMessagePartRange::RetrieveMessagePartRange(QMailRetrievalAction *retriev
     _description = QString("retrieve-message-part:partLocation-id=%1;minimumBytes=%2")
             .arg(_partLocation.toString(true))
             .arg(_minimum);
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessagePartRange::~RetrieveMessagePartRange()
@@ -454,6 +516,7 @@ RetrieveMessageRange::RetrieveMessageRange(QMailRetrievalAction *retrievalAction
     _description = QString("retrieve-message-range:message-id=%1;minimumBytes=%2")
             .arg(_messageId.toULongLong())
             .arg(_minimum);
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessageRange::~RetrieveMessageRange()
@@ -483,6 +546,7 @@ RetrieveMessages::RetrieveMessages(QMailRetrievalAction *retrievalAction,
 {
     QString idsList = idListToString(_messageIds);
     _description = QString("retrieve-messages:message-ids=%1").arg(idsList);
+    _type = EmailAction::Retrieve;
 }
 
 RetrieveMessages::~RetrieveMessages()
@@ -508,6 +572,7 @@ Synchronize::Synchronize(QMailRetrievalAction* retrievalAction, const QMailAccou
         , _accountId(id)
 {
     _description = QString("synchronize:account-id=%1").arg(_accountId.toULongLong());
+    _type = EmailAction::Retrieve;
 }
 
 Synchronize::~Synchronize()
@@ -533,6 +598,7 @@ TransmitMessages::TransmitMessages(QMailTransmitAction* transmitAction, const QM
     , _accountId(id)
 {
     _description = QString("transmit-messages:account-id=%1").arg(_accountId.toULongLong());
+    _type = EmailAction::Transmit;
 }
 
 TransmitMessages::~TransmitMessages()
@@ -547,6 +613,11 @@ void TransmitMessages::execute()
 QMailServiceAction* TransmitMessages::serviceAction() const
 {
     return _transmitAction;
+}
+
+QMailAccountId TransmitMessages::accountId() const
+{
+    return _accountId;
 }
 
 

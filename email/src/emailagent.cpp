@@ -68,7 +68,7 @@ EmailAgent::EmailAgent(QDeclarativeItem *parent)
     connect(m_transmitAction.data(), SIGNAL(activityChanged(QMailServiceAction::Activity)),
             this, SLOT(activityChanged(QMailServiceAction::Activity)));
 
-
+    //TODO: Remove
     connect (QMailStore::instance(), SIGNAL(foldersAdded(const QMailFolderIdList &)), this,
              SLOT(onFoldersAdded(const QMailFolderIdList &)));
 
@@ -112,12 +112,20 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
         // don't try to synchronise extra accounts if the user cancelled the sync
         if (m_cancelling) {
             m_synchronizing = false;
+            m_transmitting = false;
             _actionQueue.clear();
             emit error(status.accountId, status.text, status.errorCode);
+            qDebug() << "Canceled by the user";
             break;
         } else {
             // Report the error
             dequeue();
+            if (_currentAction->type() == EmailAction::Transmit) {
+                m_transmitting = false;
+                emit sendCompleted();
+                qDebug() << "Error: Send failed";
+            }
+
              _currentAction = getNext();
             emit error(status.accountId, status.text, status.errorCode);
 
@@ -134,12 +142,16 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
 
     case QMailServiceAction::Successful:
         dequeue();
-        //TODO
-        //more than one send action can occur at time
-        //sendCompleted should also have accountId
-        if (action == m_transmitAction.data()) {
+        //Clients should not wait for send, check if this is
+        //really necessary
+        if (_currentAction->type() == EmailAction::Transmit) {
+            qDebug() << "Finished sending for " << _currentAction->accountId();
             m_transmitting = false;
             emit sendCompleted();
+        }
+
+        if (_currentAction->type() == EmailAction::StandardFolders) {
+            emit standardFoldersCreated(_currentAction->accountId());
         }
 
         _currentAction = getNext();
@@ -182,16 +194,7 @@ void EmailAgent::accountsSync(const bool syncOnlyInbox, const uint minimum)
 
     foreach (QMailAccountId accountId, m_enabledAccounts) {
         if (syncOnlyInbox) {
-            QMailAccount account(accountId);
-            QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
-            if (foldId.isValid()) {
-                enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
-                enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
-                enqueue(new RetrieveMessageList(m_retrievalAction.data(), accountId, foldId, minimum));
-            }
-            else {
-                qDebug() << "Error: Inbox folder not found for account:" << accountId.toULongLong();
-            }
+            synchronizeInbox(accountId, minimum);
         }
         else {
             enqueue(new Synchronize(m_retrievalAction.data(), accountId));
@@ -213,15 +216,14 @@ void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
     QMailMessageId id(ids[0]);
     QMailAccountId accountId = accountForMessageId(id);
 
-    //TODO: dont allow to delete outbox messages while send is ongoing
-   /* if (isSending()) {
+    if (m_transmitting) {
         // Do not delete messages from the outbox folder while we're sending
         QMailMessageKey outboxFilter(QMailMessageKey::status(QMailMessage::Outbox));
-        if (QMailStore::instance()->countMessages(QMailMessageKey::id(deleteList) & outboxFilter)) {
+        if (QMailStore::instance()->countMessages(QMailMessageKey::id(ids) & outboxFilter)) {
             //TODO: emit proper error
             return;
         }
-    }*/
+    }
 
     // If any of these messages are not yet trash, then we're only moved to trash
     QMailMessageKey idFilter(QMailMessageKey::id(ids));
@@ -312,6 +314,26 @@ void EmailAgent::synchronize(QVariant id)
     }
 }
 
+void EmailAgent::synchronizeInbox(QVariant id, const uint minimum)
+{
+    QMailAccountId accountId = id.value<QMailAccountId>();
+
+    QMailAccount account(accountId);
+    QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+    if(foldId.isValid()) {
+        enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
+        enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
+        enqueue(new RetrieveMessageList(m_retrievalAction.data(), accountId, foldId, minimum));
+    }
+    //Account was never synced, retrieve list of folders and come back here.
+    else {
+        connect(this, SIGNAL(standardFoldersCreated(const QMailAccountId &)),
+                this, SLOT(onStandardFoldersCreated(const QMailAccountId &)));
+        enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
+        enqueue(new CreateStandardFolders(m_retrievalAction.data(), accountId));
+    }
+}
+
 void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, const uint minimum)
 {
     QMailAccountId acctId = accountId.value<QMailAccountId>();
@@ -350,7 +372,7 @@ void EmailAgent::sendMessages(const QMailAccountId &id)
 {
     if (id.isValid()) {
         m_cancelling = false; //check
-        m_transmitting = true; //check
+        m_transmitting = true;
         enqueue(new TransmitMessages(m_transmitAction.data(),id));
     }
 }
@@ -420,12 +442,25 @@ void EmailAgent::exportUpdates(const QMailAccountId id)
 }
 
 // callback function to handle foldersAdded signal
-void EmailAgent::onFoldersAdded (const QMailFolderIdList & folderIdList)
+void EmailAgent::onFoldersAdded (const QMailFolderIdList &folderIdList)
 {
     QMailFolder folder(folderIdList[0]);
     QMailAccountId accountId = folder.parentAccountId();
     //TODO: Check if this is necessary here
     synchronize(accountId);
+}
+
+void EmailAgent::onStandardFoldersCreated(const QMailAccountId &accountId)
+{
+    //TODO: default minimum should be kept
+    QMailAccount account(accountId);
+    QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+    if(foldId.isValid()) {
+        synchronizeInbox(accountId);
+    }
+    else {
+        qDebug() << "Error: Inbox not found!!!";
+    }
 }
 
 void EmailAgent::downloadAttachment(QVariant vMsgId, const QString & attachmentDisplayName)
@@ -597,7 +632,7 @@ void EmailAgent::enqueue(EmailAction *actionPointer)
 
     if (!foundAction) {
         // It's a new action.
-        action->id = newAction();
+        action->setId(newAction());
         _actionQueue.append(action);
 
         if (_currentAction.isNull()) {
