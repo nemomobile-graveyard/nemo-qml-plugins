@@ -75,12 +75,12 @@ signals:
     void attachmentDownloadStarted();
     void attachmentDownloadCompleted();
     void progressUpdate (int percent);
+    void folderRetrievalCompleted(const QMailAccountId &id);
 
 private slots:
     void progressChanged(uint value, uint total);
     void activityChanged(QMailServiceAction::Activity activity);
     void attachmentDownloadActivityChanged(QMailServiceAction::Activity activity);
-    void onFoldersAdded (const QMailFolderIdList &);
     void onStandardFoldersCreated(const QMailAccountId &accountId);
 
 private:

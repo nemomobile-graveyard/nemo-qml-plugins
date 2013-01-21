@@ -363,7 +363,7 @@ RetrieveFolderList::RetrieveFolderList(QMailRetrievalAction* retrievalAction, co
     _description = QString("retrieve-folder-list:account-id=%1;folder-id=%2")
             .arg(_accountId.toULongLong())
             .arg(fId);
-    _type = EmailAction::Retrieve;
+    _type = EmailAction::RetrieveFolderList;
 }
 
 RetrieveFolderList::~RetrieveFolderList()
@@ -379,6 +379,12 @@ QMailServiceAction* RetrieveFolderList::serviceAction() const
 {
     return _retrievalAction;
 }
+
+QMailAccountId RetrieveFolderList::accountId() const
+{
+    return _accountId;
+}
+
 
 /*
   RetrieveMessageList

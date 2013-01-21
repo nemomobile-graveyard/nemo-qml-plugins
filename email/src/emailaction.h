@@ -21,6 +21,7 @@ public:
     enum ActionType {
         Export = 0,
         Retrieve,
+        RetrieveFolderList,
         Send,
         StandardFolders,
         Storage,
@@ -186,6 +187,7 @@ public:
     ~RetrieveFolderList();
     void execute();
     QMailServiceAction* serviceAction() const;
+    QMailAccountId accountId() const;
 
 private:
     QMailRetrievalAction* _retrievalAction;
