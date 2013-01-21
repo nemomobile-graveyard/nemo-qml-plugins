@@ -87,6 +87,12 @@ ServiceAccountModel::ServiceAccountModel(QObject* parent)
     d->headerData.insert(ColumnCountRole, "columncount");
     QObject::connect(d->manager, SIGNAL(accountCreated(Accounts::AccountId)),
                      this, SLOT(accountCreated(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(accountRemoved(Accounts::AccountId)),
+                     this, SLOT(accountRemoved(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(accountUpdated(Accounts::AccountId)),
+                     this, SLOT(accountUpdated(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(enabledEvent(Accounts::AccountId)),
+                     this, SLOT(accountUpdated(Accounts::AccountId)));
     setRoleNames(d->headerData);
     Accounts::AccountIdList idList = d->manager->accountList();
     foreach (Accounts::AccountId id, idList)
@@ -127,6 +133,13 @@ QVariant ServiceAccountModel::data(const QModelIndex &index, int role) const
 
     DisplayData *data = d->accountsList[index.row()];
     Accounts::AccountService *account = data->account;
+
+    if (!account || !account->account()) {
+        // When this occurs, it means that the accounts db is out of sync with
+        // our local data structure (perhaps due to not receiving a removed() signal).
+        qWarning() << Q_FUNC_INFO << "Invalid account at row" << index.row();
+        return QVariant();
+    }
 
     if (role == AccountIdRole ||
             (role == Qt::DisplayRole && index.column() == AccountIdColumn))
@@ -209,11 +222,6 @@ void ServiceAccountModel::accountCreated(Accounts::AccountId id)
     QModelIndex index;
     Accounts::Account *account = d->manager->account(id);
 
-    QObject::connect(account, SIGNAL(removed()),
-                     this, SLOT(accountRemoved()));
-    QObject::connect(account, SIGNAL(enabledChanged(const QString, bool)),
-                     this, SLOT(accountUpdated()));
-
     if (account != 0) {
         Accounts::ServiceList srvList = account->services();
         int count = srvList.size();
@@ -226,14 +234,13 @@ void ServiceAccountModel::accountCreated(Accounts::AccountId id)
     }
 }
 
-void ServiceAccountModel::accountRemoved()
+void ServiceAccountModel::accountRemoved(Accounts::AccountId id)
 {
     Q_D(ServiceAccountModel);
-    Accounts::Account *account = qobject_cast<Accounts::Account *>(sender());
 
-    QList<int> indexes = getAccountIndexes(account);
+    QList<int> indexes = getAccountIndexes(id);
     if (!indexes.size()) {
-        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << account->id();
+        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << id;
         return;
     }
 
@@ -271,21 +278,19 @@ void ServiceAccountModel::accountRemoved()
 
     // remove the last (or possibly only) chunk
     beginRemoveRows(parent, firstIdx, lastIdx);
-    for (int i = firstIdx; i < lastIdx; ++i) {
-        DisplayData *data = d->accountsList[i];
-        d->accountsList.removeAt(i);
-        cleanupList.append(data);
-    }
+    for (int i = firstIdx; i <= lastIdx; ++i)
+        cleanupList.append(d->accountsList.at(i));
+    foreach (DisplayData *data, cleanupList)
+        d->accountsList.removeOne(data);
     endRemoveRows();
     qDeleteAll(cleanupList);
 }
 
-void ServiceAccountModel::accountUpdated()
+void ServiceAccountModel::accountUpdated(Accounts::AccountId id)
 {
-    Accounts::Account *account = qobject_cast<Accounts::Account *>(sender());
-    QList<int> indexes = getAccountIndexes(account);
+    QList<int> indexes = getAccountIndexes(id);
     if (!indexes.size()) {
-        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << account->id();
+        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << id;
         return;
     }
 
@@ -315,14 +320,17 @@ void ServiceAccountModel::accountUpdated()
 }
 
 // Each Account can be represented multiple times in the list (as it may support multiple services)
-QList<int> ServiceAccountModel::getAccountIndexes(Accounts::Account *account) const
+QList<int> ServiceAccountModel::getAccountIndexes(Accounts::AccountId id) const
 {
     Q_D(const ServiceAccountModel);
     QList<int> indexes;
     for (int i = 0; i < d->accountsList.count(); ++i) {
-        const DisplayData *data = d->accountsList[i];
-        if (data->account->account() == account)
+        if (!d->accountsList.at(i)->account->account()) {
+            // the account has been removed, and our local datastructure is out of sync with the accounts db.
+            continue;
+        } else if (d->accountsList.at(i)->account->account()->id() == id) {
             indexes.append(i);
+        }
     }
     return indexes;
 }
@@ -394,7 +402,8 @@ ProviderInterface *ServiceAccountModel::provider(int accountId, QObject *parent)
 
     for (int i = 0; i < d->accountsList.size(); ++i) {
         DisplayData *data = d->accountsList.at(i);
-        if (data->account->account()->id() == accountId) {
+        int intAccountId = data->account->account()->id();
+        if (intAccountId == accountId) {
             return provider(data->account->account()->providerName(), parent);
         }
     }

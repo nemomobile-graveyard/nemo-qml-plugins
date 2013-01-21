@@ -105,11 +105,11 @@ public:
 
 private slots:
     void accountCreated(Accounts::AccountId id);
-    void accountRemoved();
-    void accountUpdated();
+    void accountRemoved(Accounts::AccountId id);
+    void accountUpdated(Accounts::AccountId id);
 
 private:
-    int getAccountIndex(Accounts::Account *account) const;
+    int getAccountIndex(Accounts::AccountId id) const;
 
 private:
     AccountModelPrivate* d_ptr;
