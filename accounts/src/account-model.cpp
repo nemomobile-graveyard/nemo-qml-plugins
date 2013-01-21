@@ -79,6 +79,12 @@ AccountModel::AccountModel(QObject* parent)
     d->headerData.insert(ColumnCountRole, "columncount");
     QObject::connect(d->manager, SIGNAL(accountCreated(Accounts::AccountId)),
                      this, SLOT(accountCreated(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(accountRemoved(Accounts::AccountId)),
+                     this, SLOT(accountRemoved(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(accountUpdated(Accounts::AccountId)),
+                     this, SLOT(accountUpdated(Accounts::AccountId)));
+    QObject::connect(d->manager, SIGNAL(enabledEvent(Accounts::AccountId)),
+                     this, SLOT(accountUpdated(Accounts::AccountId)));
     setRoleNames(d->headerData);
     Accounts::AccountIdList idList = d->manager->accountList();
     foreach (Accounts::AccountId id, idList)
@@ -172,11 +178,6 @@ void AccountModel::accountCreated(Accounts::AccountId id)
     QModelIndex index;
     Accounts::Account *account = d->manager->account(id);
 
-    QObject::connect(account, SIGNAL(removed()),
-                     this, SLOT(accountRemoved()));
-    QObject::connect(account, SIGNAL(enabledChanged(const QString, bool)),
-                     this, SLOT(accountUpdated()));
-
     if (account != 0) {
         beginInsertRows(index, 0, 0);
         d->accountsList.insert(0, new DisplayData(account));
@@ -184,52 +185,46 @@ void AccountModel::accountCreated(Accounts::AccountId id)
     }
 }
 
-void AccountModel::accountRemoved()
+void AccountModel::accountRemoved(Accounts::AccountId id)
 {
     Q_D(AccountModel);
-    Accounts::Account *account = qobject_cast<Accounts::Account *>(sender());
 
-    /* find the position of the deleted account in the list: QAbstractItemModel
-     * APIs need it */
-    int index = getAccountIndex(account);
-    if (index < 0)
-    {
-        qWarning() << "Account not present in the list:" << account->id();
+    int index = getAccountIndex(id);
+
+    if (index < 0) {
+        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << id;
         return;
     }
 
     QModelIndex parent;
     beginRemoveRows(parent, index, index);
-    DisplayData *data = d->accountsList[index];
-    d->accountsList.removeAt(index);
+    DisplayData *data = d->accountsList.takeAt(index);
     endRemoveRows();
 
     delete data;
 }
 
-void AccountModel::accountUpdated()
+void AccountModel::accountUpdated(Accounts::AccountId id)
 {
-    Accounts::Account *account = qobject_cast<Accounts::Account *>(sender());
-    int accountIndex = getAccountIndex(account);
-    if (accountIndex < 0)
-    {
-        qWarning() << "Account not present in the list:" << account->id();
+    int accountIndex = getAccountIndex(id);
+    if (accountIndex < 0) {
+        qWarning() << Q_FUNC_INFO << "Account not present in the list:" << id;
         return;
     }
 
     emit dataChanged(index(accountIndex, 0), index(accountIndex, 0));
 }
 
-int AccountModel::getAccountIndex(Accounts::Account *account) const
+int AccountModel::getAccountIndex(Accounts::AccountId id) const
 {
     Q_D(const AccountModel);
-    int index;
-    for (index = 0; index < d->accountsList.count(); index ++) {
-        const DisplayData *data = d->accountsList[index];
-        if (data->account == account)
-            break;
+    for (int i = 0; i < d->accountsList.count(); ++i) {
+        if (d->accountsList.at(i)->account->id() == id) {
+            return i;
+        }
     }
-    return index < d->accountsList.count() ? index : -1;
+
+    return -1;
 }
 
 /*!
@@ -328,7 +323,8 @@ ProviderInterface *AccountModel::provider(int accountId, QObject *parent)
 
     for (int i = 0; i < d->accountsList.size(); ++i) {
         DisplayData *data = d->accountsList.at(i);
-        if (data->account->id() == accountId) {
+        int intAccountId = data->account->id();
+        if (intAccountId == accountId) {
             return provider(data->account->providerName(), parent);
         }
     }

@@ -23,6 +23,12 @@ HEADERS += \
 
 OTHER_FILES += signon.qdoc signon.qdocconf
 
+!contains(DEFINES, SIGNON_UI_NO_EMBED_WEBVIEW) {
+    QT += gui
+    HEADERS += $$PWD/signonuicontainerinterface.h
+    SOURCES += $$PWD/signonuicontainerinterface.cpp
+}
+
 MOC_DIR = $$PWD/../.moc
 OBJECTS_DIR = $$PWD/../.obj
 
