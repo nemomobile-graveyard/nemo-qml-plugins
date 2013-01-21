@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd. <chris.adams@jollamobile.com>
+ * Copyright (C) 2013 Jolla Ltd. <chris.adams@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,51 +29,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
+#ifndef SIGNONUICONTAINERINTERFACE_H
+#define SIGNONUICONTAINERINTERFACE_H
 
-#include "identityinterface.h"
-#include "identitymanagerinterface.h"
-#include "serviceaccountidentityinterface.h"
-#include "sessiondatainterface.h"
+#include <QtCore/QObject>
+#include <QtDeclarative/QDeclarativeItem>
 
-#ifndef SIGNON_UI_NO_EMBED_WEBVIEW
-#include "signonuicontainerinterface.h"
-#endif
+class SignOnUiContainerInterfacePrivate;
 
-class Q_DECL_EXPORT NemoSignonPlugin : public QDeclarativeExtensionPlugin
+class SignOnUiContainerInterface : public QDeclarativeItem
 {
+    Q_OBJECT
+
 public:
-    virtual ~NemoSignonPlugin() { }
+    SignOnUiContainerInterface(QDeclarativeItem *parent = 0);
+    ~SignOnUiContainerInterface();
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
-        Q_UNUSED(engine)
-        Q_UNUSED(uri)
-    }
+    Q_INVOKABLE int windowId();
+    Q_INVOKABLE void show(int xOffset = 0, int yOffset = 0, int widthOffset = 0, int heightOffset = 0);
+    Q_INVOKABLE void hide();
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.signon"));
+Q_SIGNALS:
+    void embedWidgetClosed();
+    void embedWidgetOpened();
+    void embedWidgetError();
 
-        QString m2 = QLatin1String("Retrieve from ServiceAccountIdentity");
-
-#ifndef SIGNON_UI_NO_EMBED_WEBVIEW
-        qmlRegisterType<SignOnUiContainerInterface>(uri, 1, 0, "SignOnUiContainer");
-#endif // SIGNON_UI_NO_EMBED_WEBVIEW
-
-        // Types which should be exposed to "normal" applications:
-        qmlRegisterType<ServiceAccountIdentityInterface>(uri, 1, 0, "ServiceAccountIdentity");
-        qmlRegisterType<SessionDataInterface>(uri, 1, 0, "SessionData");
-
-        // Types which should be exposed to "settings" application:
-        qmlRegisterType<IdentityManagerInterface>(uri, 1, 0, "IdentityManager");
-        qmlRegisterType<IdentityInterface>(uri, 1, 0, "Identity");
-    }
+private:
+    void connectSignals();
+    SignOnUiContainerInterfacePrivate *d;
+    friend class SignOnUiContainerInterfacePrivate;
 };
 
-Q_EXPORT_PLUGIN2(nemosignon, NemoSignonPlugin);
-
+#endif // SIGNONUICONTAINERINTERFACE_H

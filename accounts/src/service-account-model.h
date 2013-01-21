@@ -95,11 +95,11 @@ public:
 
 private slots:
     void accountCreated(Accounts::AccountId id);
-    void accountRemoved();
-    void accountUpdated();
+    void accountRemoved(Accounts::AccountId id);
+    void accountUpdated(Accounts::AccountId id);
 
 private:
-    QList<int> getAccountIndexes(Accounts::Account *account) const;
+    QList<int> getAccountIndexes(Accounts::AccountId id) const;
 
 private:
     ServiceAccountModelPrivate* d_ptr;
