@@ -75,8 +75,8 @@ SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
 
     dataReset();
 
-    sortByFieldConf = new MGConfItem("/org/nemomobile/contacts/display_label_order", this);
-    connect(sortByFieldConf, SIGNAL(valueChanged()), this, SLOT(onSortByConfChanged()));
+    displayLabelOrderConf = new MGConfItem("/org/nemomobile/contacts/display_label_order", this);
+    connect(displayLabelOrderConf, SIGNAL(valueChanged()), this, SLOT(onDisplayLabelOrderConfChanged()));
 }
 
 QString SeasidePeopleModelPriv::normalizePhoneNumber(const QString &msisdn)
@@ -109,15 +109,15 @@ void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int
             phoneNumbersToContactIds.insert(normalizedPhoneNumber, contact.localId());
         }
 
-        connect(q, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
-                person, SLOT(recalculateDisplayLabel(SeasideProxyModel::SortByField)), Qt::UniqueConnection);
+        connect(q, SIGNAL(displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder)),
+                person, SLOT(recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder)), Qt::UniqueConnection);
 
-        if (q->sortByField() != personSortByField) {
-            person->recalculateDisplayLabel(q->sortByField());
+        if (q->displayLabelOrder() != personDisplayLabelOrder) {
+            person->recalculateDisplayLabel(q->displayLabelOrder());
         }
     }
 
-    personSortByField = q->sortByField();
+    personDisplayLabelOrder = q->displayLabelOrder();
 }
 
 void SeasidePeopleModelPriv::fixIndexMap()
@@ -303,9 +303,9 @@ void SeasidePeopleModelPriv::contactsChanged(const QList<QContactLocalId>& conta
     }
 }
 
-void SeasidePeopleModelPriv::onSortByConfChanged()
+void SeasidePeopleModelPriv::onDisplayLabelOrderConfChanged()
 {
-    emit q->sortByFieldChanged((SeasideProxyModel::SortByField)sortByFieldConf->value().toInt());
+    emit q->displayLabelOrderChanged((SeasideProxyModel::DisplayLabelOrder)displayLabelOrderConf->value().toInt());
 }
 
 void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::State requestState)

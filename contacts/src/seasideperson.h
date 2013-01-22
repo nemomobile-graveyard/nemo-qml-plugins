@@ -198,7 +198,7 @@ signals:
     void accountPathsChanged();
 
 public slots:
-    void recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst);
+    void recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
 
 private:
     // TODO: private class

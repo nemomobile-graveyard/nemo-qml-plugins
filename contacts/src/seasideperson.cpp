@@ -99,7 +99,7 @@ void SeasidePerson::setLastName(const QString &name)
 }
 
 // small helper to avoid inconvenience
-static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst)
+static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
     QString displayLabel;
@@ -107,7 +107,7 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
 
     QString nameStr1;
     QString nameStr2;
-    if (sortBy == SeasideProxyModel::LastNameFirst) {
+    if (order == SeasideProxyModel::LastNameFirst) {
         nameStr1 = name.lastName();
         nameStr2 = name.firstName();
     } else {
@@ -149,10 +149,10 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
     return "(unnamed)"; // TODO: localisation
 }
 
-void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy)
+void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order)
 {
     QString oldDisplayLabel = mDisplayLabel;
-    QString newDisplayLabel = generateDisplayLabel(mContact, sortBy);
+    QString newDisplayLabel = generateDisplayLabel(mContact, order);
 
     // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {

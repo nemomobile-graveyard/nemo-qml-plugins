@@ -77,19 +77,19 @@ public:
 
     bool populated() const;
     QContactManager *manager() const;
-    SeasideProxyModel::SortByField sortByField() const;
+    SeasideProxyModel::DisplayLabelOrder displayLabelOrder() const;
 
 public slots:
-    void onSortByFieldChanged(SeasideProxyModel::SortByField sortBy);
+    void onDisplayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder order);
 
 Q_SIGNALS:
     void populatedChanged();
-    void sortByFieldChanged(SeasideProxyModel::SortByField);
+    void displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder);
 
 private:
     SeasidePeopleModelPriv *priv;
     friend class SeasidePeopleModelPriv;
-    SeasideProxyModel::SortByField currentSortByField;
+    SeasideProxyModel::DisplayLabelOrder currentDisplayLabelOrder;
     Q_DISABLE_COPY(SeasidePeopleModel);
 };
 
