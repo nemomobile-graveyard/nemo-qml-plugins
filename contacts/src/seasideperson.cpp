@@ -327,7 +327,7 @@ QList<int> SeasidePerson::phoneNumberTypes() const
     return types;
 }
 
-void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
     if (which >= numbers.length()) {
@@ -391,7 +391,7 @@ QList<int> SeasidePerson::emailAddressTypes() const
     return types;
 }
 
-void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
 
@@ -505,7 +505,7 @@ QList<int> SeasidePerson::addressTypes() const
     return types;
 }
 
-void SeasidePerson::setAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
 
@@ -561,7 +561,7 @@ QList<int> SeasidePerson::websiteTypes() const
     return types;
 }
 
-void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
 
