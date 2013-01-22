@@ -86,7 +86,10 @@ public:
         // Website
         WebsiteHomeType,
         WebsiteWorkType,
-        WebsiteOtherType
+        WebsiteOtherType,
+        // Dates
+        BirthdayType,
+        AnniversaryType
     };
 
     explicit SeasidePerson(QObject *parent = 0);
