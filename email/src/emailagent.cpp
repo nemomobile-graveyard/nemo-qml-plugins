@@ -68,10 +68,6 @@ EmailAgent::EmailAgent(QDeclarativeItem *parent)
     connect(m_transmitAction.data(), SIGNAL(activityChanged(QMailServiceAction::Activity)),
             this, SLOT(activityChanged(QMailServiceAction::Activity)));
 
-    //TODO: Remove
-    connect (QMailStore::instance(), SIGNAL(foldersAdded(const QMailFolderIdList &)), this,
-             SLOT(onFoldersAdded(const QMailFolderIdList &)));
-
     m_instance = this;
 }
 
@@ -152,6 +148,10 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
 
         if (_currentAction->type() == EmailAction::StandardFolders) {
             emit standardFoldersCreated(_currentAction->accountId());
+        }
+
+        if(_currentAction->type() == EmailAction::RetrieveFolderList) {
+            emit folderRetrievalCompleted(_currentAction->accountId());
         }
 
         _currentAction = getNext();
@@ -320,6 +320,7 @@ void EmailAgent::synchronizeInbox(QVariant id, const uint minimum)
 
     QMailAccount account(accountId);
     QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+    emit syncBegin();
     if(foldId.isValid()) {
         enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
         enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
@@ -439,15 +440,6 @@ bool EmailAgent::confirmDeleteMail()
 void EmailAgent::exportUpdates(const QMailAccountId id)
 {
     enqueue(new ExportUpdates(m_retrievalAction.data(),id));
-}
-
-// callback function to handle foldersAdded signal
-void EmailAgent::onFoldersAdded (const QMailFolderIdList &folderIdList)
-{
-    QMailFolder folder(folderIdList[0]);
-    QMailAccountId accountId = folder.parentAccountId();
-    //TODO: Check if this is necessary here
-    synchronize(accountId);
 }
 
 void EmailAgent::onStandardFoldersCreated(const QMailAccountId &accountId)
