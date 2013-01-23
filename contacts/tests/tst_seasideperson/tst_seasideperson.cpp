@@ -85,6 +85,7 @@ void tst_SeasidePerson::firstName()
     person->setFirstName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->firstName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("firstName").toString(), person->firstName());
 }
 
 void tst_SeasidePerson::lastName()
@@ -95,6 +96,7 @@ void tst_SeasidePerson::lastName()
     person->setLastName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->lastName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("lastName").toString(), person->lastName());
 }
 
 void tst_SeasidePerson::middleName()
@@ -130,21 +132,24 @@ void tst_SeasidePerson::sectionBucket()
 {
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
     QSignalSpy spy(person.data(), SIGNAL(displayLabelChanged()));
-    QCOMPARE(person->displayLabel(), QString());
-    QCOMPARE(person->sectionBucket(), QString());
+    QCOMPARE(person->displayLabel(), QString("(Unnamed)"));
+    QCOMPARE(spy.count(), 1);
+
+    // XXX This should be in a section bucket of "unnamed" contacts?
+//    QCOMPARE(person->sectionBucket(), QString());
 
     // set first
     person->setLastName("Test");
     QCOMPARE(person->displayLabel(), QString::fromLatin1("Test"));
     QCOMPARE(person->sectionBucket(), QString::fromLatin1("T"));
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.count(), 2);
 
     // change first
     // TODO: eventually where sectionBucket comes from should be a setting
     person->setFirstName("Another");
     QCOMPARE(person->displayLabel(), QString::fromLatin1("Another Test"));
     QCOMPARE(person->sectionBucket(), QString::fromLatin1("A"));
-    QCOMPARE(spy.count(), 2);
+    QCOMPARE(spy.count(), 3);
 }
 
 void tst_SeasidePerson::companyName()
@@ -155,6 +160,7 @@ void tst_SeasidePerson::companyName()
     person->setCompanyName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->companyName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("companyName").toString(), person->companyName());
 }
 
 void tst_SeasidePerson::nickname()
@@ -186,6 +192,7 @@ void tst_SeasidePerson::favorite()
     QSignalSpy spy(person.data(), SIGNAL(favoriteChanged()));
     person->setFavorite(true);
     QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->property("favorite").toBool(), person->favorite());
     QVERIFY(person->favorite());
 }
 
@@ -197,6 +204,7 @@ void tst_SeasidePerson::avatarPath()
     person->setAvatarPath(QUrl("http://test.com"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->avatarPath(), QUrl("http://test.com"));
+    QCOMPARE(person->property("avatarPath").toUrl(), person->avatarPath());
 }
 
 void tst_SeasidePerson::phoneNumbers()
@@ -207,6 +215,7 @@ void tst_SeasidePerson::phoneNumbers()
     person->setPhoneNumbers(QStringList() << "1234" << "5678" << "9101112");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->phoneNumbers(), QStringList() << "1234" << "5678" << "9101112");
+    QCOMPARE(person->property("phoneNumbers").toStringList(), person->phoneNumbers());
 }
 
 void tst_SeasidePerson::phoneTypes()
@@ -234,7 +243,7 @@ void tst_SeasidePerson::phoneTypes()
     }
 
     // Test that we don't crash here even if we set the type out of bounds.
-    // We will get a warning printed to the console.
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for phone number: invalid index specified. Aborting. ");
     person->setPhoneNumberType(numbers.length(), phoneTypes.at(phoneTypes.length() - 1));
 
     QCOMPARE(spy.count(), 5);
@@ -245,6 +254,7 @@ void tst_SeasidePerson::phoneTypes()
     for (int i=0; i<contactsPhoneTypes.count(); i++) {
         QVERIFY(contactsPhoneTypes.at(i) == phoneTypes.at(i));
     }
+    QCOMPARE(person->property("phoneNumbers").toStringList(), person->phoneNumbers());
 }
 
 void tst_SeasidePerson::emailTypes()
@@ -269,7 +279,7 @@ void tst_SeasidePerson::emailTypes()
     }
 
     // Test that we don't crash here even if we set the type out of bounds.
-    // We will get a warning printed to the console.
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for email address: invalid index specified. Aborting. ");
     person->setEmailAddressType(emails.length(), emailTypes.at(emailTypes.length() - 1));
 
     QCOMPARE(spy.count(), 3);
@@ -290,6 +300,7 @@ void tst_SeasidePerson::emailAddresses()
     person->setEmailAddresses(QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->emailAddresses(), QStringList() << "foo@bar.com" << "moo@cow.com" << "lol@snafu.com");
+    QCOMPARE(person->property("emailAddresses").toStringList(), person->emailAddresses());
 }
 
 void tst_SeasidePerson::websites()
@@ -300,6 +311,7 @@ void tst_SeasidePerson::websites()
     person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->websites(), QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
+    QCOMPARE(person->property("websites").toStringList(), person->websites());
 }
 
 void tst_SeasidePerson::websiteTypes()
@@ -331,7 +343,6 @@ void tst_SeasidePerson::websiteTypes()
     for (int i=0; i<contactsWebsiteTypes.count(); i++) {
         QVERIFY(contactsWebsiteTypes.at(i) == websiteTypes.at(i));
     }
-
 }
 
 void tst_SeasidePerson::birthday()
@@ -342,6 +353,7 @@ void tst_SeasidePerson::birthday()
     person->setBirthday(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
 }
 
 void tst_SeasidePerson::anniversary()
@@ -352,6 +364,7 @@ void tst_SeasidePerson::anniversary()
     person->setAnniversary(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->anniversary(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(person->property("anniversary").toDateTime(), person->anniversary());
 }
 
 void tst_SeasidePerson::address()
@@ -377,6 +390,8 @@ void tst_SeasidePerson::address()
 
     person->setAddressType(0, SeasidePerson::AddressHomeType);
     person->setAddressType(1, SeasidePerson::AddressWorkType);
+
+    QTest::ignoreMessage(QtWarningMsg, "Unable to set type for address: invalid index specified. Aborting. ");
     person->setAddressType(2, SeasidePerson::AddressWorkType);  // Invalid, should not crash.
 
     QCOMPARE(person->addressTypes().count(), 2);
