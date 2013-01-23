@@ -32,13 +32,11 @@
 
 #include "alarmsbackendmodel_p.h"
 #include "alarmobject.h"
-#include <timed/interface>
+#include "interface.h"
 #include <QDBusMessage>
 #include <QDBusReply>
 #include <QDeclarativeEngine>
 #include <algorithm>
-
-extern Maemo::Timed::Interface *timed;
 
 inline static bool alarmSort(AlarmObject *a1, AlarmObject *a2)
 {
@@ -72,13 +70,10 @@ AlarmsBackendModelPriv::AlarmsBackendModelPriv(AlarmsBackendModel *m)
 
 void AlarmsBackendModelPriv::populate()
 {
-    if (!timed)
-        timed = new Maemo::Timed::Interface();
-
     // Retrieve a list of cookies created by nemoalarms
     QMap<QString,QVariant> attributes;
     attributes.insert(QLatin1String("APPLICATION"), "nemoalarms");
-    QDBusPendingCallWatcher *reply = new QDBusPendingCallWatcher(timed->query_async(attributes), this);
+    QDBusPendingCallWatcher *reply = new QDBusPendingCallWatcher(TimedInterface::instance()->query_async(attributes), this);
     connect(reply, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(queryReply(QDBusPendingCallWatcher*)));
 }
 
@@ -97,7 +92,7 @@ void AlarmsBackendModelPriv::queryReply(QDBusPendingCallWatcher *call)
         cookies.append(v.toUInt());
 
     // Get a list of attributes for each of those cookies
-    QDBusPendingCall call2 = timed->get_attributes_by_cookies_async(cookies);
+    QDBusPendingCall call2 = TimedInterface::instance()->get_attributes_by_cookies_async(cookies);
     QDBusPendingCallWatcher *reply2 = new QDBusPendingCallWatcher(call2, this);
     connect(reply2, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(attributesReply(QDBusPendingCallWatcher*)));
 }

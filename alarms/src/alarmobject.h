@@ -177,7 +177,7 @@ private slots:
     void saveReply(QDBusPendingCallWatcher *w);
     void deleteReply(QDBusPendingCallWatcher *w);
 
-private:
+protected:
     QString m_title;
     int m_hour, m_minute;
     QString m_daysOfWeek;

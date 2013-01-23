@@ -5,7 +5,10 @@
        <set name="unit-tests" feature="QML Alarms">
            <description>Alarms QML plugin automatic tests</description>
            <case manual="false" name="alarmsbackendmodel">
-               <step>/opt/tests/nemo-qml-plugins/accounts/tst_alarmsbackendmodel</step>
+               <step>/opt/tests/nemo-qml-plugins/alarms/tst_alarmsbackendmodel</step>
+           </case>
+           <case manual="false" name="alarmhandler">
+               <step>/opt/tests/nemo-qml-plugins/alarms/tst_alarmhandler</step>
            </case>
        </set>
    </suite>
