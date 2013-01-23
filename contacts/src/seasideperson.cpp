@@ -99,7 +99,7 @@ void SeasidePerson::setLastName(const QString &name)
 }
 
 // small helper to avoid inconvenience
-static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst)
+static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
     QString displayLabel;
@@ -107,7 +107,7 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
 
     QString nameStr1;
     QString nameStr2;
-    if (sortBy == SeasideProxyModel::LastNameFirst) {
+    if (order == SeasideProxyModel::LastNameFirst) {
         nameStr1 = name.lastName();
         nameStr2 = name.firstName();
     } else {
@@ -149,10 +149,10 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
     return "(unnamed)"; // TODO: localisation
 }
 
-void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy)
+void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order)
 {
     QString oldDisplayLabel = mDisplayLabel;
-    QString newDisplayLabel = generateDisplayLabel(mContact, sortBy);
+    QString newDisplayLabel = generateDisplayLabel(mContact, order);
 
     // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
@@ -327,7 +327,7 @@ QList<int> SeasidePerson::phoneNumberTypes() const
     return types;
 }
 
-void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setPhoneNumberType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactPhoneNumber> &numbers = mContact.details<QContactPhoneNumber>();
     if (which >= numbers.length()) {
@@ -391,7 +391,7 @@ QList<int> SeasidePerson::emailAddressTypes() const
     return types;
 }
 
-void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setEmailAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactEmailAddress> &emails = mContact.details<QContactEmailAddress>();
 
@@ -505,7 +505,7 @@ QList<int> SeasidePerson::addressTypes() const
     return types;
 }
 
-void SeasidePerson::setAddressType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setAddressType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactAddress> &addresses = mContact.details<QContactAddress>();
 
@@ -561,7 +561,7 @@ QList<int> SeasidePerson::websiteTypes() const
     return types;
 }
 
-void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailTypes type)
+void SeasidePerson::setWebsiteType(int which, SeasidePerson::DetailType type)
 {
     const QList<QContactUrl> &urls = mContact.details<QContactUrl>();
 

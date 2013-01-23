@@ -21,10 +21,10 @@ class SeasideProxyModel : public QSortFilterProxyModel, public QDeclarativeParse
     Q_PROPERTY(bool populated READ populated NOTIFY populatedChanged)
     Q_PROPERTY(FilterType filterType READ filterType WRITE setFilter NOTIFY filterTypeChanged)
     Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
-    Q_PROPERTY(SortByField sortByField READ sortByField WRITE setSortByField NOTIFY sortByFieldChanged(SeasideProxyModel::SortByField))
+    Q_PROPERTY(DisplayLabelOrder displayLabelOrder READ displayLabelOrder WRITE setDisplayLabelOrder NOTIFY displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder))
 
     Q_ENUMS(FilterType)
-    Q_ENUMS(SortByField)
+    Q_ENUMS(DisplayLabelOrder)
 
 public:
     SeasideProxyModel(QObject *parent = 0);
@@ -36,7 +36,7 @@ public:
         FilterFavorites
     };
 
-    enum SortByField {
+    enum DisplayLabelOrder {
         FirstNameFirst,
         LastNameFirst
     };
@@ -53,9 +53,9 @@ public:
 
     FilterType filterType() const;
     QString filterPattern() const;
-    void setSortByField(SortByField sortByField);
+    void setDisplayLabelOrder(DisplayLabelOrder displayLabelOrder);
 
-    SortByField sortByField();
+    DisplayLabelOrder displayLabelOrder();
 
     Q_INVOKABLE virtual void setFilter(FilterType filter);
     Q_INVOKABLE void setFilterPattern(const QString &pattern);
@@ -81,7 +81,7 @@ signals:
     void countChanged();
     void filterTypeChanged();
     void filterPatternChanged();
-    void sortByFieldChanged(SeasideProxyModel::SortByField);
+    void displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder);
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
@@ -92,7 +92,7 @@ private:
 
     friend class tst_SeasideProxyModel;
     SeasideProxyModelPriv *priv;
-    SeasideProxyModel::SortByField mSortByField;
+    SeasideProxyModel::DisplayLabelOrder mDisplayLabelOrder;
     Q_DISABLE_COPY(SeasideProxyModel)
 };
 

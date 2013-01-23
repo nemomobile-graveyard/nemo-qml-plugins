@@ -174,7 +174,7 @@ void tst_SeasidePerson::phoneTypes()
 
     QSignalSpy spy(person.data(), SIGNAL(phoneNumberTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> phoneTypes;
+    QList<SeasidePerson::DetailType> phoneTypes;
     phoneTypes.append(SeasidePerson::PhoneHomeType);
     phoneTypes.append(SeasidePerson::PhoneWorkType);
     phoneTypes.append(SeasidePerson::PhoneMobileType);
@@ -211,7 +211,7 @@ void tst_SeasidePerson::emailTypes()
     person->setEmailAddresses(QStringList() << "foo@bar" << "bar@foo"<< "foo@baz");
     QSignalSpy spy(person.data(), SIGNAL(emailAddressTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> emailTypes;
+    QList<SeasidePerson::DetailType> emailTypes;
     emailTypes.append(SeasidePerson::EmailHomeType);
     emailTypes.append(SeasidePerson::EmailWorkType);
     emailTypes.append(SeasidePerson::EmailOtherType);
@@ -266,7 +266,7 @@ void tst_SeasidePerson::websiteTypes()
     person->setWebsites(QStringList() << "www.example.com" << "www.test.com" << "www.foobar.com");
     QSignalSpy spy(person.data(), SIGNAL(websiteTypesChanged()));
 
-    QList<SeasidePerson::DetailTypes> websiteTypes;
+    QList<SeasidePerson::DetailType> websiteTypes;
     websiteTypes.append(SeasidePerson::WebsiteHomeType);
     websiteTypes.append(SeasidePerson::WebsiteWorkType);
     websiteTypes.append(SeasidePerson::WebsiteOtherType);

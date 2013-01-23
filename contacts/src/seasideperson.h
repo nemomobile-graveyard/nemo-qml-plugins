@@ -49,13 +49,13 @@ Q_DECLARE_METATYPE(QContact)
 class SeasidePerson : public QObject
 {
     Q_OBJECT
-    Q_ENUMS(DetailTypes)
+    Q_ENUMS(DetailType)
 
 public:
     /**
      * Identifiers of contact details for the UI.
      */
-    enum DetailTypes {
+    enum DetailType {
         // Name
         FirstNameType,
         LastNameType,
@@ -86,7 +86,10 @@ public:
         // Website
         WebsiteHomeType,
         WebsiteWorkType,
-        WebsiteOtherType
+        WebsiteOtherType,
+        // Dates
+        BirthdayType,
+        AnniversaryType
     };
 
     explicit SeasidePerson(QObject *parent = 0);
@@ -127,7 +130,7 @@ public:
 
     Q_PROPERTY(QList<int> phoneNumberTypes READ phoneNumberTypes NOTIFY phoneNumberTypesChanged)
     QList<int> phoneNumberTypes() const;
-    Q_INVOKABLE void setPhoneNumberType(int which, DetailTypes type);
+    Q_INVOKABLE void setPhoneNumberType(int which, DetailType type);
 
     Q_PROPERTY(QStringList emailAddresses READ emailAddresses WRITE setEmailAddresses NOTIFY emailAddressesChanged)
     QStringList emailAddresses() const;
@@ -135,7 +138,7 @@ public:
 
     Q_PROPERTY(QList<int> emailAddressTypes READ emailAddressTypes NOTIFY emailAddressTypesChanged)
     QList<int> emailAddressTypes() const;
-    Q_INVOKABLE void setEmailAddressType(int which, DetailTypes type);
+    Q_INVOKABLE void setEmailAddressType(int which, DetailType type);
 
     Q_PROPERTY(QStringList addresses READ addresses WRITE setAddresses NOTIFY addressesChanged)
     QStringList addresses() const;
@@ -143,7 +146,7 @@ public:
 
     Q_PROPERTY(QList<int> addressTypes READ addressTypes NOTIFY addressTypesChanged)
     QList<int> addressTypes() const;
-    Q_INVOKABLE void setAddressType(int which, DetailTypes type);
+    Q_INVOKABLE void setAddressType(int which, DetailType type);
 
     Q_PROPERTY(QStringList websites READ websites WRITE setWebsites NOTIFY websitesChanged)
     QStringList websites() const;
@@ -151,7 +154,7 @@ public:
 
     Q_PROPERTY(QList<int> websiteTypes READ websiteTypes NOTIFY websiteTypesChanged)
     QList<int> websiteTypes() const;
-    Q_INVOKABLE void setWebsiteType(int which, DetailTypes type);
+    Q_INVOKABLE void setWebsiteType(int which, DetailType type);
 
     Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)
     QDateTime birthday() const;
@@ -195,7 +198,7 @@ signals:
     void accountPathsChanged();
 
 public slots:
-    void recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy = SeasideProxyModel::FirstNameFirst);
+    void recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
 
 private:
     // TODO: private class
