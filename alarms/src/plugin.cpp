@@ -36,22 +36,25 @@
 #include "alarmobject.h"
 #include "alarmhandlerinterface.h"
 #include "alarmdialogobject.h"
-#include <timed/interface>
+#include "interface.h"
 
-Maemo::Timed::Interface *timed = 0;
+TimedInterface *TimedInterface::instance()
+{
+    static TimedInterface *timed = 0;
+    if (!timed)
+        timed = new TimedInterface;
+    return timed;
+}
 
 class Q_DECL_EXPORT NemoAlarmsPlugin : public QDeclarativeExtensionPlugin
 {
 public:
     NemoAlarmsPlugin()
     {
-        timed = new Maemo::Timed::Interface();
     }
 
     virtual ~NemoAlarmsPlugin()
     {
-        delete timed;
-        timed = 0;
     }
 
     void initializeEngine(QDeclarativeEngine *engine, const char *uri)

@@ -31,12 +31,10 @@
  */
 
 #include "alarmobject.h"
+#include "interface.h"
 #include <QDBusPendingReply>
 #include <timed/event>
-#include <timed/interface>
 #include <timed/exception>
-
-extern Maemo::Timed::Interface *timed;
 
 AlarmObject::AlarmObject(QObject *parent)
     : QObject(parent), m_hour(0), m_minute(0), m_enabled(false),
@@ -175,9 +173,9 @@ void AlarmObject::save()
 
         QDBusPendingCallWatcher *w;
         if (m_cookie)
-            w = new QDBusPendingCallWatcher(timed->replace_event_async(ev, m_cookie), this);
+            w = new QDBusPendingCallWatcher(TimedInterface::instance()->replace_event_async(ev, m_cookie), this);
         else
-            w = new QDBusPendingCallWatcher(timed->add_event_async(ev), this);
+            w = new QDBusPendingCallWatcher(TimedInterface::instance()->add_event_async(ev), this);
         connect(w, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(saveReply(QDBusPendingCallWatcher*)));
 
         // Emit the updated signal immediately to update UI
@@ -209,7 +207,7 @@ void AlarmObject::deleteAlarm()
         return;
     }
 
-    QDBusPendingCall re = timed->cancel_async(m_cookie);
+    QDBusPendingCall re = TimedInterface::instance()->cancel_async(m_cookie);
     QDBusPendingCallWatcher *w = new QDBusPendingCallWatcher(re, this);
     connect(w, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(deleteReply(QDBusPendingCallWatcher*)));
 

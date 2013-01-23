@@ -30,64 +30,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "alarmdialogobject.h"
-#include "interface.h"
-#include <timed-voland/reminder>
-#include <QDBusPendingReply>
-#include <QDBusPendingCallWatcher>
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
-AlarmDialogObject::AlarmDialogObject(QObject *parent)
-    : AlarmObject(parent), m_hideSnooze(false), m_hideDismiss(false), m_missed(false)
+#include <timed/interface>
+
+class TimedInterface : public Maemo::Timed::Interface
 {
-}
+public:
+    static TimedInterface *instance();
+};
 
-AlarmDialogObject::AlarmDialogObject(const Maemo::Timed::Voland::Reminder &data, QObject *parent)
-    : AlarmObject(data.attributes(), parent),
-      m_hideSnooze(data.hideSnoozeButton1()),
-      m_hideDismiss(data.hideCancelButton2()),
-      m_missed(data.isMissed())
-{
-    // Reminders mysteriously do not contain the 'COOKIE' attribute. Set it here.
-    m_cookie = data.cookie();
-}
-
-void AlarmDialogObject::snooze()
-{
-    sendResponse(-1);
-}
-
-void AlarmDialogObject::dismiss()
-{
-    sendResponse(-2);
-}
-
-void AlarmDialogObject::close()
-{
-    sendResponse(0);
-}
-
-void AlarmDialogObject::closedExternally()
-{
-    // Closed by external forces, don't send a response, just emit
-    emit closed(this);
-}
-
-void AlarmDialogObject::sendResponse(int code)
-{
-    QDBusPendingCall call = TimedInterface::instance()->dialog_response_async(id(), code);
-    QDBusPendingCallWatcher *w = new QDBusPendingCallWatcher(call, this);
-    connect(w, SIGNAL(finished(QDBusPendingCallWatcher*)), SLOT(responseReply(QDBusPendingCallWatcher*)));
-
-    // Close dialog
-    emit closed(this);
-}
-
-void AlarmDialogObject::responseReply(QDBusPendingCallWatcher *w)
-{
-    QDBusPendingReply<bool> reply = *w;
-    w->deleteLater();
-
-    if (reply.isError())
-        qWarning() << "org.nemomobile.alarms: Error from sending alarm dialog response:" << reply.error();
-}
+#endif
 
