@@ -146,7 +146,7 @@ static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::SortBy
             return phone.number();
     }
 
-    return "(unnamed)"; // TODO: localisation
+    return "(Unnamed)"; // TODO: localisation
 }
 
 void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::SortByField sortBy)
