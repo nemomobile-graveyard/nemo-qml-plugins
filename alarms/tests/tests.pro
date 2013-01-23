@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
-SUBDIRS = tst_alarmsbackendmodel
+SUBDIRS = tst_alarmsbackendmodel \
+    tst_alarmhandler
 
 tests_xml.target = tests.xml
 tests_xml.files = tests.xml

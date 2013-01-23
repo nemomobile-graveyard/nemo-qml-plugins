@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Ltd.
+ * Copyright (C) 2013 Jolla Ltd.
  * Contact: John Brooks <john.brooks@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -30,46 +30,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include "alarmsbackendmodel.h"
-#include "alarmobject.h"
-#include "alarmhandlerinterface.h"
-#include "alarmdialogobject.h"
-#include "interface.h"
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
-TimedInterface *TimedInterface::instance()
-{
-    static TimedInterface *timed = 0;
-    if (!timed)
-        timed = new TimedInterface;
-    return timed;
-}
+#include <timed/interface>
 
-class Q_DECL_EXPORT NemoAlarmsPlugin : public QDeclarativeExtensionPlugin
+class TimedInterface : public Maemo::Timed::Interface
 {
 public:
-    NemoAlarmsPlugin()
-    {
-    }
-
-    virtual ~NemoAlarmsPlugin()
-    {
-    }
-
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.alarms"));
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.alarms"));
-        qmlRegisterType<AlarmsBackendModel>(uri, 1, 0, "AlarmsModel");
-        qmlRegisterUncreatableType<AlarmObject>(uri, 1, 0, "Alarm", "Create Alarm via AlarmsModel");
-        qmlRegisterType<AlarmHandlerInterface>(uri, 1, 0, "AlarmHandler");
-    }
+    static TimedInterface *instance();
 };
 
-Q_EXPORT_PLUGIN2(nemoalarms, NemoAlarmsPlugin);
+#endif
 
