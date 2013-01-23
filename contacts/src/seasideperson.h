@@ -106,6 +106,10 @@ public:
     QString lastName() const;
     void setLastName(const QString &name);
 
+    Q_PROPERTY(QString middleName READ middleName WRITE setMiddleName NOTIFY middleNameChanged)
+    QString middleName() const;
+    void setMiddleName(const QString &name);
+
     Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
     QString sectionBucket();
 
@@ -115,6 +119,14 @@ public:
     Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
     QString companyName() const;
     void setCompanyName(const QString &name);
+
+    Q_PROPERTY(QString nickname READ nickname WRITE setNickname NOTIFY nicknameChanged)
+    QString nickname() const;
+    void setNickname(const QString &name);
+
+    Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
+    QString title() const;
+    void setTitle(const QString &name);
 
     Q_PROPERTY(bool favorite READ favorite WRITE setFavorite NOTIFY favoriteChanged)
     bool favorite() const;
@@ -180,8 +192,11 @@ signals:
     void contactRemoved();
     void firstNameChanged();
     void lastNameChanged();
+    void middleNameChanged();
     void displayLabelChanged();
     void companyNameChanged();
+    void nicknameChanged();
+    void titleChanged();
     void favoriteChanged();
     void avatarPathChanged();
     void phoneNumbersChanged();

@@ -35,6 +35,7 @@
 #include <QContactBirthday>
 #include <QContactAnniversary>
 #include <QContactName>
+#include <QContactNickname>
 #include <QContactFavorite>
 #include <QContactPhoneNumber>
 #include <QContactEmailAddress>
@@ -95,6 +96,21 @@ void SeasidePerson::setLastName(const QString &name)
     nameDetail.setLastName(name);
     mContact.saveDetail(&nameDetail);
     emit lastNameChanged();
+    recalculateDisplayLabel();
+}
+
+QString SeasidePerson::middleName() const
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    return nameDetail.middleName();
+}
+
+void SeasidePerson::setMiddleName(const QString &name)
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    nameDetail.setMiddleName(name);
+    mContact.saveDetail(&nameDetail);
+    emit middleNameChanged();
     recalculateDisplayLabel();
 }
 
@@ -197,6 +213,35 @@ void SeasidePerson::setCompanyName(const QString &name)
     companyNameDetail.setName(name);
     mContact.saveDetail(&companyNameDetail);
     emit companyNameChanged();
+}
+
+QString SeasidePerson::nickname() const
+{
+    QContactNickname nameDetail = mContact.detail<QContactNickname>();
+    return nameDetail.nickname();
+}
+
+void SeasidePerson::setNickname(const QString &name)
+{
+    QContactNickname nameDetail = mContact.detail<QContactNickname>();
+    nameDetail.setNickname(name);
+    mContact.saveDetail(&nameDetail);
+    emit nicknameChanged();
+    recalculateDisplayLabel();
+}
+
+QString SeasidePerson::title() const
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    return nameDetail.prefix();
+}
+
+void SeasidePerson::setTitle(const QString &name)
+{
+    QContactName nameDetail = mContact.detail<QContactName>();
+    nameDetail.setPrefix(name);
+    mContact.saveDetail(&nameDetail);
+    emit titleChanged();
 }
 
 bool SeasidePerson::favorite() const
