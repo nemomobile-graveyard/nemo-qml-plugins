@@ -995,7 +995,7 @@ void AccountInterface::setConfigurationValues(const QVariantMap &values)
                 || currValue.type() == QVariant::StringList) {
             validValues.insert(key, currValue);
         } else if (currValue.type() == QVariant::List) {
-            validVaues.insert(key, currValue.toStringList());
+            validValues.insert(key, currValue.toStringList());
         }
     }
 
