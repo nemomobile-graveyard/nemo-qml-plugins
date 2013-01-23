@@ -32,8 +32,18 @@
 #include <QObject>
 #include <QtTest>
 
-#include <QContactFavorite>
+#include <QContactAvatar>
+#include <QContactBirthday>
+#include <QContactAnniversary>
 #include <QContactName>
+#include <QContactNickname>
+#include <QContactFavorite>
+#include <QContactPhoneNumber>
+#include <QContactEmailAddress>
+#include <QContactAddress>
+#include <QContactOnlineAccount>
+#include <QContactOrganization>
+#include <QContactUrl>
 
 #include "seasideperson.h"
 
@@ -46,9 +56,12 @@ class tst_SeasidePerson : public QObject
 private slots:
     void firstName();
     void lastName();
+    void middleName();
     void displayLabel();
     void sectionBucket();
     void companyName();
+    void nickname();
+    void title();
     void favorite();
     void avatarPath();
     void phoneNumbers();
@@ -82,6 +95,17 @@ void tst_SeasidePerson::lastName()
     person->setLastName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->lastName(), QString::fromLatin1("Test"));
+}
+
+void tst_SeasidePerson::middleName()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->middleName(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(middleNameChanged()));
+    person->setMiddleName("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->middleName(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("middleName").toString(), person->middleName());
 }
 
 void tst_SeasidePerson::displayLabel()
@@ -131,6 +155,28 @@ void tst_SeasidePerson::companyName()
     person->setCompanyName("Test");
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->companyName(), QString::fromLatin1("Test"));
+}
+
+void tst_SeasidePerson::nickname()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->nickname(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(nicknameChanged()));
+    person->setNickname("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->nickname(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("nickname").toString(), person->nickname());
+}
+
+void tst_SeasidePerson::title()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->title(), QString());
+    QSignalSpy spy(person.data(), SIGNAL(titleChanged()));
+    person->setTitle("Test");
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->title(), QString::fromLatin1("Test"));
+    QCOMPARE(person->property("title").toString(), person->title());
 }
 
 void tst_SeasidePerson::favorite()
