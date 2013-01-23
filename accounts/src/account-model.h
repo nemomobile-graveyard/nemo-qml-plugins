@@ -107,6 +107,7 @@ private slots:
     void accountCreated(Accounts::AccountId id);
     void accountRemoved(Accounts::AccountId id);
     void accountUpdated(Accounts::AccountId id);
+    void accountDisplayNameChanged();
 
 private:
     int getAccountIndex(Accounts::AccountId id) const;

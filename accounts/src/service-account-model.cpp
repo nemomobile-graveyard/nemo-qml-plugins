@@ -98,6 +98,8 @@ ServiceAccountModel::ServiceAccountModel(QObject* parent)
     foreach (Accounts::AccountId id, idList)
     {
         Accounts::Account *account = d->manager->account(id);
+        connect(account, SIGNAL(displayNameChanged(QString)),
+                this, SLOT(accountDisplayNameChanged()));
         Accounts::ServiceList accountServices = account->services();
         foreach (const Accounts::Service &srv, accountServices) {
             Accounts::AccountService *srvAcc = new Accounts::AccountService(account, srv);
@@ -317,6 +319,13 @@ void ServiceAccountModel::accountUpdated(Accounts::AccountId id)
 
     // emit change signal for the last (or possibly only) chunk
     emit dataChanged(index(firstIdx, 0), index(lastIdx, 0));
+}
+
+void ServiceAccountModel::accountDisplayNameChanged()
+{
+    Accounts::Account *account = qobject_cast<Accounts::Account*>(sender());
+    if (account)
+        accountUpdated(account->id());
 }
 
 // Each Account can be represented multiple times in the list (as it may support multiple services)
