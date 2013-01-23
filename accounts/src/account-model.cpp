@@ -90,6 +90,8 @@ AccountModel::AccountModel(QObject* parent)
     foreach (Accounts::AccountId id, idList)
     {
         Accounts::Account *account = d->manager->account(id);
+        connect(account, SIGNAL(displayNameChanged(QString)),
+                this, SLOT(accountDisplayNameChanged()));
         d->accountsList.append(new DisplayData(account));
     }
 }
@@ -213,6 +215,13 @@ void AccountModel::accountUpdated(Accounts::AccountId id)
     }
 
     emit dataChanged(index(accountIndex, 0), index(accountIndex, 0));
+}
+
+void AccountModel::accountDisplayNameChanged()
+{
+    Accounts::Account *account = qobject_cast<Accounts::Account*>(sender());
+    if (account)
+        accountUpdated(account->id());
 }
 
 int AccountModel::getAccountIndex(Accounts::AccountId id) const

@@ -70,6 +70,11 @@ AccountInterfacePrivate::~AccountInterfacePrivate()
 
 static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
 {
+    QVariant stringListVariant(QVariant::StringList);
+    acc->value(key, stringListVariant);
+    if (!stringListVariant.isNull())
+        return stringListVariant.value<QStringList>();
+
     QString strVal = acc->valueAsString(key);
     if (!strVal.isNull())
         return QVariant(strVal);
@@ -608,19 +613,26 @@ void AccountInterface::remove()
 /*!
     \qmlmethod void Account::setConfigurationValue(const QString &key, const QVariant &value)
     Sets the account's configuration settings value for the key \a key
-    to the value \a value.  The only supported value types are int, quint64, bool and QString.
+    to the value \a value.  The only supported value types are int,
+    quint64, bool, QString and QStringList.
 */
 void AccountInterface::setConfigurationValue(const QString &key, const QVariant &value)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
 
+    if (value.type() == QVariant::List) {
+        setConfigurationValue(key, value.toStringList());
+        return;
+    }
+
     if (value.type() != QVariant::Int
             && value.type() != QVariant::LongLong
             && value.type() != QVariant::ULongLong
             && value.type() != QVariant::Bool
-            && value.type() != QVariant::String) {
-        qWarning() << Q_FUNC_INFO << "Unsupported configuration value type!  Must be int, quint64, bool or string.";
+            && value.type() != QVariant::String
+            && value.type() != QVariant::StringList) {
+        qWarning() << Q_FUNC_INFO << "Unsupported configuration value type!  Must be int, quint64, bool, string or string list.";
         return; // unsupported value type.
     }
 
@@ -955,7 +967,8 @@ QStringList AccountInterface::enabledServiceNames() const
     file installed by the account provider plugin.  Other settings
     may be specified directly for an account.
 
-    The only supported value types are int, quint64, bool and QString.
+    The only supported value types are int, quint64, bool, QString
+    and QStringList.
 */
 
 QVariantMap AccountInterface::configurationValues() const
@@ -978,8 +991,11 @@ void AccountInterface::setConfigurationValues(const QVariantMap &values)
                 || currValue.type() == QVariant::Int
                 || currValue.type() == QVariant::LongLong
                 || currValue.type() == QVariant::ULongLong
-                || currValue.type() == QVariant::String) {
+                || currValue.type() == QVariant::String
+                || currValue.type() == QVariant::StringList) {
             validValues.insert(key, currValue);
+        } else if (currValue.type() == QVariant::List) {
+            validVaues.insert(key, currValue.toStringList());
         }
     }
 
