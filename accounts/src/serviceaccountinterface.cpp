@@ -60,6 +60,11 @@ ServiceAccountInterfacePrivate::~ServiceAccountInterfacePrivate()
 
 static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
 {
+    QVariant stringListVariant(QVariant::StringList);
+    acc->value(key, stringListVariant);
+    if (!stringListVariant.isNull())
+        return stringListVariant.value<QStringList>(); // XXX TODO: check to see that this works as expected?
+
     QString strVal = acc->valueAsString(key);
     if (!strVal.isNull())
         return QVariant(strVal);
@@ -84,7 +89,7 @@ void ServiceAccountInterfacePrivate::updateConfigurationValues()
     QStringList allKeys = serviceAccount->allKeys();
     foreach (const QString &key, allKeys) {
         QVariant currentValue;
-        currentValue = serviceAccount->value(key);
+        currentValue = serviceAccount->value(key, 0);
         configurationValues.insert(key, currentValue);
     }
 
@@ -185,6 +190,11 @@ ProviderInterface *ServiceAccountInterface::provider() const
 */
 void ServiceAccountInterface::setConfigurationValue(const QString &key, const QVariant &value)
 {
+    if (value.type() == QVariant::List) {
+        setConfigurationValue(key, value.toStringList());
+        return;
+    }
+
     d->serviceAccount->setValue(key, value);
     d->serviceAccount->account()->sync();
 }
