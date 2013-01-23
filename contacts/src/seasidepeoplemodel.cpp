@@ -74,7 +74,7 @@
 SeasidePeopleModel::SeasidePeopleModel(QObject *parent)
     : QAbstractListModel(parent)
     , priv(new SeasidePeopleModelPriv(this))
-    , currentSortByField(SeasideProxyModel::FirstNameFirst)
+    , currentDisplayLabelOrder(SeasideProxyModel::FirstNameFirst)
 {
     QHash<int, QByteArray> roles;
     roles.insert(Qt::DisplayRole, "display");
@@ -84,8 +84,8 @@ SeasidePeopleModel::SeasidePeopleModel(QObject *parent)
     roles.insert(PersonRole, "person");
     setRoleNames(roles);
 
-    connect(this, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
-            this, SLOT(onSortByFieldChanged(SeasideProxyModel::SortByField)));
+    connect(this, SIGNAL(displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder)),
+            this, SLOT(onDisplayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder)));
 }
 
 SeasidePeopleModel::~SeasidePeopleModel()
@@ -287,15 +287,15 @@ QContactManager *SeasidePeopleModel::manager() const
     return priv->manager;
 }
 
-SeasideProxyModel::SortByField SeasidePeopleModel::sortByField() const
+SeasideProxyModel::DisplayLabelOrder SeasidePeopleModel::displayLabelOrder() const
 {
-    return currentSortByField;
+    return currentDisplayLabelOrder;
 }
 
-void SeasidePeopleModel::onSortByFieldChanged(SeasideProxyModel::SortByField sortBy)
+void SeasidePeopleModel::onDisplayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder order)
 {
-    if (sortBy != currentSortByField) {
-        currentSortByField = sortBy;
+    if (order != currentDisplayLabelOrder) {
+        currentDisplayLabelOrder = order;
     }
 }
 

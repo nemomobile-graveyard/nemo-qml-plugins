@@ -35,7 +35,7 @@ SeasideProxyModel::SeasideProxyModel(QObject *parent)
     Q_UNUSED(parent);
     priv = new SeasideProxyModelPriv;
     priv->filterType = FilterAll;
-    mSortByField = FirstNameFirst;
+    mDisplayLabelOrder = FirstNameFirst;
     priv->localeHelper = LocaleUtils::self();
     setDynamicSortFilter(true);
     setFilterKeyColumn(-1);
@@ -72,11 +72,11 @@ void SeasideProxyModel::componentComplete()
     connect(sourceModel, SIGNAL(populatedChanged()),
             this, SIGNAL(populatedChanged()));
 
-    connect(this, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)),
-            sourceModel, SIGNAL(sortByFieldChanged(SeasideProxyModel::SortByField)));
+    connect(this, SIGNAL(displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder)),
+            sourceModel, SIGNAL(displayLabelOrderChanged(SeasideProxyModel::DisplayLabelOrder)));
 
-    if (mSortByField != FirstNameFirst) {
-        emit sortByFieldChanged(mSortByField);
+    if (mDisplayLabelOrder != FirstNameFirst) {
+        emit displayLabelOrderChanged(mDisplayLabelOrder);
     }
 }
 
@@ -122,17 +122,17 @@ void SeasideProxyModel::setFilterPattern(const QString &pattern)
     }
 }
 
-SeasideProxyModel::SortByField SeasideProxyModel::sortByField()
+SeasideProxyModel::DisplayLabelOrder SeasideProxyModel::displayLabelOrder()
 {
-    return mSortByField;
+    return mDisplayLabelOrder;
 }
 
-void SeasideProxyModel::setSortByField(SortByField sortByField)
+void SeasideProxyModel::setDisplayLabelOrder(DisplayLabelOrder order)
 {
-    if (sortByField != mSortByField) {
-        mSortByField = sortByField;
+    if (order != mDisplayLabelOrder) {
+        mDisplayLabelOrder = order;
         invalidate();
-        emit sortByFieldChanged(sortByField);
+        emit displayLabelOrderChanged(order);
     }
 }
 

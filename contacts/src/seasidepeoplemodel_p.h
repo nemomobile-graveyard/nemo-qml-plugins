@@ -45,8 +45,8 @@ public:
     LocaleUtils *localeHelper;
     QContactGuid currentGuid;
     QList<QContact> contactsPendingSave;
-    MGConfItem *sortByFieldConf;
-    SeasideProxyModel::SortByField personSortByField;
+    MGConfItem *displayLabelOrderConf;
+    SeasideProxyModel::DisplayLabelOrder personDisplayLabelOrder;
 
     static QString normalizePhoneNumber(const QString &msisdn);
 
@@ -68,7 +68,7 @@ private slots:
     void contactsAdded(const QList<QContactLocalId>& contactIds);
     void contactsChanged(const QList<QContactLocalId>& contactIds);
 
-    void onSortByConfChanged();
+    void onDisplayLabelOrderConfChanged();
 
 private:
     Q_DISABLE_COPY(SeasidePeopleModelPriv);
