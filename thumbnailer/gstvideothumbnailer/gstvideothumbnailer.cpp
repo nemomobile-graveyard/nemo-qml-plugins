@@ -154,6 +154,8 @@ extern "C" Q_DECL_EXPORT QImage createThumbnail(const QString &fileName, const Q
                 NULL);
     gst_app_sink_set_caps(GST_APP_SINK(thumbnailer.appsink), sinkCaps);
 
+    gst_caps_unref(sinkCaps);
+
     gst_element_link_pads(thumbnailer.transform, "src", thumbnailer.appsink, "sink");
     g_signal_connect(thumbnailer.decodebin, "autoplug-continue", G_CALLBACK(decodebin_autoplug_continue), &thumbnailer);
     g_signal_connect(thumbnailer.decodebin, "pad-added", G_CALLBACK(decodebin_new_pad), &thumbnailer);
