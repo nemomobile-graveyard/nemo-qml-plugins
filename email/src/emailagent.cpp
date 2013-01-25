@@ -43,7 +43,6 @@ EmailAgent *EmailAgent::instance()
 EmailAgent::EmailAgent(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
     , m_actionCount(0)
-    , m_retrieving(false)
     , m_transmitting(false)
     , m_cancelling(false)
     , m_synchronizing(false)
@@ -109,6 +108,7 @@ void EmailAgent::activityChanged(QMailServiceAction::Activity activity)
         if (m_cancelling) {
             m_synchronizing = false;
             m_transmitting = false;
+            m_cancelling = false;
             _actionQueue.clear();
             emit error(status.accountId, status.text, status.errorCode);
             qDebug() << "Canceled by the user";
@@ -295,9 +295,7 @@ void EmailAgent::retrieveFolderList(QVariant accountId, QVariant folderId, const
     QMailFolderId foldId = folderId.value<QMailFolderId>();
 
     if (acctId.isValid()) {
-        emit syncBegin(); //check
-        m_cancelling = false;
-        m_retrieving = true;
+        emit syncBegin();
         enqueue(new RetrieveFolderList(m_retrievalAction.data(),acctId, foldId, descending));
     }
 }
@@ -306,10 +304,8 @@ void EmailAgent::synchronize(QVariant id)
 {
     QMailAccountId accountId = id.value<QMailAccountId>();
 
-    if (!isSynchronizing() && accountId.isValid()) {
-        emit syncBegin(); //check
-        m_cancelling = false;
-        m_retrieving = true;
+    if (accountId.isValid()) {
+        emit syncBegin();
         enqueue(new Synchronize(m_retrievalAction.data(), accountId));
     }
 }
@@ -320,7 +316,7 @@ void EmailAgent::synchronizeInbox(QVariant id, const uint minimum)
 
     QMailAccount account(accountId);
     QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
-    emit syncBegin();
+    emit syncBegin();    
     if(foldId.isValid()) {
         enqueue(new ExportUpdates(m_retrievalAction.data(),accountId));
         enqueue(new RetrieveFolderList(m_retrievalAction.data(), accountId, QMailFolderId(), true));
@@ -341,15 +337,14 @@ void EmailAgent::retrieveMessageList(QVariant accountId, QVariant folderId, cons
     QMailFolderId foldId = folderId.value<QMailFolderId>();
 
     if (acctId.isValid()) {
-        emit syncBegin(); //check
-        m_cancelling = false; //check
-        m_retrieving = true; //check
+        emit syncBegin();
         enqueue(new RetrieveMessageList(m_retrievalAction.data(),acctId, foldId, minimum));
     }
 }
 
 void EmailAgent::retrieveMessageRange(QVariant messageId, uint minimum)
 {
+    emit syncBegin();
     QMailMessageId id = messageId.value<QMailMessageId>();
     enqueue(new RetrieveMessageRange(m_retrievalAction.data(), id, minimum));
 }
@@ -358,9 +353,7 @@ void EmailAgent::getMoreMessages(QVariant vFolderId, uint minimum)
 {
     QMailFolderId folderId = vFolderId.value<QMailFolderId>();
     if (folderId.isValid()) {
-        emit syncBegin(); //check
-        m_cancelling = false; //check
-        m_retrieving = true; //check
+        emit syncBegin();
         QMailFolder folder(folderId);
         QMailMessageKey countKey(QMailMessageKey::parentFolderId(folderId));
         countKey &= ~QMailMessageKey::status(QMailMessage::Temporary);
@@ -372,7 +365,6 @@ void EmailAgent::getMoreMessages(QVariant vFolderId, uint minimum)
 void EmailAgent::sendMessages(const QMailAccountId &id)
 {
     if (id.isValid()) {
-        m_cancelling = false; //check
         m_transmitting = true;
         enqueue(new TransmitMessages(m_transmitAction.data(),id));
     }
