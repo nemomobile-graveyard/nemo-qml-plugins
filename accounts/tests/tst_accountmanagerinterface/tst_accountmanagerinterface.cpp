@@ -223,6 +223,7 @@ void tst_AccountManagerInterface::accounts()
         acc->setDisplayName("test-account");
         acc->enableWithService("test-service2");
         acc->sync();
+        QTRY_COMPARE(acc->status(), AccountInterface::Synced);
         QTRY_COMPARE(spy.count(), 1);
         QString newAccountId = QString::number(acc->identifier());
         QVERIFY(m->accountIdentifiers().contains(newAccountId));

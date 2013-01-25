@@ -58,31 +58,6 @@ ServiceAccountInterfacePrivate::~ServiceAccountInterfacePrivate()
         delete serviceAccount;
 }
 
-static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
-{
-    QVariant stringListVariant(QVariant::StringList);
-    acc->value(key, stringListVariant);
-    if (!stringListVariant.isNull())
-        return stringListVariant.value<QStringList>(); // XXX TODO: check to see that this works as expected?
-
-    QString strVal = acc->valueAsString(key);
-    if (!strVal.isNull())
-        return QVariant(strVal);
-
-    quint64 uintMax = 0xffffffffffffffffU;
-    quint64 uintVal = acc->valueAsUInt64(key, uintMax);
-    if (uintVal != uintMax)
-        return QVariant(uintVal);
-
-    int intMax = 0xffffffff;
-    int intVal = acc->valueAsInt(key, intMax);
-    if (intVal != intMax)
-        return QVariant(intVal);
-
-    bool boolVal = acc->valueAsBool(key);
-    return QVariant(boolVal);
-}
-
 void ServiceAccountInterfacePrivate::updateConfigurationValues()
 {
     configurationValues.clear();
@@ -246,7 +221,7 @@ QVariantMap ServiceAccountInterface::unrelatedValues() const
     QStringList allKeys = acct->allKeys();
     QVariantMap unrelatedValues;
     foreach (const QString &key, allKeys)
-        unrelatedValues.insert(key, configurationValueVariant(acct, key));
+        unrelatedValues.insert(key, acct->value(key, QVariant(), 0));
     acct->selectService(srv);
 
     return unrelatedValues;
