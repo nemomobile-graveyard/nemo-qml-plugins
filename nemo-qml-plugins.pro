@@ -9,4 +9,5 @@ SUBDIRS += thumbnailer \
            signon \
            accounts \
            alarms \
-           time
+           time \
+           utilities
