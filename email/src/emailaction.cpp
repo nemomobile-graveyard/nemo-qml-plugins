@@ -193,6 +193,37 @@ QMailServiceAction* FlagMessages::serviceAction() const
 }
 
 /*
+    MoveToFolder
+*/
+
+MoveToFolder::MoveToFolder(QMailStorageAction *storageAction, const QMailMessageIdList &ids,
+                           const QMailFolderId &folderId)
+    : EmailAction()
+    , _storageAction(storageAction)
+    , _ids(ids)
+    , _destinationFolder(folderId)
+{
+    QString idsList = idListToString(_ids);
+    _description =  QString("move-messages-to-folder:message-ids=%1;folder-id=%2").arg(idsList)
+            .arg(_destinationFolder.toULongLong());
+    _type = EmailAction::Storage;
+}
+
+MoveToFolder::~MoveToFolder()
+{
+}
+
+void MoveToFolder::execute()
+{
+    _storageAction->moveToFolder(_ids, _destinationFolder);
+}
+
+QMailServiceAction* MoveToFolder::serviceAction() const
+{
+    return _storageAction;
+}
+
+/*
   MoveToStandardFolder
 */
 MoveToStandardFolder::MoveToStandardFolder(QMailStorageAction *storageAction,

@@ -340,6 +340,20 @@ void EmailMessageListModel::sortByAttachment(int key)
     Q_UNUSED(key);
 }
 
+QVariant EmailMessageListModel::accountIdForMessage(QVariant messageId)
+{
+    QMailMessageId msgId = messageId.value<QMailMessageId>();
+    QMailMessageMetaData metaData(msgId);
+    return metaData.parentAccountId();
+}
+
+QVariant EmailMessageListModel::folderIdForMessage(QVariant messageId)
+{
+    QMailMessageId msgId = messageId.value<QMailMessageId>();
+    QMailMessageMetaData metaData(msgId);
+    return metaData.parentFolderId();
+}
+
 QVariant EmailMessageListModel::indexFromMessageId (QString uuid)
 {
     quint64 id = uuid.toULongLong();
