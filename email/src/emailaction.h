@@ -106,6 +106,21 @@ private:
     quint64 _unsetMask;
 };
 
+class MoveToFolder : public EmailAction
+{
+public:
+    MoveToFolder(QMailStorageAction *storageAction, const QMailMessageIdList &ids,
+                 const QMailFolderId &folderId);
+    ~MoveToFolder();
+    void execute();
+    QMailServiceAction* serviceAction() const;
+
+private:
+    QMailStorageAction* _storageAction;
+    QMailMessageIdList _ids;
+    QMailFolderId _destinationFolder;
+};
+
 class MoveToStandardFolder : public EmailAction
 {
 public:

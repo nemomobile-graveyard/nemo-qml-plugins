@@ -56,6 +56,7 @@ public:
     Q_INVOKABLE void cancelSync();
     Q_INVOKABLE void markMessageAsRead(QVariant vMsgId);
     Q_INVOKABLE void markMessageAsUnread(QVariant vMsgId);
+    Q_INVOKABLE void moveMessage(QVariant id, QVariant destinationId);
     Q_INVOKABLE void getMoreMessages(QVariant vFolderId, uint minimum = 20);
     Q_INVOKABLE QString getSignatureForAccount(QVariant vMailAccountId);
     Q_INVOKABLE bool confirmDeleteMail();
@@ -64,6 +65,7 @@ public:
     Q_INVOKABLE void openBrowser(const QString& url);
     Q_INVOKABLE QString getMessageBodyFromFile(const QString& bodyFilePath);
     Q_INVOKABLE QVariant inboxFolderId(QVariant vMailAccountId);
+    Q_INVOKABLE qint64 folderIdToInt(QVariant folderId);
 
 signals:
     void standardFoldersCreated(const QMailAccountId &id);
