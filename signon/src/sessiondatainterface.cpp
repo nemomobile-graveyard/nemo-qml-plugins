@@ -96,9 +96,27 @@ void SessionDataInterface::setProperties(const QVariantMap &data)
     emit propertiesChanged();
 }
 
+QVariantMap SessionDataInterface::sanitizeVariantMap(const QVariantMap &input)
+{
+    // Helper function for Identity/ServiceAccountIdentity.  Don't use this elsewhere.
+    QVariantMap retn;
+
+    QStringList allkeys = input.keys();
+    foreach (const QString &key, allkeys) {
+        QVariant curr = input.value(key);
+        if (curr.type() == QVariant::List) {
+            retn.insert(key, curr.toStringList());
+        } else {
+            retn.insert(key, curr);
+        }
+    }
+
+    return retn;
+}
+
 SignOn::SessionData SessionDataInterface::sessionData() const
 {
-    // Helper function for AuthSessionInterface.  Don't use this elsewhere.
+    // Helper function for Identity/ServiceAccountIdentity.  Don't use this elsewhere.
     return d->sessionData;
 }
 

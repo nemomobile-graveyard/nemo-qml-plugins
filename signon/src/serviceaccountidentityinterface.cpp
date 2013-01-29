@@ -332,7 +332,7 @@ void ServiceAccountIdentityInterface::verifyUser(const QVariantMap &params)
     qWarning() << "ServiceAccountIdentityInterface::verifyUser() not implemented!";
     if (d->status == ServiceAccountIdentityInterface::Invalid)
         return;
-    d->identity->verifyUser(params);
+    d->identity->verifyUser(SessionDataInterface::sanitizeVariantMap(params));
 }
 
 /*!
@@ -432,7 +432,7 @@ bool ServiceAccountIdentityInterface::signIn(const QString &method, const QStrin
     d->currentMethod = method;
     d->currentMechanism = mechanism;
     d->setUpSessionSignals();
-    d->session->process(SignOn::SessionData(sessionData), mechanism);
+    d->session->process(SignOn::SessionData(SessionDataInterface::sanitizeVariantMap(sessionData)), mechanism);
     return true;
 }
 
@@ -447,7 +447,7 @@ void ServiceAccountIdentityInterface::process(const QVariantMap &sessionData)
         return;
 
     if (d->session)
-        d->session->process(SignOn::SessionData(sessionData), d->currentMechanism);
+        d->session->process(SignOn::SessionData(SessionDataInterface::sanitizeVariantMap(sessionData)), d->currentMechanism);
 }
 
 /*!

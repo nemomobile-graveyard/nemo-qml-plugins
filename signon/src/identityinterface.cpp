@@ -32,6 +32,8 @@
 #include "identityinterface.h"
 #include "identityinterface_p.h"
 
+#include "sessiondatainterface.h"
+
 #include <QtDebug>
 
 //libsignon-qt
@@ -42,6 +44,7 @@ IdentityInterfacePrivate::IdentityInterfacePrivate(SignOn::Identity *ident, Iden
     : QObject(parent)
     , q(parent)
     , identity(ident)
+    , session(0)
     , componentComplete(false)
     , initializationComplete(false)
     , pendingSync(false)
@@ -237,15 +240,49 @@ void IdentityInterfacePrivate::handleError(SignOn::Error err)
     emit q->errorMessageChanged();
 }
 
-void IdentityInterfacePrivate::setStatus(IdentityInterface::Status newStatus)
+void IdentityInterfacePrivate::setStatus(IdentityInterface::Status newStatus, const QString &message)
 {
     if (status == IdentityInterface::Invalid)
         return; // never update state from invalid to anything else.
+
+    bool shouldEmit = false;
+    if (statusMessage != message) {
+        shouldEmit = true;
+        statusMessage = message;
+    }
 
     if (status != newStatus) {
         status = newStatus;
         emit q->statusChanged();
     }
+
+    if (shouldEmit)
+        emit q->statusMessageChanged(); // emit after statusChanged signal.
+}
+
+// AuthSession response
+void IdentityInterfacePrivate::handleResponse(const SignOn::SessionData &sd)
+{
+    QVariantMap dataMap;
+    QStringList keys = sd.propertyNames();
+    foreach (const QString &key, keys)
+        dataMap.insert(key, sd.getProperty(key));
+    emit q->responseReceived(dataMap);
+}
+
+// AuthSession status
+void IdentityInterfacePrivate::handleStateChanged(SignOn::AuthSession::AuthSessionState newState, const QString &message)
+{
+    setStatus(static_cast<IdentityInterface::Status>(newState), message);
+}
+
+// AuthSession signals
+void IdentityInterfacePrivate::setUpSessionSignals()
+{
+    connect(session, SIGNAL(error(SignOn::Error)), this, SLOT(handleError(SignOn::Error)));
+    connect(session, SIGNAL(response(SignOn::SessionData)), this, SLOT(handleResponse(SignOn::SessionData)));
+    connect(session, SIGNAL(stateChanged(AuthSession::AuthSessionState, QString)),
+            this, SLOT(handleStateChanged(AuthSession::AuthSessionState, QString)));
 }
 
 //---------------------------
@@ -490,6 +527,19 @@ void IdentityInterface::setIdentifierPending(bool p)
 IdentityInterface::Status IdentityInterface::status() const
 {
     return d->status;
+}
+
+/*!
+    \qmlproperty string Identity::statusMessage
+    Contains the message associated with the most recent
+    status changed which occurred during sign-in.  Note
+    that status changes unrelated to sign-in will not
+    have any message associated.
+*/
+
+QString IdentityInterface::statusMessage() const
+{
+    return d->statusMessage;
 }
 
 /*!
@@ -859,6 +909,208 @@ void IdentityInterface::remove()
     d->identity = 0; // seems like libsignon-qt doesn't propagate the signal correctly.  assume it worked...
     d->setStatus(IdentityInterface::Invalid);
 }
+
+// ------------------------------------ sign-on related functions
+
+/*!
+    \qmlmethod void Identity::verifySecret(const QString &secret)
+
+    Triggers verification of the given \a secret.
+    The verification may occur synchronously or asynchronously.
+    When verification completes, the secretVerified() signal
+    will be emitted.
+*/
+void IdentityInterface::verifySecret(const QString &secret)
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+    d->identity->verifySecret(secret);
+}
+
+
+/*!
+    \qmlmethod void Identity::requestCredentialsUpdate(const QString &message)
+
+    Triggers out-of-process dialogue creation which requests
+    updated credentials from the user.
+
+    The implementation of this function depends on the
+    implementation of the underlying signon-ui service.
+*/
+void IdentityInterface::requestCredentialsUpdate(const QString &message)
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+    d->identity->requestCredentialsUpdate(message);
+}
+
+/*!
+    \qmlmethod void Identity::verifyUser(const QString &message)
+    Triggers out-of-process dialogue creation which attempts
+    to verify the user, displaying the given \a message.
+
+    The implementation of this function depends on the
+    implementation of the underlying signon-ui service.
+*/
+void IdentityInterface::verifyUser(const QString &message)
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+    d->identity->verifyUser(message);
+}
+
+/*!
+    \qmlmethod void Identity::verifyUser(const QVariantMap &params)
+
+    Triggers out-of-process dialogue creation which attempts
+    to verify the user, specifying the given \a params.
+
+    The implementation of this function depends on the
+    implementation of the underlying signon-ui service.
+*/
+void IdentityInterface::verifyUser(const QVariantMap &params)
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+    d->identity->verifyUser(SessionDataInterface::sanitizeVariantMap(params));
+}
+
+/*!
+    \qmlmethod bool Identity::signIn(const QString &method, const QString &mechanism, const QVariantMap &sessionData)
+
+    Begins sign-in to the service via the specified \a method and
+    \a mechanism, using the given \a sessionData parameters.
+    Returns true if the session could be created.
+    Once the sign-in request has been processed successfully, the
+    responseReceived() signal will be emitted.  If sign-in occurs
+    in multiple stages (for example, via token swapping), you must
+    call process() to progress the sign-in operation.
+
+    Only one sign-in session may exist for an Identity at any
+    time.  To start a new sign-in session, you must signOut() of the
+    current sign-in session, if one exists, prior to calling signIn().
+
+    Usually only one single method and one single mechanism will be valid
+    to sign in with, and these can be retrieved from the \c authData of the
+    \c ServiceAccount for the service with which this \c Identity is associated.
+
+    The \a sessionData should be retrieved from the \c authData of the
+    \c ServiceAccount and augmented with any application-specific values
+    which are required for sign on.  In particular, it is often useful or
+    necessary to provide one or more of the following keys:
+
+    \table
+        \header
+            \li Key
+            \li Value
+            \li When
+        \row
+            \li WindowId
+            \li You may call the \c windowId() function of the \c WindowIdHelper
+                type to retrieve the window id.  Alternatively, it may be
+                accessed from the top-level QDeclarativeView or QWidget.
+            \li All applications should provide a \c WindowId in order to
+                ensure that any UI spawned by the sign-on UI daemon will
+                belong to the correct window.
+        \row
+            \li Embedded
+            \li Either \c true or \c false.  It is \c false by default.
+            \li If you wish to embed the UI spawned by the sign-on UI daemon
+                into a SignOnUiContainer, this value should be set to \c true.
+        \row
+            \li Title
+            \li A translated string
+            \li The title will be displayed in any UI element spawned by the
+                sign-on UI daemon.
+        \row
+            \li ClientId
+            \li OAuth2 application client id provided to you by the service
+                (eg, Facebook, GMail, etc)
+            \li Services which use the \c oauth2 method with the \c user_agent
+                mechanism require this key to be provided
+        \row
+            \li ClientSecret
+            \li OAuth2 application client secret provided to you by the service
+                (eg, Facebook, GMail, etc)
+            \li Services which use the \c oauth2 method with the \c user_agent
+                mechanism require this key to be provided
+        \row
+            \li ConsumerKey
+            \li OAuth1.0a application consumer key provided to you by the service
+                (eg, Flickr, Twitter, etc)
+            \li Services which use the \c oauth1.0a or \c oauth2 method with the \c HMAC-SHA1
+                mechanism require this key to be provided
+        \row
+            \li ConsumerSecret
+            \li OAuth1.0a application consumer secret provided to you by the service
+                (eg, Flickr, Twitter, etc)
+            \li Services which use the \c oauth1.0a or \c oauth2 method with the \c HMAC-SHA1
+                mechanism require this key to be provided
+    \endtable
+*/
+bool IdentityInterface::signIn(const QString &method, const QString &mechanism, const QVariantMap &sessionData)
+{
+    if (d->status == IdentityInterface::Invalid
+            || d->status == IdentityInterface::Initializing
+            || !d->initializationComplete) {
+        return false;
+    }
+
+    if (d->session) {
+        qWarning() << Q_FUNC_INFO << "Sign-in requested while previous sign-in session exists!";
+        return false; // not a continuation.  they need to sign out first.
+    }
+
+    // beginning new sign-on
+    d->session = d->identity->createSession(method);
+
+    if (!d->session) {
+        qWarning() << Q_FUNC_INFO << "Failed to create sign-in session.";
+        return false;
+    }
+
+    d->currentMethod = method;
+    d->currentMechanism = mechanism;
+    d->setUpSessionSignals();
+    d->session->process(SignOn::SessionData(SessionDataInterface::sanitizeVariantMap(sessionData)), mechanism);
+    return true;
+}
+
+/*!
+    \qmlmethod void Identity::process(const QVariantMap &sessionData)
+    Processes the session request defined by the given \a sessionData in order
+    to progress a multi-stage sign-in operation.
+*/
+void IdentityInterface::process(const QVariantMap &sessionData)
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+
+    if (d->session)
+        d->session->process(SignOn::SessionData(SessionDataInterface::sanitizeVariantMap(sessionData)), d->currentMechanism);
+}
+
+/*!
+    \qmlmethod void Identity::signOut()
+    Signs out of the service, if a sign-in process has been initiated.
+    The status of the Identity will be set to \c NotStarted.
+*/
+void IdentityInterface::signOut()
+{
+    if (d->status == IdentityInterface::Invalid)
+        return;
+
+    if (d->session) {
+        SignOn::AuthSession *temp = d->session;
+        d->session = 0;
+        d->currentMethod = QString();
+        d->currentMechanism = QString();
+        d->identity->destroySession(temp);
+        d->setStatus(IdentityInterface::NotStarted);
+    }
+}
+
+// ------------------------------------
 
 // the following functions are helpers for the IdentityManagerInterface ONLY
 void IdentityInterface::setIdentity(SignOn::Identity *ident)

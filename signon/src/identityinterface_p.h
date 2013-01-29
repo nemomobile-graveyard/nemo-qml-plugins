@@ -48,12 +48,13 @@ public:
     IdentityInterfacePrivate(SignOn::Identity *ident, IdentityInterface *parent);
     ~IdentityInterfacePrivate();
 
-    void setStatus(IdentityInterface::Status newStatus);
+    void setStatus(IdentityInterface::Status newStatus, const QString &message = QString());
     void setIdentity(SignOn::Identity *ident);
 
     IdentityInterface *q;
 
     SignOn::Identity *identity;
+    SignOn::AuthSession *session;
     SignOn::IdentityInfo info;
     bool componentComplete;
     bool initializationComplete;
@@ -81,7 +82,12 @@ public:
     bool identifierPending;
     IdentityInterface::Status status;
     IdentityInterface::ErrorType error;
+    QString statusMessage;
     QString errorMessage;
+
+    // auth session related data.
+    QString currentMethod;
+    QString currentMechanism;
 
 public Q_SLOTS:
     void asyncQueryInfo();
@@ -89,6 +95,13 @@ public Q_SLOTS:
     void handleCredentialsStored(quint32 newId);
     void handleRemoved();
     void handleError(SignOn::Error error);
+
+    // auth session related
+    void handleResponse(const SignOn::SessionData &sd);
+    void handleStateChanged(SignOn::AuthSession::AuthSessionState newState, const QString &message);
+
+public:
+    void setUpSessionSignals();
 };
 
 
