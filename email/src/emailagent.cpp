@@ -209,6 +209,7 @@ void EmailAgent::deleteMessage(QVariant id)
     msgIdList << msgId;
     deleteMessages (msgIdList);
 }
+
 void EmailAgent::deleteMessages(const QMailMessageIdList &ids)
 {
     Q_ASSERT(ids.isEmpty());
@@ -567,11 +568,24 @@ void EmailAgent::flagMessages(const QMailMessageIdList &ids, quint64 setMask,
     enqueue(new FlagMessages(m_storageAction.data(), ids, setMask, unsetMask));
 }
 
+void EmailAgent::moveMessage(QVariant id, QVariant destinationId)
+{
+    QMailMessageId msgId = id.value<QMailMessageId>();
+    QMailMessageIdList msgIdList;
+    msgIdList << msgId;
+    QMailFolderId destId = destinationId.value<QMailFolderId>();
+    moveMessages(msgIdList, destId);
+}
+
 void EmailAgent::moveMessages(const QMailMessageIdList &ids, const QMailFolderId &destinationId)
 {
     Q_ASSERT(!ids.empty());
 
-    enqueue(new OnlineMoveMessages(m_storageAction.data(), ids, destinationId));
+    QMailMessageId id(ids[0]);
+    QMailAccountId accountId = accountForMessageId(id);
+
+    enqueue(new MoveToFolder(m_storageAction.data(), ids, destinationId));
+    enqueue(new ExportUpdates(m_retrievalAction.data(), accountId));
 }
 
 QString EmailAgent::getMessageBodyFromFile (const QString& bodyFilePath)
@@ -600,6 +614,12 @@ QVariant EmailAgent::inboxFolderId(QVariant id)
         qDebug() << "Error: Inbox not found for account: " << accountId;
         return QVariant();
     }
+}
+
+qint64 EmailAgent::folderIdToInt(QVariant folderId)
+{
+    QMailFolderId foldId = folderId.value<QMailFolderId>();
+    return foldId.toULongLong();
 }
 
 /*
