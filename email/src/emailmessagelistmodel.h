@@ -64,7 +64,9 @@ public slots:
     Q_INVOKABLE void setSearch(const QString search);
     Q_INVOKABLE void setCombinedInbox(bool unread = false);
 
+    Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);
     Q_INVOKABLE QVariant indexFromMessageId(QString msgId);
+    Q_INVOKABLE QVariant folderIdForMessage(QVariant messageId);
     Q_INVOKABLE QVariant messageId (int index);
     Q_INVOKABLE QVariant subject (int index);
     Q_INVOKABLE QVariant mailSender (int index);
