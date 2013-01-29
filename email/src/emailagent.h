@@ -65,7 +65,7 @@ public:
     Q_INVOKABLE void openBrowser(const QString& url);
     Q_INVOKABLE QString getMessageBodyFromFile(const QString& bodyFilePath);
     Q_INVOKABLE QVariant inboxFolderId(QVariant vMailAccountId);
-    Q_INVOKABLE int folderIdToInt(QVariant folderId);
+    Q_INVOKABLE qint64 folderIdToInt(QVariant folderId);
 
 signals:
     void standardFoldersCreated(const QMailAccountId &id);

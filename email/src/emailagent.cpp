@@ -616,7 +616,7 @@ QVariant EmailAgent::inboxFolderId(QVariant id)
     }
 }
 
-int EmailAgent::folderIdToInt(QVariant folderId)
+qint64 EmailAgent::folderIdToInt(QVariant folderId)
 {
     QMailFolderId foldId = folderId.value<QMailFolderId>();
     return foldId.toULongLong();
