@@ -110,8 +110,10 @@ public:
     Q_INVOKABLE void remove();
 
     // invokable api.
-    Q_INVOKABLE void setConfigurationValue(const QString &key, const QVariant &value);
-    Q_INVOKABLE void removeConfigurationValue(const QString &key);
+    Q_INVOKABLE void setConfigurationValue(const QString &key, const QVariant &value, const QString &serviceName = QString());
+    Q_INVOKABLE void removeConfigurationValue(const QString &key, const QString &serviceName = QString());
+    Q_INVOKABLE QVariantMap configurationValues(const QString &serviceName) const;
+    Q_INVOKABLE void setConfigurationValues(const QVariantMap &values, const QString &serviceName);
 
     Q_INVOKABLE bool supportsServiceType(const QString &serviceType);
     Q_INVOKABLE void enableWithService(const QString &serviceName);

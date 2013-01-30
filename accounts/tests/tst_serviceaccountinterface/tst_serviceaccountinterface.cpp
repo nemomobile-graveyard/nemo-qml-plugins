@@ -271,10 +271,12 @@ void tst_ServiceAccountInterface::configurationValues()
         Accounts::AccountService as(a, m.service("test-service2"));
         QScopedPointer<ServiceAccountInterface> sai(new ServiceAccountInterface(&as, ServiceAccountInterface::DoesNotHaveOwnership));
         QSignalSpy spy(sai.data(), SIGNAL(configurationValuesChanged()));
+        account->setConfigurationValue(QLatin1String("testing"), QLatin1String("first"), QLatin1String("test-service2"));
+        account->sync();
         QTest::qWait(2000); // after 2 seconds, it should have "stabilised".
         int emitCount = spy.count();
         QTRY_VERIFY(emitCount >= 1); // it can emit any number of times, so we can't use QTRY_COMPARE here.
-        sai->setConfigurationValue(QString(QLatin1String("testing")), QVariant(QString("test")));
+        sai->setConfigurationValue(QString(QLatin1String("testing")), QVariant(QString("test"))); // will auto sync.
         QTRY_COMPARE(spy.count(), emitCount + 1);
         QCOMPARE(sai->configurationValues().value("testing"), QVariant(QString("test")));
         QCOMPARE(sai->unrelatedValues().value("unrelated"), QVariant(QString("testvalue")));

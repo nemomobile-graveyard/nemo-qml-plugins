@@ -70,6 +70,9 @@ public:
 Q_SIGNALS:
     void propertiesChanged();
 
+public:
+    static QVariantMap sanitizeVariantMap(const QVariantMap &input);
+
 private:
     SignOn::SessionData sessionData() const;
     friend class AuthSessionInterface;

@@ -67,6 +67,7 @@ public:
     bool enabled;
     QString displayName;
     QVariantMap configurationValues;
+    QMap<QString, QVariantMap> serviceConfigurationValues;
     QStringList supportedServiceNames;
     QStringList enabledServiceNames;
     bool identifierPendingInit;

@@ -84,6 +84,7 @@ private slots:
     void error();
     void errorMessage();
     //invokables
+    void serviceConfigurationValues();
     //these are already tested:
     //sync() in identifier()
     //enableWithService() in enabledServiceNames()
@@ -95,7 +96,11 @@ private slots:
 
 void tst_AccountInterface::enabled()
 {
+    // first, without account creation / sync
     QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
+    account->setProviderName("test-provider");
+    account->setDisplayName("test-display-name");
     QCOMPARE(account->enabled(), false);
     QSignalSpy spy(account.data(), SIGNAL(enabledChanged()));
     account->setEnabled(true);
@@ -104,6 +109,29 @@ void tst_AccountInterface::enabled()
     account->setEnabled(false);
     QCOMPARE(spy.count(), 2);
     QCOMPARE(account->enabled(), false);
+
+    // now, with sync.
+    account->setEnabled(true);
+    account->sync(); // pending sync
+    account->componentComplete(); // will construct new account.
+    QTRY_COMPARE(account->status(), AccountInterface::Synced); // wait for sync.
+    QVERIFY(account->enabled());
+
+    // and ensure that it's globally enabled in the database.
+    Accounts::Manager m;
+    Accounts::Account *a = m.account(account->identifier());
+    QVERIFY(a->enabled());
+
+    // disable it
+    account->setEnabled(false);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced); // wait for sync.
+
+    // ensure that it's globally disabled in the database.
+    QVERIFY(!a->enabled());
+
+    // cleanup.
+    account->remove();
 }
 
 void tst_AccountInterface::identifier()
@@ -118,6 +146,11 @@ void tst_AccountInterface::identifier()
     account->componentComplete(); // will construct new account.
     QTRY_COMPARE(spy.count(), 1);
     QVERIFY(account->identifier() > 0);
+
+    // and ensure that it exists in the database
+    Accounts::Manager m;
+    Accounts::Account *a = m.account(account->identifier());
+    QCOMPARE(a->displayName(), QLatin1String("test-display-name"));
 
     // cleanup.
     account->remove();
@@ -204,19 +237,34 @@ void tst_AccountInterface::enabledServiceNames()
     account->setDisplayName("test-display-name");
     account->sync(); // pending sync - empty account (ie, no display name) won't get saved.
     account->componentComplete(); // will construct new account.
-    QCOMPARE(account->enabledServiceNames(), QStringList());
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
+
+    QCOMPARE(account->enabledServiceNames(), QStringList());
     account->enableWithService(QString(QLatin1String("test-service2")));
     QCOMPARE(account->status(), AccountInterface::Modified);
+    int currCount = spy.count();
     account->sync();
     // note: the change signal can be emitted an arbitrary number of times,
     // depending on how many signals the backend emits (one by one).
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
-    QCOMPARE(account->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service2")));
+    QTRY_VERIFY(spy.count() > currCount); // can get multiple signals, depending on supported service names etc.
+    QTRY_COMPARE(account->enabledServiceNames(), QStringList() << QString(QLatin1String("test-service2")));
+
+    // ensure that the account really has been enabled as we expect.
+    Accounts::Manager m;
+    Accounts::Account *a = m.account(account->identifier());
+    QVERIFY(a->enabledServices().contains(m.service(QLatin1String("test-service2"))));
+
+    // now disable and test again
     account->disableWithService(QString(QLatin1String("test-service2")));
     account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     QCOMPARE(account->enabledServiceNames(), QStringList());
+
+    // ensure that the account really has been disabled as we expect.
+    QVERIFY(!a->enabledServices().contains(m.service(QLatin1String("test-service2"))));
+
+    // cleanup
     account->remove();
 }
 
@@ -224,6 +272,7 @@ void tst_AccountInterface::configurationValues()
 {
     QVariantMap testData;
     QString testKey(QLatin1String("test-key"));
+    QVariant testStrListValue(QStringList() << QLatin1String("first") << QLatin1String("second"));
     QVariant testStrValue(QString(QLatin1String("test-value")));
     QVariant testBoolValue(true);
     QVariant testIntValue(-5);
@@ -266,10 +315,17 @@ void tst_AccountInterface::configurationValues()
     account->setConfigurationValue(testKey, testStrValue);
     QCOMPARE(spy.count(), 6);
     QCOMPARE(account->configurationValues().value(testKey), testStrValue);
+    account->setConfigurationValue(testKey, testStrListValue);
+    QCOMPARE(spy.count(), 7);
+    QCOMPARE(account->configurationValues().value(testKey), testStrListValue);
 
     // ensure that configuration values can be saved.
     account->sync(); // pending sync.
     account->componentComplete(); // will create new account.
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues().value(testKey), testStrListValue);
+    account->setConfigurationValue(testKey, testStrValue);
+    account->sync();
     QTRY_COMPARE(account->status(), AccountInterface::Synced);
     QCOMPARE(account->configurationValues().value(testKey), testStrValue);
     account->setConfigurationValue(testKey, testQuintValue);
@@ -286,6 +342,7 @@ void tst_AccountInterface::configurationValues()
     QCOMPARE(account->configurationValues().value(testKey), testBoolValue);
 
     // ensure that configuration values from subgroups are reported correctly.
+    // and ensure that stringlist configuration values are reported correctly.
     QString testGroup = QLatin1String("test-group");
     Accounts::Manager m;
     Accounts::Account *a = m.account(account->identifier());
@@ -293,6 +350,7 @@ void tst_AccountInterface::configurationValues()
     a->beginGroup(testGroup);
     a->setValue(testKey, testStrValue);
     a->endGroup();
+    a->setValue(testKey, testStrListValue);
     a->sync();
 
     // account doesn't emit signals on configuration values changed...
@@ -303,6 +361,138 @@ void tst_AccountInterface::configurationValues()
     existingAccount->componentComplete(); // will load existing account
     QTRY_COMPARE(existingAccount->status(), AccountInterface::Initialized);
     QCOMPARE(existingAccount->configurationValues().value(QString("%1/%2").arg(testGroup).arg(testKey)), testStrValue);
+    QCOMPARE(existingAccount->configurationValues().value(testKey), testStrListValue);
+
+    // and ensure that changes are really synced
+    account->setConfigurationValue(testKey, testStrValue);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QVariant expectString(QVariant::String);
+    a->value(testKey, expectString); // expectString is an in-out argument.
+    QCOMPARE(expectString, testStrValue);
+    account->setConfigurationValue(testKey, testStrListValue);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QVariant expectStringList(QVariant::StringList);
+    a->value(testKey, expectStringList); // expectStringList is an in-out argument.
+    QCOMPARE(expectStringList, testStrListValue);
+
+    // cleanup.
+    account->remove();
+}
+
+void tst_AccountInterface::serviceConfigurationValues()
+{
+    QVariantMap testData;
+    QString testKey(QLatin1String("service-test-key")); // different to key in previous test, to avoid overlap.
+    QVariant testStrListValue(QStringList() << QLatin1String("first") << QLatin1String("second"));
+    QVariant testStrValue(QString(QLatin1String("test-value")));
+    QVariant testBoolValue(true);
+    QVariant testIntValue(-5);
+    QVariant testQuintValue(0xaaaaaaaaaaaa);
+    testData.insert(testKey, testStrValue);
+    QString testServiceName = QLatin1String("test-service2");
+
+    QVariantMap noValueTestData;
+    noValueTestData.insert(testKey, QVariant());
+
+    QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
+    account->setProviderName("test-provider");
+    QCOMPARE(account->configurationValues(testServiceName), QVariantMap());
+    QSignalSpy spy(account.data(), SIGNAL(configurationValuesChanged()));
+    account->setConfigurationValues(testData, testServiceName);
+    int currentCount = spy.count();
+    QCOMPARE(account->configurationValues(testServiceName), testData);
+    account->removeConfigurationValue(testKey, testServiceName);
+    QCOMPARE(spy.count(), currentCount); // shouldn't emit - the configurationValuesChanged() signal is for global config values only.
+    QCOMPARE(account->configurationValues(testServiceName), QVariantMap());
+
+    // invalid values
+    account->setConfigurationValue(testKey, QVariant(QColor(Qt::black)), testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName), QVariantMap()); // not set.
+    account->setConfigurationValue(testKey, QVariant(), testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName), QVariantMap()); // not set.
+
+    // bool, int, quint64 and string should all work.
+    account->setConfigurationValue(testKey, testBoolValue, testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testBoolValue);
+    account->setConfigurationValue(testKey, testIntValue, testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testIntValue);
+    account->setConfigurationValue(testKey, testQuintValue, testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testQuintValue);
+    account->setConfigurationValue(testKey, testStrValue, testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testStrValue);
+    account->setConfigurationValue(testKey, testStrListValue, testServiceName);
+    QCOMPARE(spy.count(), currentCount);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testStrListValue);
+
+    // ensure that configuration values can be saved.
+    account->sync(); // pending sync.
+    account->componentComplete(); // will create new account.
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testStrListValue);
+    account->setConfigurationValue(testKey, testStrValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testStrValue);
+    account->setConfigurationValue(testKey, testQuintValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testQuintValue);
+    account->setConfigurationValue(testKey, testIntValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testIntValue);
+    account->setConfigurationValue(testKey, testBoolValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QCOMPARE(account->configurationValues(testServiceName).value(testKey), testBoolValue);
+
+    // ensure that configuration values from subgroups are reported correctly.
+    // and ensure that stringlist configuration values are reported correctly.
+    QString testGroup = QLatin1String("test-group");
+    Accounts::Manager m;
+    Accounts::Account *a = m.account(account->identifier());
+    QVERIFY(a != 0);
+    Accounts::Service s = m.service(testServiceName);
+    QVERIFY(s.isValid());
+    a->selectService(s);
+    a->beginGroup(testGroup);
+    a->setValue(testKey, testStrValue);
+    a->endGroup();
+    a->setValue(testKey, testStrListValue);
+    a->sync();
+
+    // account doesn't emit signals on configuration values changed...
+    // we really need a "refresh" function, similar to the one in Identity.
+    QScopedPointer<AccountInterface> existingAccount(new AccountInterface);
+    existingAccount->classBegin();
+    existingAccount->setIdentifier(account->identifier());
+    existingAccount->componentComplete(); // will load existing account
+    QTRY_COMPARE(existingAccount->status(), AccountInterface::Initialized);
+    QCOMPARE(existingAccount->configurationValues(testServiceName).value(QString("%1/%2").arg(testGroup).arg(testKey)), testStrValue);
+    QCOMPARE(existingAccount->configurationValues(testServiceName).value(testKey), testStrListValue);
+
+    // and ensure that changes are really synced
+    account->setConfigurationValue(testKey, testStrValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QVariant expectString(QVariant::String);
+    a->value(testKey, expectString); // expectString is an in-out parameter.
+    QCOMPARE(expectString, testStrValue);
+    account->setConfigurationValue(testKey, testStrListValue, testServiceName);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QVariant expectStringList(QVariant::StringList);
+    a->value(testKey, expectStringList); // expectStringList is an in-out parameter.
+    QCOMPARE(expectStringList, testStrListValue);
 
     // cleanup.
     account->remove();
