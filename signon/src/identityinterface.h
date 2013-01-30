@@ -58,6 +58,7 @@ class IdentityInterface : public QObject, public QDeclarativeParserStatus
     Q_PROPERTY(int identifier READ identifier WRITE setIdentifier NOTIFY identifierChanged)
     Q_PROPERTY(bool identifierPending READ identifierPending WRITE setIdentifierPending NOTIFY identifierPendingChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged)
     Q_PROPERTY(ErrorType error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
 
@@ -75,7 +76,19 @@ class IdentityInterface : public QObject, public QDeclarativeParserStatus
 
 public:
     enum Status {
-        Initialized = 0,
+        NotStarted          = SignOn::AuthSession::SessionNotStarted,
+        HostResolving       = SignOn::AuthSession::HostResolving,
+        ServerConnecting    = SignOn::AuthSession::ServerConnecting,
+        DataSending         = SignOn::AuthSession::DataSending,
+        ReplyWaiting        = SignOn::AuthSession::ReplyWaiting,
+        UserPending         = SignOn::AuthSession::UserPending,
+        UiRefreshing        = SignOn::AuthSession::UiRefreshing,
+        ProcessPending      = SignOn::AuthSession::ProcessPending,
+        SessionStarted      = SignOn::AuthSession::SessionStarted,
+        ProcessCanceling    = SignOn::AuthSession::ProcessCanceling,
+        ProcessDone         = SignOn::AuthSession::ProcessDone,
+        CustomState         = SignOn::AuthSession::CustomState,
+        Initialized = SignOn::AuthSession::MaxState+1,
         Initializing,
         Synced,
         SyncInProgress,
@@ -103,8 +116,20 @@ public:
         SignOutFailedError          = SignOn::Identity::SignOutFailedError,
         CanceledError               = SignOn::Identity::CanceledError,
         CredentialsNotAvailableError= SignOn::Identity::CredentialsNotAvailableError,
+        AuthSessionError            = SignOn::AuthSession::AuthSessionErr,
+        MechanismNotAvailableError  = SignOn::AuthSession::MechanismNotAvailableError,
+        MissingDataError            = SignOn::AuthSession::MissingDataError,
+        InvalidCredentialsError     = SignOn::AuthSession::InvalidCredentialsError,
+        WrongStateError             = SignOn::AuthSession::WrongStateError,
+        OperationNotSupportedError  = SignOn::AuthSession::OperationNotSupportedError,
+        NoConnectionError           = SignOn::AuthSession::NoConnectionError,
+        NetworkError                = SignOn::AuthSession::NetworkError,
+        SslError                    = SignOn::AuthSession::SslError,
+        RuntimeError                = SignOn::AuthSession::RuntimeError,
+        TimedOutError               = SignOn::AuthSession::TimedOutError,
+        UserInteractionError        = SignOn::AuthSession::UserInteractionError,
         UserError                   = SignOn::Error::UserErr,
-        NoError                     = UserError+1
+        NoError
     };
 
 public:
@@ -121,6 +146,7 @@ public:
     bool identifierPending() const;
     void setIdentifierPending(bool p);
     Status status() const;
+    QString statusMessage() const;
     ErrorType error() const;
     QString errorMessage() const;
 
@@ -147,10 +173,20 @@ public:
     Q_INVOKABLE void refresh(); // sync but without writing any changes.
     Q_INVOKABLE void remove();
 
+    // sign-on related API - mostly duplicated by ServiceAccountIdentityInterface
+    Q_INVOKABLE void verifySecret(const QString &secret);
+    Q_INVOKABLE void requestCredentialsUpdate(const QString &message);
+    Q_INVOKABLE void verifyUser(const QString &message);
+    Q_INVOKABLE void verifyUser(const QVariantMap &params);
+    Q_INVOKABLE bool signIn(const QString &methodName, const QString &mechanism, const QVariantMap &sessionData);
+    Q_INVOKABLE void process(const QVariantMap &sessionData);
+    Q_INVOKABLE void signOut();
+
 Q_SIGNALS:
     void identifierChanged();
     void identifierPendingChanged();
     void statusChanged();
+    void statusMessageChanged();
     void errorChanged();
     void errorMessageChanged();
     void userNameChanged();
@@ -160,6 +196,11 @@ Q_SIGNALS:
     void ownerChanged();
     void accessControlListChanged();
     void methodsChanged();
+    // signon-related signals:
+    void responseReceived(const QVariantMap &data);
+    void signedOut();
+    void secretVerified(bool valid);
+    void userVerified(bool valid);
 
 private:
     IdentityInterface(SignOn::Identity *ident, QObject *parent = 0);

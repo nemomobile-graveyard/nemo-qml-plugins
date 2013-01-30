@@ -68,31 +68,6 @@ AccountInterfacePrivate::~AccountInterfacePrivate()
 {
 }
 
-static QVariant configurationValueVariant(Accounts::Account *acc, const QString &key)
-{
-    QVariant stringListVariant(QVariant::StringList);
-    acc->value(key, stringListVariant);
-    if (!stringListVariant.isNull())
-        return stringListVariant.value<QStringList>();
-
-    QString strVal = acc->valueAsString(key);
-    if (!strVal.isNull())
-        return QVariant(strVal);
-
-    quint64 uintMax = 0xffffffffffffffffU;
-    quint64 uintVal = acc->valueAsUInt64(key, uintMax);
-    if (uintVal != uintMax)
-        return QVariant(uintVal);
-
-    int intMax = 0xffffffff;
-    int intVal = acc->valueAsInt(key, intMax);
-    if (intVal != intMax)
-        return QVariant(intVal);
-
-    bool boolVal = acc->valueAsBool(key);
-    return QVariant(boolVal);
-}
-
 void AccountInterfacePrivate::setAccount(Accounts::Account *acc)
 {
     if (!acc) {
@@ -194,11 +169,27 @@ void AccountInterfacePrivate::asyncQueryInfo()
     if (configurationValuesPendingInit) {
         pendingInitModifications = true;
     } else {
-        // enumerate the configuration values
+        // enumerate the global configuration values
         QVariantMap allValues;
         QStringList allKeys = account->allKeys();
         foreach (const QString &key, allKeys)
-            allValues.insert(key, configurationValueVariant(account, key));
+            allValues.insert(key, account->value(key, QVariant(), 0));
+
+        // also enumerate configuration values for all supported services.
+        for (int i = 0; i < supportedServices.size(); ++i) {
+            Accounts::Service currService = supportedServices.at(i);
+            account->selectService(currService);
+            QVariantMap serviceValues;
+            QStringList serviceKeys = account->allKeys();
+            foreach (const QString &key, serviceKeys)
+                serviceValues.insert(key, account->value(key, QVariant(), 0));
+            QVariantMap existingServiceValues = serviceConfigurationValues.value(currService.name());
+            if (serviceValues != existingServiceValues)
+                serviceConfigurationValues.insert(currService.name(), serviceValues);
+            account->selectService(Accounts::Service());
+        }
+
+        // emit change signal for global configuration values only.
         if (configurationValues != allValues) {
             configurationValues = allValues;
             emit q->configurationValuesChanged();
@@ -321,7 +312,7 @@ void AccountInterfacePrivate::handleSynced()
         QVariantMap allValues;
         QStringList allKeys = account->allKeys();
         foreach (const QString &key, allKeys)
-            allValues.insert(key, configurationValueVariant(account, key));
+            allValues.insert(key, account->value(key, QVariant(), 0));
         if (configurationValues != allValues) {
             configurationValues = allValues;
             emit q->configurationValuesChanged();
@@ -368,7 +359,7 @@ void AccountInterfacePrivate::setStatus(AccountInterface::Status newStatus)
 
         Item {
             id: root
-            
+
             Account {
                 id: account
                 providerName: "google"
@@ -377,7 +368,7 @@ void AccountInterfacePrivate::setStatus(AccountInterface::Status newStatus)
                 onStatusChanged: {
                     if (status == Account.Initialized) {
                         enableWithService("google-talk")
-                        setConfigurationValue("AwayMessage", "I'm away!")
+                        setConfigurationValue("AwayMessage", "I'm away!", "google-talk")
                         sync() // trigger database write
                     } else if (status == Account.Synced) {
                         // successfully written to database
@@ -400,7 +391,7 @@ void AccountInterfacePrivate::setStatus(AccountInterface::Status newStatus)
 
         Item {
             id: root
-            
+
             Account {
                 id: account
                 identifier: 12 // retrieved from AccountManager or AccountModel
@@ -536,32 +527,19 @@ void AccountInterface::sync()
         }
     }
 
-    // set the enabled services correctly.
-    foreach (const QString &srvn, d->supportedServiceNames) {
-        Accounts::Service srv = d->manager->service(srvn);
-        if (srv.isValid()) {
-            d->account->selectService(srv);
-            if (d->enabledServiceNames.contains(srvn))
-                d->account->setEnabled(true);
-            else
-                d->account->setEnabled(false);
-            d->account->selectService(Accounts::Service());
-        }
-    }
-
-    // remove any which aren't part of the supported services set.
+    // remove any enabled services which aren't part of the supported services set.
     QStringList tmpESN = d->enabledServiceNames;
     QStringList improvedESN;
     foreach (const QString &esn, tmpESN) {
         if (d->supportedServiceNames.contains(esn))
-            improvedESN.append(esn);            
+            improvedESN.append(esn);
     }
     if (tmpESN != improvedESN) {
         d->enabledServiceNames = improvedESN;
         emit enabledServiceNamesChanged();
     }
 
-    // set the configuration values.
+    // set the global configuration values.
     QStringList allKeys = d->account->allKeys();
     QStringList setKeys = d->configurationValues.keys();
     QStringList doneKeys;
@@ -588,9 +566,64 @@ void AccountInterface::sync()
         }
     }
 
+    // and the service-specific configuration values
+    foreach (const QString &srvn, d->supportedServiceNames) {
+        Accounts::Service srv = d->manager->service(srvn);
+        if (srv.isValid()) {
+            d->account->selectService(srv);
+
+            QVariantMap setSrvValues = d->serviceConfigurationValues.value(srvn);
+            QStringList setSrvKeys = setSrvValues.keys();
+            QStringList srvKeys = d->account->allKeys();
+            QStringList doneSrvKeys;
+
+            foreach (const QString &key, srvKeys) {
+                // overwrite existing keys
+                if (setSrvKeys.contains(key)) {
+                    doneSrvKeys.append(key);
+                    const QVariant &currValue = setSrvValues.value(key);
+                    if (currValue.isValid()) {
+                        d->account->setValue(key, currValue);
+                    } else {
+                        d->account->remove(key);
+                    }
+                } else {
+                    // remove removed keys
+                    d->account->remove(key);
+                }
+            }
+            foreach (const QString &key, setSrvKeys) {
+                // add new keys
+                if (!doneSrvKeys.contains(key)) {
+                    const QVariant &currValue = setSrvValues.value(key);
+                    d->account->setValue(key, currValue);
+                }
+            }
+
+            d->account->selectService(Accounts::Service());
+        }
+    }
+
+    // set the enabled services correctly.
+    foreach (const QString &srvn, d->supportedServiceNames) {
+        Accounts::Service srv = d->manager->service(srvn);
+        if (srv.isValid()) {
+            d->account->selectService(srv);
+            if (d->enabledServiceNames.contains(srvn))
+                d->account->setEnabled(true);
+            else
+                d->account->setEnabled(false);
+            d->account->selectService(Accounts::Service());
+        }
+    }
+    // enable or disable the global service
+    d->account->selectService(Accounts::Service());
     d->account->setEnabled(d->enabled);
+
+    // set the display name
     d->account->setDisplayName(d->displayName);
 
+    // and write to database.
     d->setStatus(AccountInterface::SyncInProgress);
     d->account->sync();
 }
@@ -611,18 +644,28 @@ void AccountInterface::remove()
 }
 
 /*!
-    \qmlmethod void Account::setConfigurationValue(const QString &key, const QVariant &value)
+    \qmlmethod void Account::setConfigurationValue(const QString &key, const QVariant &value, const QString &serviceName = QString())
     Sets the account's configuration settings value for the key \a key
     to the value \a value.  The only supported value types are int,
     quint64, bool, QString and QStringList.
+
+    If the \a serviceName is supplied, the key and value will be set
+    with the account for use with the specified service only, otherwise
+    it will be set globally for the account.  Note that \a serviceName
+    must specify a service which is supported by the account, otherwise
+    setting the configuration value will have no effect.
+
+    The configurationValuesChanged() signal will only be emitted if
+    the value is set for the global account settings.  The signal
+    will not be emitted if a valid \a serviceName is supplied.
 */
-void AccountInterface::setConfigurationValue(const QString &key, const QVariant &value)
+void AccountInterface::setConfigurationValue(const QString &key, const QVariant &value, const QString &serviceName)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
 
     if (value.type() == QVariant::List) {
-        setConfigurationValue(key, value.toStringList());
+        setConfigurationValue(key, value.toStringList(), serviceName);
         return;
     }
 
@@ -636,30 +679,147 @@ void AccountInterface::setConfigurationValue(const QString &key, const QVariant 
         return; // unsupported value type.
     }
 
-    d->configurationValues.insert(key, value);
+    if (!serviceName.isEmpty()) {
+        if (d->status != AccountInterface::Initializing && !supportedServiceNames().contains(serviceName))
+            return; // we don't know which services are supported until initialization completes.
+        QVariantMap scv = d->serviceConfigurationValues.value(serviceName);
+        scv.insert(key, value);
+        d->serviceConfigurationValues.insert(serviceName, scv);
+    } else {
+        d->configurationValues.insert(key, value);
+    }
+
     if (d->status == AccountInterface::Initializing)
         d->configurationValuesPendingInit = true;
     else
         d->setStatus(AccountInterface::Modified);
-    emit configurationValuesChanged();
+
+    // only emit if the service-agnostic (global) account configuration values changed.
+    if (serviceName.isEmpty())
+        emit configurationValuesChanged();
 }
 
 /*!
-    \qmlmethod void Account::removeConfigurationValue(const QString &key)
+    \qmlmethod void Account::removeConfigurationValue(const QString &key, const QString &serviceName = QString())
     Removes the key \a key and any associated values from the
     configuration settings of the account.
+
+    If the \a serviceName is supplied, the key and values will be removed
+    from the account for the specified service only, otherwise
+    it will be removed from the global configuration for the account.
+    Note that \a serviceName must specify a service which is supported by
+    the account, otherwise removing the configuration value will have no effect.
+
+    The configurationValuesChanged() signal will only be emitted if
+    the value is removed from the global account settings.  The signal
+    will not be emitted if a valid \a serviceName is supplied.
 */
-void AccountInterface::removeConfigurationValue(const QString &key)
+void AccountInterface::removeConfigurationValue(const QString &key, const QString &serviceName)
 {
     if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
         return;
 
-    d->configurationValues.remove(key);
+    if (!serviceName.isEmpty()) {
+        if (d->status != AccountInterface::Initializing && !supportedServiceNames().contains(serviceName))
+            return; // we don't know which services are supported until initialization completes.
+        QVariantMap scv = d->serviceConfigurationValues.value(serviceName);
+        if (!scv.contains(key))
+            return;
+        scv.remove(key);
+        d->serviceConfigurationValues.insert(serviceName, scv);
+    } else {
+        if (!d->configurationValues.contains(key))
+            return;
+        d->configurationValues.remove(key);
+    }
+
     if (d->status == AccountInterface::Initializing)
         d->configurationValuesPendingInit = true;
     else
         d->setStatus(AccountInterface::Modified);
-    emit configurationValuesChanged();
+
+    if (serviceName.isEmpty())
+        emit configurationValuesChanged();
+}
+
+/*!
+    \qmlmethod QVariantMap Account::configurationValues(const QString &serviceName)
+
+    Returns the configuration settings for the account which apply
+    specifically to the service with the specified \a serviceName.
+    Note that it won't include global configuration settings which
+    may also be applied (as fallback settings) when the account is
+    used with the service.
+
+    Some default settings are usually specified in the \c{.service}
+    file installed by the account provider plugin.  Other settings
+    may be specified directly on an account for the service.
+
+    If the specified \a serviceName is empty, the account's global
+    configuration settings will be returned instead.
+*/
+QVariantMap AccountInterface::configurationValues(const QString &serviceName) const
+{
+    if (d->status == AccountInterface::Invalid)
+        return QVariantMap();
+    if (serviceName.isEmpty())
+        return configurationValues();
+    return d->serviceConfigurationValues.value(serviceName);
+}
+
+
+/*!
+    \qmlmethod void Account::setConfigurationValues(const QVariantMap &values, const QString &serviceName)
+
+    Sets the configuration settings for the account which apply
+    specifically to the service with the specified \a serviceName.
+
+    The \a serviceName must identify a service supported by the
+    account, or be empty, else calling this function will have no effect.
+    If the \a serviceName is empty, the global account configuration
+    settings will updated instead.
+
+    Note that the configurationValuesChanged() signal will not be
+    emitted as a result of this call, as that signal is for the
+    global account configuration settings only.
+*/
+void AccountInterface::setConfigurationValues(const QVariantMap &values, const QString &serviceName)
+{
+    if (d->status == AccountInterface::Invalid || d->status == AccountInterface::SyncInProgress)
+        return;
+
+    if (serviceName.isEmpty()) {
+        setConfigurationValues(values);
+        return;
+    }
+
+    if (d->status != AccountInterface::Initializing && !supportedServiceNames().contains(serviceName))
+        return;
+
+    QVariantMap validValues;
+    QStringList vkeys = values.keys();
+    foreach (const QString &key, vkeys) {
+        QVariant currValue = values.value(key);
+        if (currValue.type() == QVariant::Bool
+                || currValue.type() == QVariant::Int
+                || currValue.type() == QVariant::LongLong
+                || currValue.type() == QVariant::ULongLong
+                || currValue.type() == QVariant::String
+                || currValue.type() == QVariant::StringList) {
+            validValues.insert(key, currValue);
+        } else if (currValue.type() == QVariant::List) {
+            validValues.insert(key, currValue.toStringList());
+        }
+    }
+
+    if (d->serviceConfigurationValues.value(serviceName) == validValues)
+        return;
+
+    d->serviceConfigurationValues.insert(serviceName, validValues);
+    if (d->status == AccountInterface::Initializing)
+        d->configurationValuesPendingInit = true;
+    else
+        d->setStatus(AccountInterface::Modified);
 }
 
 bool AccountInterface::supportsServiceType(const QString &serviceType)
@@ -713,7 +873,7 @@ void AccountInterface::disableWithService(const QString &serviceName)
         return;
 
     if (d->enabledServiceNames.contains(serviceName)) {
-        d->enabledServiceNames.removeAll(serviceName);  
+        d->enabledServiceNames.removeAll(serviceName);
         if (d->status == AccountInterface::Initializing)
             d->enabledServiceNamesPendingInit = true;
         else
@@ -961,14 +1121,18 @@ QStringList AccountInterface::enabledServiceNames() const
 
 /*!
     \qmlproperty QVariantMap Account::configurationValues
-    This property contains the configuration settings of the account
+    This property contains the global configuration settings of the account
 
-    Some default settings are usually specified in the \c{.service}
+    Some default settings are usually specified in the \c{.provider}
     file installed by the account provider plugin.  Other settings
     may be specified directly for an account.
 
     The only supported value types are int, quint64, bool, QString
     and QStringList.
+
+    If you wish to retrieve the service-specific configuration settings
+    for the account, you should call the invokable configurationValues()
+    function which takes a service name parameter, instead.
 */
 
 QVariantMap AccountInterface::configurationValues() const
