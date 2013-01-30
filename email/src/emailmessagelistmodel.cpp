@@ -81,6 +81,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessageTimeStampRole] = "qDateTime";
     roles[MessageSelectModeRole] = "selected";
     roles[MessagePreviewRole] = "preview";
+    roles[MessageTimeSectionRole] = "timeSection";
     setRoleNames(roles);
 
     EmailAgent::instance()->initMailServer();
@@ -206,6 +207,18 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     }
     else if (role == MessagePreviewRole) {
         return messageMetaData.preview().simplified();
+    }
+    else if (role == MessageTimeSectionRole) {
+        const int daysDiff = QDate::currentDate().toJulianDay()
+                - (messageMetaData.date().toLocalTime()).date().toJulianDay();
+
+        if (daysDiff < 7) {
+            return (messageMetaData.date().toLocalTime()).date();
+        }
+        else {
+            //returns epoch time for items older than a week
+            return QDateTime::fromTime_t(0);
+        }
     }
 
     return QMailMessageListModel::data(index, role);
