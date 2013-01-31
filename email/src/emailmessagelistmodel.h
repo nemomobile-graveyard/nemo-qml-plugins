@@ -40,7 +40,8 @@ public:
         MessageBccRole,                                        // returns a list of Bcc (email + displayName)
         MessageTimeStampRole,                                  // returns timestamp in QDateTime format
         MessageSelectModeRole,                                 // returns the select mode
-        MessagePreviewRole                                     // returns message preview if available
+        MessagePreviewRole,                                    // returns message preview if available
+        MessageTimeSectionRole                                 // returns time section relative to the current time
     };
 
 
