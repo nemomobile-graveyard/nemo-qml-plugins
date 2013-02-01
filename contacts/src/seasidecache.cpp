@@ -465,7 +465,7 @@ void SeasideCache::contactIdsAvailable()
     }
 #endif
 
-    synchronizeLists(
+    synchronizeList(
             this,
             m_contacts[m_fetchFilter],
             m_cacheIndex,

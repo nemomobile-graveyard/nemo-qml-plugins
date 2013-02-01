@@ -32,11 +32,11 @@
 #ifndef SYNCHRONIZELISTS_P_H
 #define SYNCHRONIZELISTS_P_H
 
-//#include <QContactId>
+#include <QContactId>
 
-//QTM_USE_NAMESPACE
+#include <QtDebug>
 
-typedef quint32 QContactLocalId;
+QTM_USE_NAMESPACE
 
 // Helper utility to synchronize a cached list with some reference list with correct
 // QAbstractItemModel signals and filtering.
@@ -48,10 +48,10 @@ typedef quint32 QContactLocalId;
 // cache list before (filtering and) appending the remaining reference items.
 
 template <typename Agent, typename ReferenceList>
-class SynchronizeLists
+class SynchronizeList
 {
 public:
-    SynchronizeLists(
+    SynchronizeList(
             Agent *agent,
             const QVector<QContactLocalId> &cache,
             int &c,
@@ -60,16 +60,13 @@ public:
         : agent(agent), cache(cache), c(c), reference(reference), r(r)
     {
         while (c < cache.count() && r < reference.count()) {
-            if (cache.at(c) == reference.at(r) && agent->filterId(reference.at(r))) {
+            if (cache.at(c) == reference.at(r)) {
                 ++c;
                 ++r;
                 continue;
             }
 
             bool match = false;
-
-            if (agent->filterId(reference.at(r)))
-                insertIds.append(reference.at(r));
 
             // Iterate through both the reference and cache lists in parallel looking for first
             // point of commonality, when that is found resolve the differences and continue
@@ -79,31 +76,23 @@ public:
                 const QContactLocalId cacheId = cache.at(c + count);
                 const QContactLocalId referenceId = reference.at(r + count);
 
-                const bool filterRe = agent->filterId(referenceId);
-
-                for (int i = 0; i < count; ++i) {
-                    if ((filterRe && cacheMatch(i, count, referenceId))
-                            || referenceMatch(i, count, cacheId)) {
+                for (int i = 0; i <= count; ++i) {
+                    if (cacheMatch(i, count, referenceId) || referenceMatch(i, count, cacheId)) {
                         match = true;
                         break;
                     }
                 }
-                if (filterRe)
-                    insertIds.append(referenceId);
             }
 
             // Continue scanning the reference list if the cache has been exhausted.
             for (int re = r + count; !match && re < reference.count(); ++re) {
                 const QContactLocalId referenceId = reference.at(re);
-                if (!agent->filterId(referenceId))
-                    continue;
                 for (int i = 0; i < count; ++i) {
                     if (cacheMatch(i, re - r, referenceId)) {
                         match = true;
                         break;
                     }
                 }
-                insertIds.append(referenceId);
             }
 
             // Continue scanning the cache if the reference list has been exhausted.
@@ -119,7 +108,6 @@ public:
 
             if (!match)
                 return;
-            insertIds.clear();
         }
     }
 
@@ -131,10 +119,8 @@ private:
     {
         if (cache.at(c + i) == referenceId) {
             if (i > 0)
-                agent->removeRange(c, i);
-            if (insertIds.count() > 0)
-                agent->insertRange(c, insertIds.count(), insertIds, 0);
-            c += insertIds.count() + 1;
+                c += agent->removeRange(c, i);
+            c += agent->insertRange(c, count, reference, r) + 1;
             r += count + 1;
             return true;
         } else {
@@ -148,22 +134,11 @@ private:
     // reference list.
     bool referenceMatch(int i, int count, QContactLocalId cacheId)
     {
-        const QContactLocalId referenceId = reference.at(r + i);
-        if (referenceId == cacheId && agent->filterId(referenceId)) {
-            // The insertIds list contains all the items matching the filter between r and
-            // r + count but we're only interested in those between r and r + i, so the
-            // additional items have to be removed.
-            for (int j = r + count - 1; j >= r + i && !insertIds.isEmpty(); --j) {
-                if (reference.at(j) == insertIds.last())
-                    insertIds.pop_back();
-            }
-
-            if (count > 0)
-                agent->removeRange(c, count);
-            if (insertIds.count() > 0)
-                agent->insertRange(c, insertIds.count(), insertIds, 0);
-
-            c += insertIds.count() + 1;
+        if (reference.at(r + i) == cacheId) {
+            c += agent->removeRange(c, count);
+            if (i > 0)
+                c += agent->insertRange(c, i, reference, r);
+            c += 1;
             r += i + 1;
             return true;
         } else {
@@ -176,18 +151,150 @@ private:
     int &c;
     const ReferenceList &reference;
     int &r;
-    ReferenceList insertIds;
 };
 
 template <typename Agent, typename ReferenceList>
-void synchronizeLists(
+void synchronizeList(
         Agent *agent,
         const QVector<QContactLocalId> &cache,
         int &c,
         const ReferenceList &reference,
         int &r)
 {
-    SynchronizeLists<Agent, ReferenceList>(agent, cache, c, reference, r);
+    SynchronizeList<Agent, ReferenceList>(agent, cache, c, reference, r);
+}
+
+template <typename Agent, typename ReferenceList>
+class SynchronizeFilteredList
+{
+public:
+    SynchronizeFilteredList(
+            Agent *agent,
+            const QVector<QContactLocalId> &cache,
+            int &c,
+            const ReferenceList &reference,
+            int &r)
+        : cache(cache)
+        , agent(agent)
+        , previousIndex(0)
+        , removeCount(0)
+    {
+        synchronizeList(this, cache, c, reference, r);
+
+        if (filteredIds.count() > 0) {
+            c += filteredIds.count();
+            agent->insertRange(previousIndex, filteredIds.count(), filteredIds, 0);
+        } else if (removeCount > 0) {
+            c -= removeCount;
+            agent->removeRange(previousIndex, removeCount);
+        }
+
+        for (; previousIndex < c; ++previousIndex) {
+            int filterCount = 0;
+            for (int i; (i = previousIndex + filterCount) < c; ++filterCount) {
+                if (agent->filterId(cache.at(i)))
+                    break;
+            }
+            if (filterCount > 0) {
+                agent->removeRange(previousIndex, filterCount);
+                c -= filterCount;
+            }
+        }
+    }
+
+    int insertRange(int index, int count, const QVector<QContactLocalId> &source, int sourceIndex)
+    {
+        int adjustedIndex = index;
+
+        if (removeCount > 0) {
+            adjustedIndex -= removeCount;
+            agent->removeRange(previousIndex, removeCount);
+            removeCount = 0;
+        } else if (filteredIds.count() > 0 && index > previousIndex) {
+            agent->insertRange(previousIndex, filteredIds.count(), filteredIds, 0);
+            adjustedIndex += filteredIds.count();
+            previousIndex += filteredIds.count();
+            filteredIds.resize(0);
+        }
+
+        if (filteredIds.isEmpty()) {
+            for (; previousIndex < adjustedIndex;) {
+                int filterCount = 0;
+                for (int i; (i = previousIndex + filterCount) < adjustedIndex; ++filterCount) {
+                    if (agent->filterId(cache.at(i)))
+                        break;
+                }
+                if (filterCount > 0) {
+                    agent->removeRange(previousIndex, filterCount);
+                    adjustedIndex -= filterCount;
+                } else {
+                    ++previousIndex;
+                }
+            }
+        }
+
+        for (int i = 0; i < count; ++i) {
+            const QContactLocalId contactId = source.at(sourceIndex + i);
+            if (agent->filterId(contactId))
+                filteredIds.append(contactId);
+        }
+
+        return adjustedIndex - index;
+    }
+
+    int removeRange(int index, int count)
+    {
+        int adjustedIndex = index;
+        if (filteredIds.count() > 0) {
+            adjustedIndex += filteredIds.count();
+            agent->insertRange(previousIndex, filteredIds.count(), filteredIds, 0);
+            filteredIds.resize(0);
+        } else if (removeCount > 0 && adjustedIndex > previousIndex + removeCount) {
+            adjustedIndex -= removeCount;
+            agent->removeRange(previousIndex, removeCount);
+            removeCount = 0;
+        }
+
+        if (removeCount == 0) {
+            for (; previousIndex < adjustedIndex;) {
+                int filterCount = 0;
+                for (int i; (i = previousIndex + filterCount) < adjustedIndex; ++filterCount) {
+                    if (agent->filterId(cache.at(i)))
+                        break;
+                }
+                if (previousIndex + filterCount == adjustedIndex) {
+                    removeCount += filterCount;
+                    break;
+                } else if (filterCount > 0) {
+                    agent->removeRange(previousIndex, filterCount);
+                    adjustedIndex -= filterCount;
+                } else {
+                    ++previousIndex;
+                }
+            }
+        }
+
+        removeCount += count;
+
+        return adjustedIndex - index + count;
+    }
+
+    QVector<QContactLocalId> filteredIds;
+    const QVector<QContactLocalId> &cache;
+    Agent *agent;
+    int previousIndex;
+    int removeCount;
+};
+
+template <typename Agent, typename ReferenceList>
+void synchronizeFilteredList(
+        Agent *agent,
+        const QVector<QContactLocalId> &cache,
+        int &c,
+        const ReferenceList &reference,
+        int &r)
+{
+    SynchronizeFilteredList<Agent, ReferenceList>(agent, cache, c, reference, r);
 }
 
 #endif

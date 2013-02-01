@@ -133,10 +133,9 @@ void tst_SeasideFilteredModel::filterType()
     QCOMPARE(model.rowCount(), 2);
     QCOMPARE(typeSpy.count(), 1);
     QCOMPARE(insertedSpy.count(), 0);
-    QCOMPARE(removedSpy.count(), 3);   // This is more noisy than it could be.
+    QCOMPARE(removedSpy.count(), 2);
     QCOMPARE(removedSpy.at(0).at(1).value<int>(), 0); QCOMPARE(removedSpy.at(0).at(2).value<int>(), 1);
-    QCOMPARE(removedSpy.at(1).at(1).value<int>(), 1); QCOMPARE(removedSpy.at(1).at(2).value<int>(), 1);
-    QCOMPARE(removedSpy.at(2).at(1).value<int>(), 1); QCOMPARE(removedSpy.at(2).at(2).value<int>(), 1);
+    QCOMPARE(removedSpy.at(1).at(1).value<int>(), 1); QCOMPARE(removedSpy.at(1).at(2).value<int>(), 2);
 
     typeSpy.clear();
     removedSpy.clear();
@@ -146,10 +145,9 @@ void tst_SeasideFilteredModel::filterType()
     QCOMPARE(model.filterType(), SeasideFilteredModel::FilterAll);
     QCOMPARE(model.rowCount(), 6);
     QCOMPARE(typeSpy.count(), 1);
-    QCOMPARE(insertedSpy.count(), 3);   // Noise.
+    QCOMPARE(insertedSpy.count(), 2);
     QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 0); QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 1);
-    QCOMPARE(insertedSpy.at(1).at(1).value<int>(), 3); QCOMPARE(insertedSpy.at(1).at(2).value<int>(), 3);
-    QCOMPARE(insertedSpy.at(2).at(1).value<int>(), 4); QCOMPARE(insertedSpy.at(2).at(2).value<int>(), 4);
+    QCOMPARE(insertedSpy.at(1).at(1).value<int>(), 3); QCOMPARE(insertedSpy.at(1).at(2).value<int>(), 4);
     QCOMPARE(removedSpy.count(), 0);
 
     typeSpy.clear();
@@ -245,10 +243,9 @@ void tst_SeasideFilteredModel::filterPattern()
     QCOMPARE(model.filterPattern(), QString("Aa"));
     QCOMPARE(model.rowCount(), 4);
     QCOMPARE(patternSpy.count(), 0);
-    QCOMPARE(insertedSpy.count(), 3);   // Noise.
-    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 0); QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 0);
-    QCOMPARE(insertedSpy.at(1).at(1).value<int>(), 1); QCOMPARE(insertedSpy.at(1).at(2).value<int>(), 1);
-    QCOMPARE(insertedSpy.at(2).at(1).value<int>(), 3); QCOMPARE(insertedSpy.at(2).at(2).value<int>(), 3);
+    QCOMPARE(insertedSpy.count(), 2);
+    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 0); QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 1);
+    QCOMPARE(insertedSpy.at(1).at(1).value<int>(), 3); QCOMPARE(insertedSpy.at(1).at(2).value<int>(), 3);
     QCOMPARE(removedSpy.count(), 0);
 
     insertedSpy.clear();

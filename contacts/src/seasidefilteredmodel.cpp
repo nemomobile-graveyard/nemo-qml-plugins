@@ -271,7 +271,7 @@ void SeasideFilteredModel::updateIndex()
 {
     int f = 0;
     int r = 0;
-    synchronizeLists(this, m_filteredContactIds, f, *m_referenceContactIds, r);
+    synchronizeFilteredList(this, m_filteredContactIds, f, *m_referenceContactIds, r);
 
     if (f < m_filteredContactIds.count())
         removeRange(f, m_filteredContactIds.count() - f);

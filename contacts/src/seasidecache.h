@@ -94,10 +94,9 @@ public:
     bool event(QEvent *event);
 
     // For synchronizeLists()
-    bool filterId(QContactLocalId) const { return true; }
-    void insertRange(int index, int count, const QList<QContactLocalId> &source, int sourceIndex) {
-        insertRange(m_fetchFilter, index, count, source, sourceIndex); }
-    void removeRange(int index, int count) { removeRange(m_fetchFilter, index, count); }
+    int insertRange(int index, int count, const QList<QContactLocalId> &source, int sourceIndex) {
+        insertRange(m_fetchFilter, index, count, source, sourceIndex); return count; }
+    int removeRange(int index, int count) { removeRange(m_fetchFilter, index, count); return 0; }
 
 protected:
     void timerEvent(QTimerEvent *event);

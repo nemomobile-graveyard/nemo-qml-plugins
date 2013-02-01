@@ -51,8 +51,8 @@ public:
     QVector<QContactLocalId> m_cache;
 
     bool filterId(QContactLocalId contactId) const;
-    void insertRange(int index, int count, const QVector<QContactLocalId> &source, int sourceIndex);
-    void removeRange(int index, int count);
+    int insertRange(int index, int count, const QVector<QContactLocalId> &source, int sourceIndex);
+    int removeRange(int index, int count);
 
 private slots:
     void filtered_data();
@@ -71,16 +71,20 @@ bool tst_SynchronizeLists::filterId(QContactLocalId contactId) const
     return !m_filterEnabled || m_filter.contains(contactId);
 }
 
-void tst_SynchronizeLists::insertRange(
+int tst_SynchronizeLists::insertRange(
         int index, int count, const QVector<QContactLocalId> &source, int sourceIndex)
 {
     for (int i = 0; i < count; ++i)
         m_cache.insert(index + i, source.at(sourceIndex + i));
+
+    return count;
 }
 
-void tst_SynchronizeLists::removeRange(int index, int count)
+int tst_SynchronizeLists::removeRange(int index, int count)
 {
     m_cache.remove(index, count);
+
+    return 0;
 }
 
 void tst_SynchronizeLists::filtered_data()
@@ -153,7 +157,7 @@ void tst_SynchronizeLists::filtered_data()
                 << original
                 << (List() << 4 << 5 << 6 << 10);
     } {
-        const List reference = List() << 0 << 1 << 2 << 3 << 4 << 5 << 6 << 7 << 8 << 9 << 10;
+        const List reference = List() << 0  << 1 << 2 << 3 << 4 << 5 << 6 << 7 << 8 << 9 << 10;
         const List original  = List() << 10 << 9 << 8 << 7 << 6 << 5 << 4 << 3 << 2 << 1 << 0;
 
         QTest::newRow("c0")
@@ -232,7 +236,7 @@ void tst_SynchronizeLists::filtered()
     int c = 0;
     int r = 0;
 
-    synchronizeLists(this, m_cache, c, reference, r);
+    synchronizeFilteredList(this, m_cache, c, reference, r);
 
     if (c < m_cache.count())
         m_cache.remove(c, m_cache.count() - c);
@@ -288,7 +292,7 @@ void tst_SynchronizeLists::unfiltered()
     int c = 0;
     int r = 0;
 
-    synchronizeLists(this, m_cache, c, reference, r);
+    synchronizeList(this, m_cache, c, reference, r);
 
     if (c < m_cache.count())
         m_cache.remove(c, m_cache.count() - c);
