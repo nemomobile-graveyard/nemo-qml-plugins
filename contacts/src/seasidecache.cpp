@@ -129,7 +129,8 @@ SeasideCache::SeasideCache()
             | QContactFetchHint::NoBinaryBlobs);
     fetchHint.setDetailDefinitionsHint(QStringList()
             << QContactName::DefinitionName
-            << QContactAvatar::DefinitionName);
+            << QContactAvatar::DefinitionName
+            << QContactPhoneNumber::DefinitionName);
 
     m_fetchRequest.setFetchHint(fetchHint);
     m_fetchRequest.setFilter(QContactFavorite::match());
@@ -198,9 +199,16 @@ SeasideFilteredModel::DisplayLabelOrder SeasideCache::displayLabelOrder()
 SeasidePerson *SeasideCache::personById(QContactLocalId id)
 {
     QHash<QContactLocalId, SeasideCacheItem>::iterator it = instance->m_people.find(id);
-    if (it != instance->m_people.end())
+    if (it != instance->m_people.end()) {
         return person(&(*it));
-    return 0;
+    } else {
+        // Insert a new item into the cache if the one doesn't exist.
+        SeasideCacheItem &cacheItem = instance->m_people[id];
+        QContactId contactId;
+        contactId.setLocalId(id);
+        cacheItem.contact.setId(contactId);
+        return person(&cacheItem);
+    }
 }
 
 SeasideCacheItem *SeasideCache::cacheItemById(QContactLocalId id)
