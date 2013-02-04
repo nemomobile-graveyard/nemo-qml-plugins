@@ -35,6 +35,10 @@
 #include <gst/app/gstappsink.h>
 
 #include <QImage>
+#include <QMutex>
+#include <QWaitCondition>
+
+#include <QtDebug>
 
 namespace {
 
@@ -45,6 +49,7 @@ struct Thumbnailer
         , decodebin(0)
         , transform(0)
         , appsink(0)
+        , prerollAvailable(false)
     {
     }
 
@@ -63,10 +68,14 @@ struct Thumbnailer
         }
     }
 
+    QMutex mutex;
+    QWaitCondition condition;
+
     GstElement *pipeline;
     GstElement *decodebin;
     GstElement *transform;
     GstElement *appsink;
+    bool prerollAvailable;
 };
 
 static gboolean decodebin_autoplug_continue(GstElement *, GstPad *, GstCaps *caps, gpointer)
@@ -117,6 +126,18 @@ static void decodebin_new_pad(GstElement *element, GstPad *pad, gpointer data)
     }
 }
 
+static GstFlowReturn new_preroll(GstAppSink *appsink, gpointer data)
+{
+    Q_UNUSED(appsink);
+
+    Thumbnailer *thumbnailer = static_cast<Thumbnailer *>(data);
+    QMutexLocker locker(&thumbnailer->mutex);
+    thumbnailer->prerollAvailable = true;
+    thumbnailer->condition.wakeOne();
+
+    return GST_FLOW_OK;
+}
+
 }
 
 extern "C" Q_DECL_EXPORT QImage createThumbnail(const QString &fileName, const QSize &requestedSize, bool crop)
@@ -136,6 +157,11 @@ extern "C" Q_DECL_EXPORT QImage createThumbnail(const QString &fileName, const Q
 
     if (!thumbnailer.decodebin || !thumbnailer.transform || !thumbnailer.appsink)
         return image;
+
+    GstAppSinkCallbacks callbacks;
+    memset(&callbacks, 0, sizeof(GstAppSinkCallbacks));
+    callbacks.new_preroll = new_preroll;
+    gst_app_sink_set_callbacks(GST_APP_SINK(thumbnailer.appsink), &callbacks, &thumbnailer, 0);
 
     thumbnailer.pipeline = gst_pipeline_new(NULL);
     if (!thumbnailer.pipeline)
@@ -162,7 +188,7 @@ extern "C" Q_DECL_EXPORT QImage createThumbnail(const QString &fileName, const Q
 
     g_object_set(G_OBJECT(thumbnailer.decodebin), "uri", (QLatin1String("file://") + fileName).toLocal8Bit().constData(), NULL);
 
-    gst_element_set_state(thumbnailer.pipeline, GST_STATE_PAUSED);
+    gst_element_set_state(thumbnailer.pipeline, GST_STATE_READY);
 
     GstState currentState;
     GstState pendingState;
@@ -171,14 +197,51 @@ extern "C" Q_DECL_EXPORT QImage createThumbnail(const QString &fileName, const Q
                 &currentState,
                 &pendingState,
                 5 * GST_SECOND);
+    if (result != GST_STATE_CHANGE_SUCCESS)
+        return image;
+
+    // Seek a little to hopefully capture something a little more meaningful than a fade
+    // from black.  Seeking from the READY state is preferable because putting an element into the
+    // paused state wil decode frames which will be thrown away on the seekb but not all decoders
+    // support seaking in the READY state so we need to fallback to seeking after transitioning
+    // into the paused state if this fails.
+    const bool seekDone = gst_element_seek_simple(
+                thumbnailer.pipeline,
+                GST_FORMAT_TIME,
+                GstSeekFlags(GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_FLUSH),
+                10 * GST_SECOND);
+
+    // Transition to paused state, we should have received a new_preroll notification before this
+    // returns if we were going to get one.
+    gst_element_set_state(thumbnailer.pipeline, GST_STATE_PAUSED);
+    result = gst_element_get_state(
+                thumbnailer.pipeline,
+                &currentState,
+                &pendingState,
+                5 * GST_SECOND);
     if (result == GST_STATE_CHANGE_SUCCESS) {
-        // Seek a little to hopefully capture something a little more meaningful than a fade
-        // from black.
-        gst_element_seek_simple(
-                    thumbnailer.pipeline,
-                    GST_FORMAT_TIME,
-                    GstSeekFlags(GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_FLUSH),
-                    2 * GST_SECOND);
+        bool prerollAvailable = false;
+        if (!seekDone) {
+            // Reset the preroll state that was set by pausing and attempt a seek.  We need to
+            // ensure we get a preroll notification from gstreamer before calling
+            // gst_app_sink_pull_preroll otherwise the call may never return.
+            thumbnailer.prerollAvailable = false;
+            gst_element_seek_simple(
+                            thumbnailer.pipeline,
+                            GST_FORMAT_TIME,
+                            GstSeekFlags(GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_FLUSH),
+                            10 * GST_SECOND);
+            QMutexLocker locker(&thumbnailer.mutex);
+            if (!thumbnailer.prerollAvailable)
+                thumbnailer.condition.wait(&thumbnailer.mutex, 5000);
+            prerollAvailable = thumbnailer.prerollAvailable;
+        } else {
+            prerollAvailable = thumbnailer.prerollAvailable;
+        }
+
+        if (!prerollAvailable)
+            return image;
+
         if (GstBuffer *buffer = gst_app_sink_pull_preroll(GST_APP_SINK(thumbnailer.appsink))) {
             GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
 
