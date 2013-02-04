@@ -140,7 +140,6 @@ SeasideCache::SeasideCache()
     m_saveRequest.setManager(&m_manager);
 
 #ifdef SEASIDE_SPARQL_QUERIES
-    m_contactIdRequest.setSelfId(m_manager.selfContactId());
     m_contactIdRequest.setQueryData(true);
     m_contactIdRequest.setFavoritesOnly(true);
     m_contactIdRequest.setSortOnFirstName(m_displayLabelOrder == SeasideFilteredModel::FirstNameFirst);

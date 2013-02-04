@@ -72,9 +72,6 @@ public:
     bool sortOnFirstName() const;
     void setSortOnFirstName(bool first);
 
-    QContactLocalId selfId() const;
-    void setSelfId(QContactLocalId selfId);
-
     QList<QContactLocalId> contactIds() const;
     QList<QContact> contacts() const;
 
@@ -100,7 +97,6 @@ private:
     mutable QMutex m_mutex;
     QList<QContactLocalId> m_contactIds;
     QList<QContact> m_contacts;
-    QContactLocalId m_selfId;
     QContactAbstractRequest::State m_state;
     QContactAbstractRequest::State m_threadState;
     bool m_queryData;

@@ -45,9 +45,10 @@
 #include <QContactName>
 #include <QContactPhoneNumber>
 
+#include <QElapsedTimer>
+
 SparqlFetchRequest::SparqlFetchRequest(QObject *parent)
     : QThread(parent)
-    , m_selfId(0)
     , m_state(QContactAbstractRequest::InactiveState)
     , m_threadState(QContactAbstractRequest::InactiveState)
     , m_queryData(false)
@@ -104,16 +105,6 @@ bool SparqlFetchRequest::sortOnFirstName() const
 void SparqlFetchRequest::setSortOnFirstName(bool first)
 {
     m_sortOnFirstName = first;
-}
-
-QContactLocalId SparqlFetchRequest::selfId() const
-{
-    return m_selfId;
-}
-
-void SparqlFetchRequest::setSelfId(QContactLocalId selfId)
-{
-    m_selfId = selfId;
 }
 
 QList<QContactLocalId> SparqlFetchRequest::contactIds() const
@@ -211,10 +202,17 @@ bool SparqlFetchRequest::event(QEvent *event)
 
 void SparqlFetchRequest::run()
 {
+    const QStringList drivers = QSparqlConnection::drivers();
 
-    QSparqlConnection connection(QSparqlConnection::drivers().at(1));
-    qDebug() << "Connection drivers" << QSparqlConnection::drivers();
-    qDebug() << "valid" << connection.isValid();
+    QSparqlConnection connection(drivers.contains(QLatin1String("QTRACKER_DIRECT")) || drivers.isEmpty()
+            ? QLatin1String("QTRACKER_DIRECT")
+            : drivers.first());
+
+    if (!connection.isValid()) {
+        qWarning() << "Seaside: No valid Sparql driver, all queries will fail";
+        // Allow the thread to run anyway so requests are processed and (empty)
+        // result sets are returned.
+    }
 
     QMutexLocker locker(&m_mutex);
 
@@ -293,6 +291,7 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
             "\n OPTIONAL { ?x nco:hasAffiliation ?org . ?org nco:org ?organization }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?email . ?email nco:hasEmailAddress ?emailAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?phone . ?phone nco:hasPhoneNumber ?phoneNumber  }"
+            "\n FILTER(?x != <http://www.semanticdesktop.org/ontologies/2007/03/22/nco#default-contact-me>)"
             "\n}"
             "\nGROUP BY"
             "\n ?x"
@@ -310,7 +309,6 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
     queryString = queryString.arg(primary).arg(secondary);
 
     QScopedPointer<QSparqlResult> result(connection->syncExec(QSparqlQuery(queryString)));
-
     if (!result)
         return QContactAbstractRequest::FinishedState;
 
@@ -321,18 +319,13 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
 
 QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *results)
 {
-    const QContactLocalId selfId = m_selfId;
     for (;;) {
         QList<QContact> contacts;
         contacts.reserve(results->size());
         for (int i = 0; i < 100 && results->next(); ++i) {
-            const QContactLocalId localId = results->value(0).value<QContactLocalId>();
-            if (localId == selfId)
-                continue;
-
             QContact contact;
             QContactId contactId;
-            contactId.setLocalId(localId);
+            contactId.setLocalId(results->value(0).value<QContactLocalId>());
             contact.setId(contactId);
 
             QContactName name;
@@ -386,16 +379,11 @@ QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *r
 
 QContactAbstractRequest::State SparqlFetchRequest::readContactIds(QSparqlResult *results)
 {
-    const QContactLocalId selfId = m_selfId;
     for (;;) {
         QList<QContactLocalId> contactIds;
         contactIds.reserve(results->size());
-        for (int i = 0; i < 100 && results->next(); ++i) {
-            const QContactLocalId localId = results->value(0).value<QContactLocalId>();
-            if (localId == selfId)
-                continue;
-            contactIds.append(localId);
-        }
+        for (int i = 0; i < 100 && results->next(); ++i)
+            contactIds.append(results->value(0).value<QContactLocalId>());
 
         if (!contactIds.isEmpty()) {
             QMutexLocker locker(&m_mutex);
