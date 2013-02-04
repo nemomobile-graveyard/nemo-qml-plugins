@@ -34,6 +34,7 @@
 
 #include <QContact>
 #include <QContactManager>
+#include <QContactLocalIdFilter>
 #include <QContactFetchRequest>
 #include <QContactRemoveRequest>
 #include <QContactSaveRequest>
@@ -95,7 +96,7 @@ public:
 
     // For synchronizeLists()
     int insertRange(int index, int count, const QList<QContactLocalId> &source, int sourceIndex) {
-        insertRange(m_fetchFilter, index, count, source, sourceIndex); return count; }
+        return insertRange(m_fetchFilter, index, count, source, sourceIndex); }
     int removeRange(int index, int count) { removeRange(m_fetchFilter, index, count); return 0; }
 
 protected:
@@ -118,7 +119,7 @@ private:
 
     void finalizeUpdate(SeasideFilteredModel::FilterType filter);
     void removeRange(SeasideFilteredModel::FilterType filter, int index, int count);
-    void insertRange(
+    int insertRange(
             SeasideFilteredModel::FilterType filter,
             int index,
             int count,
@@ -143,7 +144,7 @@ private:
     QList<QContactLocalId> m_changedContacts;
     QVector<QContactLocalId> m_contacts[3];
     QList<SeasideFilteredModel *> m_models[3];
-    QSet<QContactLocalId> m_expiredContacts;
+    QHash<QContactLocalId,int> m_expiredContacts;
     QContactManager m_manager;
     QContactFetchRequest m_fetchRequest;
 #ifdef SEASIDE_SPARQL_QUERIES
@@ -160,6 +161,7 @@ private:
     int m_populated;
     int m_cacheIndex;
     int m_queryIndex;
+    QContactLocalId m_selfId;
     SeasideFilteredModel::FilterType m_fetchFilter;
     SeasideFilteredModel::DisplayLabelOrder m_displayLabelOrder;
     bool m_updatesPending;

@@ -40,9 +40,8 @@
 #include <QWaitCondition>
 
 /*
-    This shouldn't be necessary but the QtContacts tracker backend is slow to execute queries
-    (over a second for a request that doesn't return any results, two a half for a modest result
-    set), filtering on the favorites property doesn't work, and there's no support for sorting a
+    This shouldn't be necessary but the QtContacts tracker backend is slow to execute queries,
+    filtering on the favorites property doesn't work, and there's no support for sorting a
     QContactLocalIdFetchRequest.
 
     I'm sure those issues can be addressed with enough effort, but this will produce results much
@@ -72,7 +71,7 @@ public:
     bool sortOnFirstName() const;
     void setSortOnFirstName(bool first);
 
-    QList<QContactLocalId> contactIds() const;
+    QList<QContactLocalId> ids() const;
     QList<QContact> contacts() const;
 
     void start();

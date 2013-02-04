@@ -107,7 +107,7 @@ void SparqlFetchRequest::setSortOnFirstName(bool first)
     m_sortOnFirstName = first;
 }
 
-QList<QContactLocalId> SparqlFetchRequest::contactIds() const
+QList<QContactLocalId> SparqlFetchRequest::ids() const
 {
     QMutexLocker locker(&m_mutex);
 

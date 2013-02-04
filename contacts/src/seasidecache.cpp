@@ -42,7 +42,6 @@
 
 #include <QContactAvatar>
 #include <QContactDetailFilter>
-#include <QContactLocalIdFilter>
 #include <QContactFavorite>
 #include <QContactName>
 #include <QContactPhoneNumber>
@@ -64,32 +63,6 @@ static QString managerName()
             : QString();
 }
 
-#ifdef SEASIDE_SPARQL_QUERIES
-
-static void setFavoritesFilter(SparqlFetchRequest *request)
-{
-    request->setFavoritesOnly(true);
-}
-
-static void clearFavoritesFilter(SparqlFetchRequest *request)
-{
-    request->setFavoritesOnly(false);
-}
-
-#else
-
-template <typename T> static void setFavoritesFilter(T *request)
-{
-    request->setFilter(QContactFavorite::match());
-}
-
-template <typename T> static void clearFavoritesFilter(T *request)
-{
-    request->setFilter(QContactFilter());
-}
-
-#endif
-
 SeasideCache::SeasideCache()
     : m_manager(managerName())
 #ifdef HAS_MLITE
@@ -99,6 +72,7 @@ SeasideCache::SeasideCache()
     , m_populated(0)
     , m_cacheIndex(0)
     , m_queryIndex(0)
+    , m_selfId(0)
     , m_fetchFilter(SeasideFilteredModel::FilterFavorites)
     , m_displayLabelOrder(SeasideFilteredModel::FirstNameFirst)
     , m_updatesPending(true)
@@ -111,9 +85,9 @@ SeasideCache::SeasideCache()
 
 #ifdef HAS_MLITE
     connect(&m_displayLabelOrderConf, SIGNAL(valueChanged()), this, SLOT(displayLabelOrderChanged()));
-    QVariant sorting = m_displayLabelOrderConf.value();
-    if (sorting.isValid())
-        m_displayLabelOrder = SeasideFilteredModel::DisplayLabelOrder(sorting.toInt());
+    QVariant displayLabelOrder = m_displayLabelOrderConf.value();
+    if (displayLabelOrder.isValid())
+        m_displayLabelOrder = SeasideFilteredModel::DisplayLabelOrder(displayLabelOrder.toInt());
 #endif
 
     connect(&m_manager, SIGNAL(contactsChanged(QList<QContactLocalId>)),
@@ -146,8 +120,18 @@ SeasideCache::SeasideCache()
 
     m_contactIdRequest.start();
 #else
+    m_selfId = m_manager.selfContactId();
     m_contactIdRequest.setManager(&m_manager);
 
+    QContactFetchHint fetchHint;
+    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships
+            | QContactFetchHint::NoActionPreferences
+            | QContactFetchHint::NoBinaryBlobs);
+    fetchHint.setDetailDefinitionsHint(QStringList()
+            << QContactName::DefinitionName
+            << QContactAvatar::DefinitionName);
+
+    m_fetchRequest.setFetchHint(fetchHint);
     m_fetchRequest.setFilter(QContactFavorite::match());
 
     QContactSortOrder firstLabelOrder;
@@ -367,17 +351,23 @@ bool SeasideCache::event(QEvent *event)
     } else if (m_refreshRequired) {
         m_resultsRead = 0;
 
-        setFavoritesFilter(&m_contactIdRequest);
+#ifdef SEASIDE_SPARQL_QUERIES
+        m_contactIdRequest.setFavoritesOnly(true);
+#else
+        m_contactIdRequest.setFilter(QContactFavorite::match());
+#endif
         m_contactIdRequest.start();
     } else {
         m_updatesPending = false;
 
-        const QSet<QContactLocalId> expiredContacts = m_expiredContacts;
+        const QHash<QContactLocalId,int> expiredContacts = m_expiredContacts;
         m_expiredContacts.clear();
 
-        typedef QSet<QContactLocalId>::const_iterator iterator;
+        typedef QHash<QContactLocalId,int>::const_iterator iterator;
         for (iterator it = expiredContacts.begin(); it != expiredContacts.end(); ++it) {
-            QHash<QContactLocalId, SeasideCacheItem>::iterator cacheItem = m_people.find(*it);
+            if (*it >= 0)
+                continue;
+            QHash<QContactLocalId, SeasideCacheItem>::iterator cacheItem = m_people.find(it.key());
             if (cacheItem != m_people.end()) {
                 delete cacheItem->person;
                 m_people.erase(cacheItem);
@@ -468,13 +458,13 @@ void SeasideCache::contactIdsAvailable()
             this,
             m_contacts[m_fetchFilter],
             m_cacheIndex,
-            m_contactIdRequest.contactIds(),
+            m_contactIdRequest.ids(),
             m_queryIndex);
 }
 
 void SeasideCache::finalizeUpdate(SeasideFilteredModel::FilterType filter)
 {
-    const QList<QContactLocalId> queryIds = m_contactIdRequest.contactIds();
+    const QList<QContactLocalId> queryIds = m_contactIdRequest.ids();
     QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
 
     if (m_cacheIndex < cacheIds.count())
@@ -500,7 +490,7 @@ void SeasideCache::removeRange(
 
     for (int i = 0; i < count; ++i) {
         if (filter == SeasideFilteredModel::FilterAll)
-            m_expiredContacts.remove(cacheIds.at(index));
+            m_expiredContacts[cacheIds.at(index)] -= 1;
         cacheIds.remove(index);
     }
 
@@ -508,7 +498,7 @@ void SeasideCache::removeRange(
         models[i]->sourceItemsRemoved();
 }
 
-void SeasideCache::insertRange(
+int SeasideCache::insertRange(
         SeasideFilteredModel::FilterType filter,
         int index,
         int count,
@@ -518,18 +508,33 @@ void SeasideCache::insertRange(
     QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
 
+    int end = index + count - 1;
+#ifndef SEASIDE_SPARQL_QUERIES
+    // Exclude the self contact Id.
+    for (int i = 0; i < count; ++i) {
+        if (queryIds.at(queryIndex + i) == m_selfId) {
+            --end;
+            break;
+        }
+    }
+#endif
+
     for (int i = 0; i < models.count(); ++i)
-        models[i]->sourceAboutToInsertItems(index, index + count - 1);
+        models[i]->sourceAboutToInsertItems(index, end);
 
     for (int i = 0; i < count; ++i) {
-        if (filter == SeasideFilteredModel::FilterAll) {
-            m_expiredContacts.insert(queryIds.at(queryIndex + i));
-        }
+        if (queryIds.at(queryIndex + i) == m_selfId)
+            continue;
+
+        if (filter == SeasideFilteredModel::FilterAll)
+            m_expiredContacts[queryIds.at(queryIndex + i)] += 1;
         cacheIds.insert(index + i, queryIds.at(queryIndex + i));
     }
 
     for (int i = 0; i < models.count(); ++i)
-        models[i]->sourceItemsInserted(index, index + count - 1);
+        models[i]->sourceItemsInserted(index, end);
+
+    return end - index + 1;
 }
 
 void SeasideCache::appendContacts(const QList<QContact> &contacts)
@@ -540,13 +545,28 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
     cacheIds.reserve(contacts.count());
 
     const int begin = cacheIds.count();
-    const int end = contacts.count() - 1;
+    int end = contacts.count() - 1;
+
+#ifndef SEASIDE_SPARQL_QUERIES
+    // Exclude the self contact Id.
+    for (int i = cacheIds.count(); i < contacts.count(); ++i) {
+        if (contacts.at(i).localId() == m_selfId) {
+            --end;
+            break;
+        }
+    }
+#endif
 
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceAboutToInsertItems(begin, end);
 
     for (int i = cacheIds.count(); i < contacts.count(); ++i) {
         QContact contact = contacts.at(i);
+
+#ifndef SEASIDE_SPARQL_QUERIES
+        if (contact.localId() == m_selfId)
+            continue;
+#endif
 
         cacheIds.append(contact.localId());
         SeasideCacheItem &cacheItem = m_people[contact.localId()];
@@ -571,18 +591,21 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
         if (!(m_populated & FavoritesPopulated)) {
             qDebug() << "Favorites queried in" << m_timer.elapsed() << "ms";
 #ifdef SEASIDE_SPARQL_QUERIES
-            clearFavoritesFilter(&m_contactIdRequest);
+            m_contactIdRequest.setFavoritesOnly(false);
             m_contactIdRequest.start();
 #else
-            clearFavoritesFilter(&m_fetchRequest);
+            m_fetchRequest.setFilter(QContactFilter());
             m_fetchRequest.start();
 #endif
             m_populated |= FavoritesPopulated;
             makePopulated(SeasideFilteredModel::FilterFavorites);
         } else {
             finalizeUpdate(SeasideFilteredModel::FilterFavorites);
-
-            clearFavoritesFilter(&m_contactIdRequest);
+#ifdef SEASIDE_SPARQL_QUERIES
+            m_contactIdRequest.setFavoritesOnly(false);
+#else
+            m_contactIdRequest.setFilter(QContactFilter());
+#endif
             m_contactIdRequest.start();
         }
     } else if (state == QContactAbstractRequest::FinishedState) {
@@ -595,6 +618,9 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
         }
 
         if (!(m_populated & AllPopulated)) {
+#ifndef SEASIDE_SPARQL_QUERIES
+            m_fetchRequest.setFetchHint(QContactFetchHint());
+#endif
             qDebug() << "All queried in" << m_timer.elapsed() << "ms";
             m_populated |= AllPopulated;
             makePopulated(SeasideFilteredModel::FilterNone);
@@ -615,15 +641,29 @@ void SeasideCache::makePopulated(SeasideFilteredModel::FilterType filter)
 void SeasideCache::displayLabelOrderChanged()
 {
 #ifdef HAS_MLITE
-    QVariant sorting = m_displayLabelOrderConf.value();
-    if (sorting.isValid() && sorting.toInt() != m_displayLabelOrder) {
-        m_displayLabelOrder = SeasideFilteredModel::DisplayLabelOrder(sorting.toInt());
+    QVariant displayLabelOrder = m_displayLabelOrderConf.value();
+    if (displayLabelOrder.isValid() && displayLabelOrder.toInt() != m_displayLabelOrder) {
+        m_displayLabelOrder = SeasideFilteredModel::DisplayLabelOrder(displayLabelOrder.toInt());
 #ifdef SEASIDE_SPARQL_QUERIES
         m_contactIdRequest.setSortOnFirstName(true);
 #else
+        QContactSortOrder firstNameOrder;
+        firstNameOrder.setDetailDefinitionName(
+                    QContactName::DefinitionName, QContactName::FieldFirstName);
+        firstNameOrder.setCaseSensitivity(Qt::CaseInsensitive);
+        firstNameOrder.setDirection(Qt::AscendingOrder);
+        firstNameOrder.setBlankPolicy(QContactSortOrder::BlanksFirst);
+
+        QContactSortOrder secondNameOrder;
+        secondNameOrder.setDetailDefinitionName(
+                    QContactName::DefinitionName, QContactName::FieldLastName);
+        secondNameOrder.setCaseSensitivity(Qt::CaseInsensitive);
+        secondNameOrder.setDirection(Qt::AscendingOrder);
+        secondNameOrder.setBlankPolicy(QContactSortOrder::BlanksFirst);
+
         QList<QContactSortOrder> sorting = m_displayLabelOrder == SeasideFilteredModel::FirstNameFirst
-                ? (QList<QContactSortOrder>() << firstLabelOrder << secondLabelOrder)
-                : (QList<QContactSortOrder>() << secondLabelOrder << firstLabelOrder);
+                ? (QList<QContactSortOrder>() << firstNameOrder << secondNameOrder)
+                : (QList<QContactSortOrder>() << secondNameOrder << firstNameOrder);
 
         m_fetchRequest.setSorting(sorting);
         m_contactIdRequest.setSorting(sorting);

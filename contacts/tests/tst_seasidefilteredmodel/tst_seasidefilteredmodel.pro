@@ -17,7 +17,7 @@ HEADERS += \
         seasidecache.h \
         $$SRCDIR/seasidefilteredmodel.h \
         $$SRCDIR/seasideperson.h \
-        $$SRCDIR/synchronizedlists_p.h
+        $$SRCDIR/synchronizelists_p.h
 
 SOURCES += \
         tst_seasidefilteredmodel.cpp \
