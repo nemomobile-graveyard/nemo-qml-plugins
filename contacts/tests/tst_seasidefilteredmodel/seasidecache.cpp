@@ -105,6 +105,14 @@ SeasideCache::~SeasideCache()
     instance = 0;
 }
 
+void SeasideCache::reference()
+{
+}
+
+void SeasideCache::release()
+{
+}
+
 void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type)
 {
     for (int i = 0; i < 3; ++i)
@@ -156,7 +164,7 @@ void SeasideCache::removePerson(SeasidePerson *)
 {
 }
 
-const QVector<QContactLocalId> *SeasideCache::contacts(SeasideFilteredModel::FilterType filterType)
+const QVector<QContactLocalId> *SeasideCache::index(SeasideFilteredModel::FilterType filterType)
 {
     return &instance->m_contacts[filterType];
 }

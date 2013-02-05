@@ -22,6 +22,9 @@ public:
     SeasideCache();
     ~SeasideCache();
 
+    static void reference();
+    static void release();
+
     static void registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type);
     static void unregisterModel(SeasideFilteredModel *model);
 
@@ -37,7 +40,7 @@ public:
     static bool savePerson(SeasidePerson *person);
     static void removePerson(SeasidePerson *person);
 
-    static const QVector<QContactLocalId> *contacts(SeasideFilteredModel::FilterType filterType);
+    static const QVector<QContactLocalId> *index(SeasideFilteredModel::FilterType filterType);
     static bool isPopulated(SeasideFilteredModel::FilterType filterType);
 
     void populate(SeasideFilteredModel::FilterType filterType);

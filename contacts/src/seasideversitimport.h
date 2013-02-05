@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (C) 2013 Jolla Mobile <andrew.den.exter@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,44 +29,72 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
+#ifndef SEASIDEVERSITIMPORT_H
+#define SEASIDEVERSITIMPORT_H
 
-#include "seasideproxymodel.h"
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasideversitimport.h"
-#include "seasideversitexport.h"
+#include <qdeclarative.h>
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QDeclarativeExtensionPlugin
+#include <QFile>
+#include <QUrl>
+
+#include <QVersitReader>
+
+QT_BEGIN_NAMESPACE
+class QNetworkReply;
+QT_END_NAMESPACE
+
+QTM_USE_NAMESPACE
+
+class SeasideVersitImport : public QObject
 {
+    Q_OBJECT
+    Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
+    Q_ENUMS(Status)
 public:
-    virtual ~NemoContactsPlugin() { }
-
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
+    enum Status
     {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+        Null,
+        Active,
+        Finished,
+        Error
+    };
 
-/*
- * not a good solution, let's solve it properly this time
- * -    rootContext->setContextProperty(QString::fromLatin1("localeUtils"""), 
- * -                                    LocaleUtils::self());
- */
-    }
+    SeasideVersitImport(QObject *parent = 0);
+    ~SeasideVersitImport();
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+    QUrl source() const;
+    void setSource(const QUrl &source);
 
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleProxyModel");
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVersitImport>(uri, 1, 0, "VersitImport");
-        qmlRegisterType<SeasideVersitExport>(uri, 1, 0, "VersitExport");
-    }
+    Status status() const;
+
+    int count() const;
+
+    // For SeasideCache.
+    void writeCompleted();
+
+public slots:
+    void importContacts();
+    void cancel();
+
+signals:
+    void finished();
+    void sourceChanged();
+    void statusChanged();
+    void countChanged();
+
+private slots:
+    void readerStateChanged(QVersitReader::State state);
+
+private:
+    QVersitReader m_reader;
+    QFile m_input;
+    QUrl m_source;
+    int m_count;
+    Status m_status;
 };
 
-Q_EXPORT_PLUGIN2(nemocontacts, NemoContactsPlugin);
+QML_DECLARE_TYPE(SeasideVersitImport)
 
+#endif

@@ -32,6 +32,8 @@
 #include "seasidecache.h"
 
 #include "seasideperson.h"
+#include "seasideversitimport.h"
+#include "seasideversitexport.h"
 #include "synchronizelists_p.h"
 
 #include <QCoreApplication>
@@ -174,28 +176,31 @@ SeasideCache::~SeasideCache()
         instance = 0;
 }
 
+void SeasideCache::reference()
+{
+    if (!instance)
+        new SeasideCache;
+    if (instance->m_refCount++ == 0)
+        instance->m_expiryTimer.stop();
+}
+
+void SeasideCache::release()
+{
+    if (--instance->m_refCount == 0)
+        instance->m_expiryTimer.start(30000, instance);
+}
+
 void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type)
 {
-    if (!instance) {
-        new SeasideCache;
-    } else {
-        instance->m_expiryTimer.stop();
-        for (int i = 0; i < 3; ++i)
-            instance->m_models[i].removeAll(model);
-    }
+    for (int i = 0; i < 3; ++i)
+        instance->m_models[i].removeAll(model);
     instance->m_models[type].append(model);
 }
 
 void SeasideCache::unregisterModel(SeasideFilteredModel *model)
 {
-    bool empty = true;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
         instance->m_models[i].removeAll(model);
-        empty &= instance->m_models[i].isEmpty();
-    }
-
-    if (empty)
-        instance->m_expiryTimer.start(30000, instance);
 }
 
 SeasideFilteredModel::DisplayLabelOrder SeasideCache::displayLabelOrder()
@@ -289,7 +294,7 @@ bool SeasideCache::savePerson(SeasidePerson *person)
 void SeasideCache::updateContactData(
         QContactLocalId contactId, SeasideFilteredModel::FilterType filter)
 {
-    int row = m_contacts[filter].indexOf(contactId);
+    int row = m_index[filter].indexOf(contactId);
 
     QList<SeasideFilteredModel *> &models = m_models[filter];
     for (int i = 0; row != -1 && i < models.count(); ++i)
@@ -310,7 +315,7 @@ void SeasideCache::removePerson(SeasidePerson *person)
 void SeasideCache::removeContactData(
         QContactLocalId contactId, SeasideFilteredModel::FilterType filter)
 {
-    int row = m_contacts[filter].indexOf(contactId);
+    int row = m_index[filter].indexOf(contactId);
     if (row == -1)
         return;
 
@@ -318,15 +323,15 @@ void SeasideCache::removeContactData(
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceAboutToRemoveItems(row, row);
 
-    m_contacts[filter].remove(row);
+    m_index[filter].remove(row);
 
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceItemsRemoved();
 }
 
-const QVector<QContactLocalId> *SeasideCache::contacts(SeasideFilteredModel::FilterType type)
+const QVector<QContactLocalId> *SeasideCache::index(SeasideFilteredModel::FilterType type)
 {
-    return &instance->m_contacts[type];
+    return &instance->m_index[type];
 }
 
 bool SeasideCache::isPopulated(SeasideFilteredModel::FilterType filterType)
@@ -356,6 +361,14 @@ bool SeasideCache::event(QEvent *event)
 
         m_contactsToCreate.clear();
         m_contactsToSave.clear();
+    } else if (!m_pendingImports.isEmpty()) {
+        // Notify all pending imports, then loop back around to process any subsequent updates.
+        QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
+        QList<SeasideVersitImport *> imports = m_pendingImports;
+        m_pendingImports.clear();
+
+        for (int i = 0; i < imports.count(); ++i)
+            imports.at(i)->writeCompleted();
     } else if (!m_changedContacts.isEmpty()) {
         m_resultsRead = 0;
 
@@ -366,6 +379,15 @@ bool SeasideCache::event(QEvent *event)
 
         m_fetchRequest.setFilter(filter);
         !m_fetchRequest.start();
+    } else if (!m_pendingExports.isEmpty()) {
+        // Notify all pending exports, then loop back around to process any subsequent updates.
+        QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
+
+        QList<SeasideVersitExport *> exports = m_pendingExports;
+        m_pendingExports.clear();
+
+        for (int i = 0; i < exports.count(); ++i)
+            exports.at(i)->cachePopulated();
     } else if (m_refreshRequired) {
         m_resultsRead = 0;
         m_refreshRequired = false;
@@ -439,7 +461,6 @@ void SeasideCache::contactsAvailable()
     } else {
         // An update.
         const QList<QContact> contacts = m_fetchRequest.contacts();
-
         for (int i = m_resultsRead; i < contacts.count(); ++i) {
             QContact contact = contacts.at(i);
             SeasideCacheItem &item = m_people[contact.localId()];
@@ -487,7 +508,7 @@ void SeasideCache::contactIdsAvailable()
 
     synchronizeList(
             this,
-            m_contacts[m_fetchFilter],
+            m_index[m_fetchFilter],
             m_cacheIndex,
             m_contactIdRequest.ids(),
             m_queryIndex);
@@ -496,7 +517,7 @@ void SeasideCache::contactIdsAvailable()
 void SeasideCache::finalizeUpdate(SeasideFilteredModel::FilterType filter)
 {
     const QList<QContactLocalId> queryIds = m_contactIdRequest.ids();
-    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
+    QVector<QContactLocalId> &cacheIds = m_index[filter];
 
     if (m_cacheIndex < cacheIds.count())
         removeRange(filter, m_cacheIndex, cacheIds.count() - m_cacheIndex);
@@ -513,7 +534,7 @@ void SeasideCache::finalizeUpdate(SeasideFilteredModel::FilterType filter)
 void SeasideCache::removeRange(
         SeasideFilteredModel::FilterType filter, int index, int count)
 {
-    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
+    QVector<QContactLocalId> &cacheIds = m_index[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
 
     for (int i = 0; i < models.count(); ++i)
@@ -536,7 +557,7 @@ int SeasideCache::insertRange(
         const QList<QContactLocalId> &queryIds,
         int queryIndex)
 {
-    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
+    QVector<QContactLocalId> &cacheIds = m_index[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
 
     int end = index + count - 1;
@@ -570,7 +591,7 @@ int SeasideCache::insertRange(
 
 void SeasideCache::appendContacts(const QList<QContact> &contacts)
 {
-    QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
+    QVector<QContactLocalId> &cacheIds = m_index[m_fetchFilter];
     QList<SeasideFilteredModel *> &models = m_models[m_fetchFilter];
 
     cacheIds.reserve(contacts.count());
@@ -724,6 +745,80 @@ void SeasideCache::displayLabelOrderChanged()
 #endif
 }
 
+
+void SeasideCache::createContacts(const QList<QContact> &contacts, SeasideVersitImport *importer)
+{
+    instance->m_pendingImports.append(importer);
+    instance->m_contactsToCreate += contacts;
+    instance->requestUpdate();
+}
+
+void SeasideCache::populateCache(
+        SeasideVersitExport *exporter, const QList<QContactLocalId> &contactIds)
+{
+    typedef QHash<QContactLocalId, SeasideCacheItem>::iterator iterator;
+    QHash<QContactLocalId, SeasideCacheItem> &people = instance->m_people;
+    if (contactIds.isEmpty()) {
+        for (iterator it = people.begin(); it != people.end(); ++it) {
+            if (!it->hasCompleteContact) {
+                it->hasCompleteContact = true;
+                instance->m_changedContacts.append(it.key());
+            }
+        }
+    } else {
+        instance->m_changedContacts.reserve(
+                instance->m_changedContacts.count() + contactIds.count());
+        for (int i = 0; i < contactIds.count(); ++i) {
+            iterator it = people.find(contactIds.at(i));
+            if (it != people.end() && !it->hasCompleteContact) {
+                it->hasCompleteContact = true;
+                instance->m_changedContacts.append(it.key());
+            }
+        }
+    }
+
+    if (instance->m_changedContacts.isEmpty() && !instance->m_updatesPending) {
+        exporter->cachePopulated();
+    } else {
+        instance->m_pendingExports.append(exporter);
+        instance->requestUpdate();
+    }
+}
+
+void SeasideCache::cancelImport(SeasideVersitImport *importer)
+{
+    instance->m_pendingImports.removeAll(importer);
+}
+
+void SeasideCache::cancelExport(SeasideVersitExport *exporter)
+{
+    instance->m_pendingExports.removeAll(exporter);
+}
+
+QList<QContact> SeasideCache::contacts(const QList<QContactLocalId> &contactIds)
+{
+    QList<QContact> contacts;
+
+    typedef QHash<QContactLocalId, SeasideCacheItem>::const_iterator iterator;
+    const QHash<QContactLocalId, SeasideCacheItem> &people = instance->m_people;
+    if (contactIds.isEmpty()) {
+        contacts.reserve(people.count());
+        for (iterator it = people.begin(); it != people.end(); ++it) {
+            if (it->hasCompleteContact)
+                contacts.append(it->contact);
+        }
+    } else {
+        contacts.reserve(contactIds.count());
+        for (int i = 0; i < contactIds.count(); ++i) {
+            iterator it = people.find(contactIds.at(i));
+            if (it != people.end() && it->hasCompleteContact)
+                contacts.append(it->contact);
+        }
+    }
+
+    return contacts;
+}
+
 int SeasideCache::importContacts(const QString &path)
 {
     QFile vcf(path);
@@ -801,4 +896,6 @@ QString SeasideCache::exportContacts()
     writer.waitForFinished();
     return vcard.fileName();
 }
+
+
 

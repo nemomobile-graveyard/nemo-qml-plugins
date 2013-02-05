@@ -67,14 +67,16 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     roles.insert(AvatarRole, "avatar");
     setRoleNames(roles);
 
+    SeasideCache::reference();
     SeasideCache::registerModel(this, FilterAll);
-    m_referenceContactIds = SeasideCache::contacts(FilterAll);
+    m_referenceContactIds = SeasideCache::index(FilterAll);
     m_contactIds = m_referenceContactIds;
 }
 
 SeasideFilteredModel::~SeasideFilteredModel()
 {
     SeasideCache::unregisterModel(this);
+    SeasideCache::release();
 }
 
 bool SeasideFilteredModel::isPopulated() const
@@ -119,7 +121,7 @@ void SeasideFilteredModel::setFilterType(FilterType type)
             if (m_filterPattern.isEmpty())
                 m_filteredContactIds = *m_referenceContactIds;
 
-            m_referenceContactIds = SeasideCache::contacts(m_filterType);
+            m_referenceContactIds = SeasideCache::index(m_filterType);
 
             updateIndex();
 
@@ -155,7 +157,7 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
 
         if (wasEmpty && m_filterType == FilterNone) {
             SeasideCache::registerModel(this, FilterAll);
-            m_referenceContactIds = SeasideCache::contacts(FilterAll);
+            m_referenceContactIds = SeasideCache::index(FilterAll);
 
             populateIndex();
         } else if (wasEmpty) {
@@ -172,7 +174,7 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
                 beginRemoveRows(QModelIndex(), 0, m_contactIds->count() - 1);
             }
 
-            m_referenceContactIds = SeasideCache::contacts(FilterNone);
+            m_referenceContactIds = SeasideCache::index(FilterNone);
             m_contactIds = m_referenceContactIds;
             m_filteredContactIds.clear();
 
