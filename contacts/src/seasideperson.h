@@ -95,7 +95,7 @@ public:
     explicit SeasidePerson(QObject *parent = 0);
     ~SeasidePerson();
 
-    Q_PROPERTY(int id READ id)
+    Q_PROPERTY(int id READ id NOTIFY contactChanged)
     int id() const;
 
     Q_PROPERTY(QString firstName READ firstName WRITE setFirstName NOTIFY firstNameChanged)
@@ -189,6 +189,7 @@ public:
     Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
 
 signals:
+    void contactChanged();
     void contactRemoved();
     void firstNameChanged();
     void lastNameChanged();

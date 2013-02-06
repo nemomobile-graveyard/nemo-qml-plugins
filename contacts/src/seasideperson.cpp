@@ -686,6 +686,9 @@ void SeasidePerson::setContact(const QContact &contact)
     QContact oldContact = mContact;
     mContact = contact;
 
+    if (oldContact.id().localId() != mContact.id().localId())
+        emit contactChanged();
+
     QContactName oldName = oldContact.detail<QContactName>();
     QContactName newName = mContact.detail<QContactName>();
 
