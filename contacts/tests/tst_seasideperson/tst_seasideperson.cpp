@@ -443,16 +443,19 @@ void tst_SeasidePerson::setContact()
         QSignalSpy spy(person.data(), SIGNAL(firstNameChanged()));
         QSignalSpy spyTwo(person.data(), SIGNAL(lastNameChanged()));
         QSignalSpy spyThree(person.data(), SIGNAL(displayLabelChanged()));
+        QSignalSpy spyFour(person.data(), SIGNAL(contactChanged()));
         person->setContact(contact);
         QCOMPARE(spy.count(), 1);
         QCOMPARE(spyTwo.count(), 1);
         QCOMPARE(spyThree.count(), 1);
+        QCOMPARE(spyFour.count(), 1);
 
         // change them again, nothing should emit
         person->setContact(contact);
         QCOMPARE(spy.count(), 1);
         QCOMPARE(spyTwo.count(), 1);
         QCOMPARE(spyThree.count(), 1);
+        QCOMPARE(spyFour.count(), 1);
     }
 }
 
