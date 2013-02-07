@@ -35,7 +35,11 @@
 #include "synchronizelists_p.h"
 
 #include <QContactAvatar>
+#include <QContactEmailAddress>
 #include <QContactName>
+#include <QContactOnlineAccount>
+#include <QContactOrganization>
+#include <QContactPhoneNumber>
 
 #include <QtDebug>
 
@@ -201,8 +205,20 @@ bool SeasideFilteredModel::filterId(QContactLocalId contactId) const
     // TODO: i18n will require different splitting for thai and possibly
     // other locales, see MBreakIterator
 
-    if (item->filterKey.isEmpty())
+    if (item->filterKey.isEmpty()) {
         item->filterKey = item->contact.detail<QContactName>().customLabel().split(QLatin1Char(' '));
+
+        foreach (const QContactPhoneNumber &detail, item->contact.details<QContactPhoneNumber>())
+            item->filterKey.append(detail.number());
+        foreach (const QContactEmailAddress &detail, item->contact.details<QContactEmailAddress>())
+            item->filterKey.append(detail.emailAddress());
+        foreach (const QContactOrganization &detail, item->contact.details<QContactOrganization>())
+            item->filterKey.append(detail.name().split(QLatin1Char(' ')));
+        foreach (const QContactOnlineAccount &detail, item->contact.details<QContactOnlineAccount>()) {
+            item->filterKey.append(detail.accountUri());
+            item->filterKey.append(detail.serviceProvider());
+        }
+    }
 
     // search forwards over the label components for each filter word, making
     // sure to find all filter words before considering it a match.
