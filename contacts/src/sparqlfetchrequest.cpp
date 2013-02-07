@@ -269,11 +269,11 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
                 "\n ?given"
                 "\n ?family"
                 "\n nie:url(nco:photo(?x))"
-                "\n nco:phoneNumber(?phoneNumber)");
+                "\n GROUP_CONCAT(nco:phoneNumber(?phoneNumber), ';')");
     }
 
     queryString += QLatin1String(
-                "WHERE {"
+                "\nWHERE {"
                 "\n ?x a nco:PersonContact .");
 
     if (favoritesOnly) {
@@ -347,13 +347,9 @@ QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *r
                 contact.saveDetail(&avatar);
             }
 
-            value = results->value(5);
-            if (value.isValid()) {
-                // There's an issue here if a contact has multiple phone numbers, but that
-                // might be better solved by finding an alternative to the personByPhoneNumber API.
-                // Or figuring out to collate grouped results in the the sparql query.
+            foreach (const QString &string, results->value(5).toString().split(QLatin1Char(';'))) {
                 QContactPhoneNumber number;
-                number.setNumber(value.toString());
+                number.setNumber(string);
                 contact.saveDetail(&number);
             }
 

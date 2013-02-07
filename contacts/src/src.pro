@@ -37,7 +37,7 @@ HEADERS += $$PWD/localeutils_p.h \
            $$PWD/seasidecache.h \
            $$PWD/seasidefilteredmodel.h
 
-#CONFIG += seaside-tracker
+CONFIG += seaside-tracker
 contains(CONFIG, seaside-tracker) {
     CONFIG += qtsparql
     DEFINES += SEASIDE_SPARQL_QUERIES
