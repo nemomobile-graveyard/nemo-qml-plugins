@@ -437,3 +437,84 @@ ServiceAccountInterface *AccountManagerInterface::serviceAccount(int accountIden
     return newSAI;
 }
 
+/*!
+    \qmlmethod ServiceAccount* AccountManager::serviceAccountFromProvider(const QString &serviceName, const QString &providerName)
+
+    Returns the first enabled ServiceAccount which is provided by the provider identified by
+    the given \a providerName.  If the \a serviceName is specified, the ServiceAccount returned
+    will be the ServiceAccount for that particular service, or null if it does not exist or is not
+    enabled.  The AccountManager has ownership of the ServiceAccount adapter, and will delete it
+    automatically on destruction.
+
+    Returns null if no such account exists, or if the \a providerName does not identify a valid
+    provider, or if the \a serviceName is given and does not identity a valid service or if the
+    account is not enabled with that service.
+*/
+ServiceAccountInterface *AccountManagerInterface::serviceAccountFromProvider(const QString &providerName, const QString &serviceName) const
+{
+    Accounts::Provider prv = d->manager->provider(providerName);
+    if (!prv.isValid()) {
+        qWarning() << Q_FUNC_INFO << "No such provider:" << providerName;
+        return 0;
+    }
+
+    Accounts::AccountIdList enabledAccounts;
+    Accounts::Service srv;
+    if (!serviceName.isEmpty()) {
+        srv = d->manager->service(serviceName);
+        if (!srv.isValid()) {
+            qWarning() << Q_FUNC_INFO << "No such service:" << serviceName;
+            return 0;
+        }
+        enabledAccounts = d->manager->accountListEnabled(srv.serviceType());
+    } else {
+        enabledAccounts = d->manager->accountListEnabled();
+    }
+
+    Accounts::Account *whichAccount = 0;
+    foreach (Accounts::AccountId aid, enabledAccounts) {
+        Accounts::Account *acc = d->manager->account(aid);
+        if (acc->providerName() == prv.name()) {
+            if (!acc->enabled())
+                continue; // this shouldn't be possible, but just in case...
+
+            if (srv.isValid()) {
+                acc->selectService(srv);
+                if (!acc->enabled()) {
+                    continue;
+                }
+
+                // we have a valid account which is enabled with the service.
+                whichAccount = acc;
+                break;
+            }
+
+            // no service was specified, use any enabled account service.
+            Accounts::ServiceList enabledServices = acc->enabledServices();
+            if (!enabledServices.isEmpty()) {
+                whichAccount = acc;
+                srv = enabledServices.at(0);
+                break;
+            }
+        }
+    }
+
+    if (!whichAccount) {
+        if (srv.isValid())
+            qWarning() << Q_FUNC_INFO << "No enabled account from provider:" << providerName << "for service:" << srv.name();
+        else
+            qWarning() << Q_FUNC_INFO << "No enabled account from provider:" << providerName;
+        return 0;
+    }
+
+    AccountManagerInterface *parentPtr = const_cast<AccountManagerInterface*>(this);
+    Accounts::AccountService *srvAcc = new Accounts::AccountService(whichAccount, srv);
+    if (!srvAcc) {
+        qWarning() << Q_FUNC_INFO << "Unable to create service account from provider:" << providerName << "for service:" << srv.name();
+        return 0;
+    }
+
+    ServiceAccountInterface *newSAI = new ServiceAccountInterface(srvAcc, ServiceAccountInterface::HasOwnership, parentPtr);
+    return newSAI;
+}
+
