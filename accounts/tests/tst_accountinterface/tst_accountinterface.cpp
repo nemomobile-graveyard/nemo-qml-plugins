@@ -276,7 +276,7 @@ void tst_AccountInterface::configurationValues()
     QVariant testStrValue(QString(QLatin1String("test-value")));
     QVariant testBoolValue(true);
     QVariant testIntValue(-5);
-    QVariant testQuintValue(0xaaaaaaaaaaaa);
+    QVariant testQuintValue(quint64(0xaaaaaaaaaaaa));
     testData.insert(testKey, testStrValue);
 
     QVariantMap noValueTestData;
@@ -389,7 +389,7 @@ void tst_AccountInterface::serviceConfigurationValues()
     QVariant testStrValue(QString(QLatin1String("test-value")));
     QVariant testBoolValue(true);
     QVariant testIntValue(-5);
-    QVariant testQuintValue(0xaaaaaaaaaaaa);
+    QVariant testQuintValue(quint64(0xaaaaaaaaaaaa));
     testData.insert(testKey, testStrValue);
     QString testServiceName = QLatin1String("test-service2");
 
