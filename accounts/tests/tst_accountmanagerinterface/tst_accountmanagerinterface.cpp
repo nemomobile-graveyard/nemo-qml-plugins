@@ -222,11 +222,22 @@ void tst_AccountManagerInterface::accounts()
         // sync account to write it to db
         acc->setDisplayName("test-account");
         acc->enableWithService("test-service2");
+        acc->setEnabled(true);
         acc->sync();
         QTRY_COMPARE(acc->status(), AccountInterface::Synced);
         QTRY_COMPARE(spy.count(), 1);
         QString newAccountId = QString::number(acc->identifier());
+        QVERIFY(!newAccountId.isEmpty());
         QVERIFY(m->accountIdentifiers().contains(newAccountId));
+
+        // ensure the sync worked correctly
+        Accounts::Manager aqMan;
+        Accounts::Account *aqAcc = aqMan.account(acc->identifier());
+        QVERIFY(aqAcc->enabled()); // globally enabled
+        Accounts::Service aqSrv = aqMan.service("test-service2");
+        QVERIFY(aqSrv.isValid());  // service exists
+        aqAcc->selectService(aqSrv);
+        QVERIFY(aqAcc->enabled()); // enabled with service
 
         // now ensure that account retrieval works.
         AccountInterface *tempAcc = m->account(newAccountId); // string id
@@ -245,6 +256,16 @@ void tst_AccountManagerInterface::accounts()
         QVERIFY(tempSrvAcc);
         QTRY_COMPARE(tempSrvAcc->identifier(), acc->identifier());
         returnedServiceAcc = tempSrvAcc;
+
+        // now ensure that service account from provider retrieval works.
+        ServiceAccountInterface *tempSrvAcc2 = m->serviceAccountFromProvider("test-provider");
+        QVERIFY(tempSrvAcc2);
+        ServiceAccountInterface *tempSrvAcc3 = m->serviceAccountFromProvider("test-provider", "test-service2");
+        QVERIFY(tempSrvAcc3);
+        ServiceAccountInterface *nullSrvAcc = m->serviceAccountFromProvider("nonexistent-provider");
+        QVERIFY(!nullSrvAcc);
+        ServiceAccountInterface *nullSrvAcc2 = m->serviceAccountFromProvider("test-provider", "nonexistent-service");
+        QVERIFY(!nullSrvAcc2);
 
         // remove account.
         m->removeAccount(acc.data());
