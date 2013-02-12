@@ -5,7 +5,8 @@ SUBDIRS = \
     tst_providerinterface \
     tst_serviceinterface \
     tst_servicetypeinterface \
-    tst_serviceaccountinterface
+    tst_serviceaccountinterface \
+    tst_accountmodel
 
 tests_xml.target = tests.xml
 tests_xml.files = tests.xml
