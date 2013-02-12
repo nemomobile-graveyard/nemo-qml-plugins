@@ -111,6 +111,8 @@ private slots:
 
 private:
     int getAccountIndex(Accounts::AccountId id) const;
+    void addedAccount(Accounts::Account *account);
+    void removedAccount(Accounts::Account *account);
 
 private:
     AccountModelPrivate* d_ptr;
