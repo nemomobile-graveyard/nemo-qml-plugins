@@ -87,6 +87,7 @@ public:
     Q_INVOKABLE AccountInterface *account(int accountIdentifier) const;
     Q_INVOKABLE ServiceAccountInterface *serviceAccount(const QString &accountIdentifier, const QString &serviceName) const;
     Q_INVOKABLE ServiceAccountInterface *serviceAccount(int accountIdentifier, const QString &serviceName) const;
+    Q_INVOKABLE ServiceAccountInterface *serviceAccountFromProvider(const QString &providerName, const QString &serviceName = QString()) const;
 
     // property accessors and mutators.
     int timeout() const;
