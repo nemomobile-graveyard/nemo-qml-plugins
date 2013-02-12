@@ -92,6 +92,8 @@ private slots:
 
     // expected usage
     void expectedUsage();
+
+    void loadSavedAccount();
 };
 
 void tst_AccountInterface::enabled()
@@ -609,6 +611,45 @@ void tst_AccountInterface::expectedUsage()
     QTRY_COMPARE(existingAccount->status(), AccountInterface::Invalid);
 }
 
+void tst_AccountInterface::loadSavedAccount()
+{
+    QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
+    account->setProviderName("test-provider");
+    account->setDisplayName("test-display-name");
+    account->sync();
+    account->componentComplete();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QTRY_VERIFY(account->supportedServiceNames().contains(QString(QLatin1String("test-service2"))));
+    account->enableWithService(QString(QLatin1String("test-service2")));
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+
+    QScopedPointer<AccountInterface> readOnlyAccount(new AccountInterface);
+    QSignalSpy spyIdentityIdentifiers(readOnlyAccount.data(), SIGNAL(identityIdentifiersChanged()));
+    QSignalSpy spyProviderName(readOnlyAccount.data(), SIGNAL(providerNameChanged()));
+    QSignalSpy spyDisplayName(readOnlyAccount.data(), SIGNAL(displayNameChanged()));
+    QSignalSpy spySupportedServiceNames(readOnlyAccount.data(), SIGNAL(supportedServiceNamesChanged()));
+    QSignalSpy spyEnabledServiceNames(readOnlyAccount.data(), SIGNAL(enabledServiceNamesChanged()));
+
+    readOnlyAccount->classBegin();
+    readOnlyAccount->setIdentifier(account->identifier());
+    readOnlyAccount->componentComplete();
+    QTRY_COMPARE(readOnlyAccount->status(), AccountInterface::Initialized);
+    QCOMPARE(readOnlyAccount->providerName(), account->providerName());
+    QCOMPARE(readOnlyAccount->displayName(), account->displayName());
+    QCOMPARE(readOnlyAccount->identifier(), account->identifier());
+    QCOMPARE(readOnlyAccount->supportedServiceNames(), account->supportedServiceNames());
+    QCOMPARE(readOnlyAccount->enabledServiceNames(), account->enabledServiceNames());
+
+    QCOMPARE(spyIdentityIdentifiers.count(), 1);
+    QCOMPARE(spyProviderName.count(), 1);
+    QCOMPARE(spyDisplayName.count(), 1);
+    QCOMPARE(spySupportedServiceNames.count(), 1);
+    QCOMPARE(spyEnabledServiceNames.count(), 1);
+
+    account->remove();
+}
 
 #include "tst_accountinterface.moc"
 QTEST_MAIN(tst_AccountInterface)
