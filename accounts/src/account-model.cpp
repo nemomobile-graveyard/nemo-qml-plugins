@@ -90,8 +90,7 @@ AccountModel::AccountModel(QObject* parent)
     foreach (Accounts::AccountId id, idList)
     {
         Accounts::Account *account = d->manager->account(id);
-        connect(account, SIGNAL(displayNameChanged(QString)),
-                this, SLOT(accountDisplayNameChanged()));
+        addedAccount(account);
         d->accountsList.append(new DisplayData(account));
     }
 }
@@ -179,6 +178,7 @@ void AccountModel::accountCreated(Accounts::AccountId id)
     Q_D(AccountModel);
     QModelIndex index;
     Accounts::Account *account = d->manager->account(id);
+    addedAccount(account);
 
     if (account != 0) {
         beginInsertRows(index, 0, 0);
@@ -203,6 +203,7 @@ void AccountModel::accountRemoved(Accounts::AccountId id)
     DisplayData *data = d->accountsList.takeAt(index);
     endRemoveRows();
 
+    removedAccount(data->account);
     delete data;
 }
 
@@ -234,6 +235,22 @@ int AccountModel::getAccountIndex(Accounts::AccountId id) const
     }
 
     return -1;
+}
+
+void AccountModel::addedAccount(Accounts::Account *account)
+{
+    if (account) {
+        QObject::connect(account, SIGNAL(displayNameChanged(QString)),
+                this, SLOT(accountDisplayNameChanged()));
+    }
+}
+
+void AccountModel::removedAccount(Accounts::Account *account)
+{
+    if (account) {
+        QObject::disconnect(account, SIGNAL(displayNameChanged(QString)),
+                this, SLOT(accountDisplayNameChanged()));
+    }
 }
 
 /*!
