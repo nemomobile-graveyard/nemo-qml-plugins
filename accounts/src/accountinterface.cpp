@@ -205,7 +205,15 @@ void AccountInterfacePrivate::asyncQueryInfo()
                 q->enableWithService(sn);
         }
     } else {
-        // nothing to do.
+        Accounts::ServiceList enabledServices = account->enabledServices();
+        for (int i = 0; i < enabledServices.size(); ++i) {
+            Accounts::Service currService = enabledServices.at(i);
+            QString serviceName = currService.name();
+            enabledServiceNames.append(serviceName);
+        }
+        if (enabledServiceNames.count() > 0) {
+            emit q->enabledServiceNamesChanged();
+        }
     }
 
     // do sync if required.
