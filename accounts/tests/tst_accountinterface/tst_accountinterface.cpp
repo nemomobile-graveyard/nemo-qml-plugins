@@ -139,20 +139,46 @@ void tst_AccountInterface::enabled()
 void tst_AccountInterface::identifier()
 {
     QScopedPointer<AccountInterface> account(new AccountInterface);
-    QSignalSpy spy(account.data(), SIGNAL(identifierChanged()));
-    account->classBegin();
-    account->setProviderName("test-provider");
-    account->setDisplayName("test-display-name");
-    account->sync(); // pending sync - empty account (ie, no display name) won't get saved.
-    QCOMPARE(account->identifier(), 0);
-    account->componentComplete(); // will construct new account.
-    QTRY_COMPARE(spy.count(), 1);
-    QVERIFY(account->identifier() > 0);
 
-    // and ensure that it exists in the database
-    Accounts::Manager m;
-    Accounts::Account *a = m.account(account->identifier());
-    QCOMPARE(a->displayName(), QLatin1String("test-display-name"));
+    // create a new account
+    {
+        QSignalSpy spy(account.data(), SIGNAL(identifierChanged()));
+        account->classBegin();
+        account->setProviderName("test-provider");
+        account->setDisplayName("test-display-name");
+        account->sync(); // pending sync - empty account (ie, no display name) won't get saved.
+        QCOMPARE(account->identifier(), 0);
+        account->componentComplete(); // will construct new account.
+        QTRY_COMPARE(spy.count(), 1);
+        QVERIFY(account->identifier() > 0);
+
+        // and ensure that it exists in the database
+        Accounts::Manager m;
+        Accounts::Account *a = m.account(account->identifier());
+        QCOMPARE(a->displayName(), QLatin1String("test-display-name"));
+    }
+
+    // existing account identifier
+    {
+        QScopedPointer<AccountInterface> existing(new AccountInterface);
+        existing->classBegin();
+        existing->setIdentifier(account->identifier());
+        existing->componentComplete();
+        QTRY_COMPARE(existing->status(), AccountInterface::Initialized);
+        QCOMPARE(existing->displayName(), QLatin1String("test-display-name"));
+    }
+
+    // existing account identifier set after initialization
+    {
+        QScopedPointer<AccountInterface> existing(new AccountInterface);
+        existing->classBegin();
+        existing->componentComplete();
+        QTRY_COMPARE(existing->status(), AccountInterface::Invalid);
+        existing->setIdentifier(account->identifier());
+        QCOMPARE(existing->status(), AccountInterface::Initializing);
+        QTRY_COMPARE(existing->status(), AccountInterface::Initialized);
+        QCOMPARE(existing->displayName(), QLatin1String("test-display-name"));
+    }
 
     // cleanup.
     account->remove();

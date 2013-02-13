@@ -279,6 +279,8 @@ void AccountInterfacePrivate::invalidate()
     // alive, we need to ensure that invalidate() gets called also.
     // We also invalidate the interface if the account itself gets removed
     // from the accounts database.
+    if (account)
+        disconnect(account);
     account = 0;
     setStatus(AccountInterface::Invalid);
 }
@@ -938,7 +940,12 @@ void AccountInterface::setEnabled(bool e)
     Specifying both \c identifier and \c providerName in the Account
     declaration is an error.
 
-    You cannot set the identifier of an Account after it has been initialized.
+    You may only set the identifier of the account after initialization
+    if the identifier property was never initialized and no provider
+    name was given.  Attempting to set the identifier of a previously
+    initialized, valid account will have no effect.  Attempting to set
+    the identifier of a previously initialized, invalidated account
+    may result in undefined behaviour (e.g., incorrect signal emission).
 */
 
 int AccountInterface::identifier() const
@@ -958,6 +965,14 @@ void AccountInterface::setIdentifier(int id)
             d->error = AccountInterface::ConflictingProviderError;
             d->setStatus(AccountInterface::Error);
         }
+    } else if (id != d->identifier && d->status == AccountInterface::Invalid) {
+        // the client is setting the account identifier after initialization.
+        d->deleteLater();
+        d = new AccountInterfacePrivate(this, 0);
+        d->identifierPendingInit = true;
+        d->identifier = id;
+        emit statusChanged(); // manually emit - initializing.
+        componentComplete();
     }
 }
 
