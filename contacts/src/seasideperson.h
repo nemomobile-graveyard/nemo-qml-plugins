@@ -98,6 +98,10 @@ public:
     Q_PROPERTY(int id READ id NOTIFY contactChanged)
     int id() const;
 
+    Q_PROPERTY(bool complete READ isComplete NOTIFY completeChanged)
+    bool isComplete() const;
+    void setComplete(bool complete);
+
     Q_PROPERTY(QString firstName READ firstName WRITE setFirstName NOTIFY firstNameChanged)
     QString firstName() const;
     void setFirstName(const QString &name);
@@ -188,9 +192,14 @@ public:
     Q_INVOKABLE QVariant contactData() const { return QVariant::fromValue(contact()); }
     Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
 
+    static QString generateDisplayLabel(
+                const QContact &mContact,
+                SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
+
 signals:
     void contactChanged();
     void contactRemoved();
+    void completeChanged();
     void firstNameChanged();
     void lastNameChanged();
     void middleNameChanged();
@@ -221,6 +230,7 @@ private:
     explicit SeasidePerson(const QContact &contact, QObject *parent = 0);
     QContact mContact;
     QString mDisplayLabel;
+    bool mComplete;
 
     friend class tst_SeasidePerson;
     friend class SeasidePeopleModelPriv;
