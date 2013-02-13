@@ -1,0 +1,52 @@
+/*!
+    \title Nemo QML Plugins - Social Network Adapters
+    \page index.html
+
+    \section1 Overview
+
+    This plugin provides QML adapters which allow clients to access social network graphs.
+    The basic interfaces included in the Social plugin cannot be used directly, but
+    instead should be implemented for specific social networks via derived types.
+
+    \section1 Basic Interfaces
+
+    These interfaces should not be used directly.  They provide API which allows
+    a node-centric view of a social graph to be exposed as a model.  The various
+    objects related to the central node object are exposed as content items.
+
+    \list
+    \li \l{SocialNetwork} - a social network graph data model
+    \li \l{ContentItem} - an object from the social network graph
+    \li \l{IdentifiableContentItem} - an object from the social network graph which may be used as the central node in the graph view for the model
+    \li \l{Filter} - filters may be applied to the SocialNetwork to define which objects are exposed as model data
+    \li \l{Sorter} - sorters may be applied to the SocialNetwork to define the order of objects exposed as model data
+    \endlist
+
+    \section1 Specific Implementations
+
+    Clients can use a specific implementation of the social network adapters
+    to interact with the online service.  Each implementation may have specific
+    requirements (such as an AccessToken or a UserName) or capabilities (such as
+    the level of support for filtering or sorting).
+
+    \section2 Facebook
+
+    The Facebook implementation allows clients to interact with the Facebook service
+    via the Facebook OpenGraph API.  It currently supports User, Album, Photo, Comment,
+    Like and Tag objects.
+
+    \list
+    \li \l{Facebook} - the Facebook-specific implementation of the SocialNetwork interface
+    \li \l{FacebookUser} - an IdentifiableContentItem which represents a user
+    \li \l{FacebookAlbum} - an IdentifiableContentItem which represents an album
+    \li \l{FacebookPhoto} - an IdentifiableContentItem which represents a photo
+    \li \l{FacebookComment} - an IdentifiableContentItem which represents a comment
+    \li \l{FacebookLike} - a ContentItem which represents a like
+    \li \l{FacebookTag} - a ContentItem which represents a tag
+    \li \l{FacebookPicture} - a ContentItem which represents a picture
+    \endlist
+
+    \section2 Google Plus
+
+    TODO
+*/
