@@ -24,13 +24,29 @@ SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasidepeoplemodel.cpp \
            $$PWD/seasidepeoplemodel_p.cpp \
            $$PWD/seasideperson.cpp \
-           $$PWD/seasideproxymodel.cpp
+           $$PWD/seasideproxymodel.cpp \
+           $$PWD/seasidecache.cpp \
+           $$PWD/seasidefilteredmodel.cpp
 
 HEADERS += $$PWD/localeutils_p.h \
+           $$PWD/synchronizelists_p.h \
            $$PWD/seasidepeoplemodel.h \
            $$PWD/seasidepeoplemodel_p.h \
            $$PWD/seasideperson.h \
-           $$PWD/seasideproxymodel.h
+           $$PWD/seasideproxymodel.h \
+           $$PWD/seasidecache.h \
+           $$PWD/seasidefilteredmodel.h
+
+CONFIG += seaside-tracker
+contains(CONFIG, seaside-tracker) {
+    CONFIG += qtsparql
+    DEFINES += SEASIDE_SPARQL_QUERIES
+    SOURCES += \
+            sparqlfetchrequest.cpp
+
+    HEADERS += \
+            sparqlfetchrequest_p.h
+}
 
 MOC_DIR = $$PWD/../.moc
 OBJECTS_DIR = $$PWD/../.obj

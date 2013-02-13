@@ -48,6 +48,7 @@
 
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
+    , mComplete(false)
 {
 
 }
@@ -55,6 +56,7 @@ SeasidePerson::SeasidePerson(QObject *parent)
 SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(contact)
+    , mComplete(false)
 {
 }
 
@@ -67,6 +69,19 @@ SeasidePerson::~SeasidePerson()
 int SeasidePerson::id() const
 {
     return mContact.id().localId();
+}
+
+bool SeasidePerson::isComplete() const
+{
+    return mComplete;
+}
+
+void SeasidePerson::setComplete(bool complete)
+{
+    if (mComplete != complete) {
+        mComplete = complete;
+        emit completeChanged();
+    }
 }
 
 QString SeasidePerson::firstName() const
@@ -115,7 +130,7 @@ void SeasidePerson::setMiddleName(const QString &name)
 }
 
 // small helper to avoid inconvenience
-static QString generateDisplayLabel(QContact mContact, SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst)
+QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasideProxyModel::DisplayLabelOrder order)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
     QString displayLabel;
@@ -170,8 +185,12 @@ void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder
     QString oldDisplayLabel = mDisplayLabel;
     QString newDisplayLabel = generateDisplayLabel(mContact, order);
 
-    // TODO: would be lovely if mobility would let us store this somehow
     if (oldDisplayLabel != newDisplayLabel) {
+        // Save the display label as the custom label.
+        QContactName name = mContact.detail<QContactName>();
+        name.setCustomLabel(newDisplayLabel);
+        mContact.saveDetail(&name);
+
         mDisplayLabel = newDisplayLabel;
         emit displayLabelChanged();
     }
@@ -180,7 +199,10 @@ void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder
 QString SeasidePerson::displayLabel()
 {
     if (mDisplayLabel.isEmpty()) {
-        recalculateDisplayLabel();
+        QContactName name = mContact.detail<QContactName>();
+        mDisplayLabel = name.customLabel();
+        if (mDisplayLabel.isEmpty())
+            recalculateDisplayLabel();
     }
 
     return mDisplayLabel;

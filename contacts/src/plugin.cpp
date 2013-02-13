@@ -36,6 +36,7 @@
 
 #include "seasideproxymodel.h"
 #include "seasideperson.h"
+#include "seasidefilteredmodel.h"
 
 class Q_DECL_EXPORT NemoContactsPlugin : public QDeclarativeExtensionPlugin
 {
@@ -57,8 +58,8 @@ public:
     {
         Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
 
-        qmlRegisterType<SeasideProxyModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideProxyModel>(uri, 1, 0, "PeopleProxyModel");
+        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
+        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleProxyModel");
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
     }
 };
