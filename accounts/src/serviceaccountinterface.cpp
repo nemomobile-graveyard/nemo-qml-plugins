@@ -31,6 +31,7 @@
 
 #include "serviceaccountinterface.h"
 #include "serviceaccountinterface_p.h"
+#include "accountvalueencoding_p.h"
 
 #include "serviceinterface.h"
 #include "providerinterface.h"
@@ -225,5 +226,44 @@ QVariantMap ServiceAccountInterface::unrelatedValues() const
     acct->selectService(srv);
 
     return unrelatedValues;
+}
+
+/*!
+    \qmlmethod QString ServiceAccount::encodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const
+
+    Encodes the given \a value with the specified \a key using the specified \a scheme.
+    If the \a scheme is empty or invalid, the value will be encoded with Base64 and the
+    key will be ignored.
+
+    The implementation of each scheme is non-standard and a value encoded with this
+    method shouldn't be assumed to be decodable via a method other than calling
+    \c decodeConfigurationValue().
+
+    This method can be used to encode values which shouldn't be stored as plain text
+    in an account configuration.  Note that this method does NOT provide any security,
+    nor is it intended for use in cryptography or authentication; it exists merely as
+    a convenience for application authors.
+
+    Valid schemes are:
+    \list
+    \li "base64" - \a key is ignored
+    \li "rot" - \a key is ignored
+    \li "xor" - \a key is used if all characters are between 'a' and 'z', or "nemo" by default
+    \endlist
+*/
+QString ServiceAccountInterface::encodeConfigurationValue(const QString &value, const QString &scheme, const QString &key) const
+{
+    return encodeValue(value, scheme, key); // from accountvalueencoding_p.h
+}
+
+/*!
+    \qmlmethod QString ServiceAccount::decodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const
+
+    Decodes the given \a value with the specified \a key using the specified \a scheme.
+    This method can be used to decode values which were previously encoded with encode().
+*/
+QString ServiceAccountInterface::decodeConfigurationValue(const QString &value, const QString &scheme, const QString &key) const
+{
+    return decodeValue(value, scheme, key); // from accountvalueencoding_p.h
 }
 

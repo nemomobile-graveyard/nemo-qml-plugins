@@ -28,11 +28,12 @@ HEADERS += \
            $$PWD/providerinterface.h \
            $$PWD/serviceaccountinterface.h \
            $$PWD/serviceinterface.h \
+           $$PWD/servicetypeinterface.h \
+           $$PWD/service-account-model.h \
            $$PWD/accountinterface_p.h \
            $$PWD/accountmanagerinterface_p.h \
-           $$PWD/serviceaccountinterface_p.h \
-           $$PWD/servicetypeinterface.h \
-           $$PWD/service-account-model.h
+           $$PWD/accountvalueencoding_p.h \
+           $$PWD/serviceaccountinterface_p.h
 
 OTHER_FILES += accounts.qdoc accounts.qdocconf
 
