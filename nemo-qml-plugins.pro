@@ -8,6 +8,7 @@ SUBDIRS += thumbnailer \
            messages \
            signon \
            accounts \
+           social \
            alarms \
            time \
            utilities
