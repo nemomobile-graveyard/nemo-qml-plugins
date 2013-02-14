@@ -60,7 +60,8 @@ public:
         AccountIconColumn,
         ProviderNameColumn,
         ProviderDisplayNameColumn,
-        ColumnCount
+        ColumnCount,
+        AccountEnabledColumn
     };
 
     enum Roles{
@@ -69,7 +70,8 @@ public:
         AccountIconRole,
         ProviderNameRole,
         ProviderDisplayNameRole,
-        ColumnCountRole
+        ColumnCountRole,
+        AccountEnabledRole
     };
 
 
