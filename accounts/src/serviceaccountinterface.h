@@ -73,6 +73,8 @@ public:
     Q_INVOKABLE void setConfigurationValue(const QString &key, const QVariant &value);
     Q_INVOKABLE void removeConfigurationValue(const QString &key);
     Q_INVOKABLE QVariantMap unrelatedValues() const; // from Account class, all keys/values regardless of service
+    Q_INVOKABLE QString encodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const;
+    Q_INVOKABLE QString decodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const;
 
     // property accessors.
     bool enabled() const;
