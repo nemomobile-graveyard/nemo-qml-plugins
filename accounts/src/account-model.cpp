@@ -154,6 +154,11 @@ QVariant AccountModel::data(const QModelIndex &index, int role) const
         return QVariant::fromValue(data->providerDisplayName);
     }
 
+    if (role == AccountEnabledRole ||
+            (role == Qt::DisplayRole && index.column() == AccountEnabledColumn)) {
+        return QVariant::fromValue(account->enabled());
+    }
+
     return QVariant();
 }
 
