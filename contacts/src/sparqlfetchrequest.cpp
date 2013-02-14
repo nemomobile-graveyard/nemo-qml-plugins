@@ -265,10 +265,12 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
                 "\n  nco:emailAddress(?emailAddress),"
                 "\n  nco:fullname(?organization),"
                 "\n  nco:phoneNumber(?phoneNumber),"
-                "\n  '(unnamed)')"
+                "\n  '(Unnamed)')"
                 "\n ?given"
                 "\n ?family"
-                "\n nie:url(nco:photo(?x))"
+                "\n tracker:coalesce("
+                "\n  nie:url(nco:photo(?x)),"
+                "\n  nco:imAvatar(?imAccount))"
                 "\n GROUP_CONCAT(nco:phoneNumber(?phoneNumber), ';')");
     }
 
@@ -278,16 +280,17 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
 
     if (favoritesOnly) {
         queryString += QLatin1String(
-                "\n ?x a nco:PersonContact ."
-                "\n ?x nao:hasProperty ?favorite ."
-                "\n ?favorite a nao:Property ."
-                "\n ?favorite nao:propertyName 'Favorite' .");
+                "\n ?x nao:hasProperty ?favoriteProperty ."
+                "\n ?favoriteProperty a nao:Property ."
+                "\n ?favoriteProperty nao:propertyName 'Favorite' ."
+                "\n ?favoriteProperty nao:hasProperty ?favorite ."
+                "\n ?favorite nao:propertyValue 'true' .");
     }
 
     queryString += QLatin1String(
             "\n OPTIONAL { ?x nco:nameGiven ?given }"
             "\n OPTIONAL { ?x nco:nameFamily ?family }"
-            "\n OPTIONAL { ?x nco:hasIMAddress ?imAccount }"
+            "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAccount }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?org . ?org nco:org ?organization }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?email . ?email nco:hasEmailAddress ?emailAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?phone . ?phone nco:hasPhoneNumber ?phoneNumber  }"
@@ -303,7 +306,7 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
             "\n  nco:imID(?imAccount),"
             "\n  nco:fullname(?organization),"
             "\n  nco:phoneNumber(?phoneNumber),"
-            "\n  '(unnamed)'))"
+            "\n  '(Unnamed)'))"
             "\n ASC(%2)");
 
     queryString = queryString.arg(primary).arg(secondary);
@@ -343,7 +346,7 @@ QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *r
             value = results->value(4);
             if (value.isValid()) {
                 QContactAvatar avatar;
-                avatar.setImageUrl(QUrl::fromLocalFile(value.toString()));
+                avatar.setImageUrl(value.toString());
                 contact.saveDetail(&avatar);
             }
 

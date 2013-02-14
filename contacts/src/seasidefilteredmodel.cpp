@@ -52,7 +52,7 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_filterIndex(0)
     , m_referenceIndex(0)
-    , m_filterType(FilterNone)
+    , m_filterType(FilterAll)
 {
     QHash<int, QByteArray> roles;
     roles.insert(Qt::DisplayRole, "display");
@@ -63,8 +63,8 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     roles.insert(AvatarRole, "avatar");
     setRoleNames(roles);
 
-    SeasideCache::registerModel(this, FilterNone);
-    m_referenceContactIds = SeasideCache::contacts(FilterNone);
+    SeasideCache::registerModel(this, FilterAll);
+    m_referenceContactIds = SeasideCache::contacts(FilterAll);
     m_contactIds = m_referenceContactIds;
 }
 
