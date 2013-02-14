@@ -114,6 +114,8 @@ public:
     Q_INVOKABLE void removeConfigurationValue(const QString &key, const QString &serviceName = QString());
     Q_INVOKABLE QVariantMap configurationValues(const QString &serviceName) const;
     Q_INVOKABLE void setConfigurationValues(const QVariantMap &values, const QString &serviceName);
+    Q_INVOKABLE QString encodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const;
+    Q_INVOKABLE QString decodeConfigurationValue(const QString &value, const QString &scheme = QString(), const QString &key = QString()) const;
 
     Q_INVOKABLE bool supportsServiceType(const QString &serviceType);
     Q_INVOKABLE void enableWithService(const QString &serviceName);

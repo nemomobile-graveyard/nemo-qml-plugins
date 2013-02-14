@@ -90,10 +90,11 @@ private slots:
     //enableWithService() in enabledServiceNames()
     //disableWithService() in enabledServiceNames()
 
+    void loadSavedAccount();
+    void encodeDecode();
+
     // expected usage
     void expectedUsage();
-
-    void loadSavedAccount();
 };
 
 void tst_AccountInterface::enabled()
@@ -551,6 +552,116 @@ void tst_AccountInterface::errorMessage()
     // XXX TODO: error message for conflicting provider error?
 }
 
+void tst_AccountInterface::loadSavedAccount()
+{
+    QScopedPointer<AccountInterface> account(new AccountInterface);
+    account->classBegin();
+    account->setProviderName("test-provider");
+    account->setDisplayName("test-display-name");
+    account->sync();
+    account->componentComplete();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QTRY_VERIFY(account->supportedServiceNames().contains(QString(QLatin1String("test-service2"))));
+    account->enableWithService(QString(QLatin1String("test-service2")));
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+
+    QScopedPointer<AccountInterface> readOnlyAccount(new AccountInterface);
+    QSignalSpy spyIdentityIdentifiers(readOnlyAccount.data(), SIGNAL(identityIdentifiersChanged()));
+    QSignalSpy spyProviderName(readOnlyAccount.data(), SIGNAL(providerNameChanged()));
+    QSignalSpy spyDisplayName(readOnlyAccount.data(), SIGNAL(displayNameChanged()));
+    QSignalSpy spySupportedServiceNames(readOnlyAccount.data(), SIGNAL(supportedServiceNamesChanged()));
+    QSignalSpy spyEnabledServiceNames(readOnlyAccount.data(), SIGNAL(enabledServiceNamesChanged()));
+
+    readOnlyAccount->classBegin();
+    readOnlyAccount->setIdentifier(account->identifier());
+    readOnlyAccount->componentComplete();
+    QTRY_COMPARE(readOnlyAccount->status(), AccountInterface::Initialized);
+    QCOMPARE(readOnlyAccount->providerName(), account->providerName());
+    QCOMPARE(readOnlyAccount->displayName(), account->displayName());
+    QCOMPARE(readOnlyAccount->identifier(), account->identifier());
+    QCOMPARE(readOnlyAccount->supportedServiceNames(), account->supportedServiceNames());
+    QCOMPARE(readOnlyAccount->enabledServiceNames(), account->enabledServiceNames());
+
+    QCOMPARE(spyIdentityIdentifiers.count(), 1);
+    QCOMPARE(spyProviderName.count(), 1);
+    QCOMPARE(spyDisplayName.count(), 1);
+    QCOMPARE(spySupportedServiceNames.count(), 1);
+    QCOMPARE(spyEnabledServiceNames.count(), 1);
+
+    account->remove();
+}
+
+void tst_AccountInterface::encodeDecode()
+{
+    QScopedPointer<AccountInterface> a(new AccountInterface);
+
+    // XXX TODO: test UTF8 inputs
+    QString inputOne = QLatin1String("AAAaaaAbbBzzzZZ");
+    QString inputTwo = QLatin1String("n3m0abcDEF1234567890");
+    QString inputThree = QLatin1String("-123-abcd-000-ZYXA-");
+
+    QString b641 = a->encodeConfigurationValue(inputOne);                    // default scheme is b64
+    QString b6412 = a->encodeConfigurationValue(inputOne, "base64");
+    QString b6413 = a->encodeConfigurationValue(inputOne, "base64", "test"); // key should be ignored
+    QString b642 = a->encodeConfigurationValue(inputTwo);
+    QString b643 = a->encodeConfigurationValue(inputThree);
+
+    QString rot1 = a->encodeConfigurationValue(inputOne, "rot");
+    QString rot12 = a->encodeConfigurationValue(inputOne, "rot", "test"); // key should be ignored
+    QString rot2 = a->encodeConfigurationValue(inputTwo, "rot");
+    QString rot3 = a->encodeConfigurationValue(inputThree, "rot");
+
+    QString xor1 = a->encodeConfigurationValue(inputOne, "xor");             // default key is "nemo"
+    QString xor12 = a->encodeConfigurationValue(inputOne, "xor", "nemo");
+    QString xor13 = a->encodeConfigurationValue(inputOne, "xor", "test");
+    QString xor2 = a->encodeConfigurationValue(inputTwo, "xor");
+    QString xor3 = a->encodeConfigurationValue(inputThree, "xor");
+
+    QCOMPARE(b641, b6412);
+    QCOMPARE(b641, b6413);
+    QVERIFY(b641 != b642);
+    QVERIFY(b641 != b643);
+    QVERIFY(b642 != b643);
+    QCOMPARE(b641, QLatin1String("QUFBYWFhQWJiQnp6elpa"));
+    QCOMPARE(b642, QLatin1String("bjNtMGFiY0RFRjEyMzQ1Njc4OTA="));
+    QCOMPARE(b643, QLatin1String("LTEyMy1hYmNkLTAwMC1aWVhBLQ=="));
+
+    QCOMPARE(rot1, rot12);
+    QVERIFY(rot1 != rot2);
+    QVERIFY(rot1 != rot3);
+    QVERIFY(rot2 != rot3);
+    QCOMPARE(rot1, QLatin1String("UVZIRV1cTG9ZYFR0XXt+RXV9gnQ="));
+    QCOMPARE(rot2, QLatin1String("YmtQd1FMTHBhOVxRXndTiF2LY0Rif3lLZ21bWA=="));
+    QCOMPARE(rot3, QLatin1String("TFVHfFF+N29hdlh2WGFPhl1UQ3Rra35ZZGpXWA=="));
+
+    QCOMPARE(xor1, xor12);
+    QVERIFY(xor1 != xor13);
+    QVERIFY(xor1 != xor2);
+    QVERIFY(xor1 != xor3);
+    QVERIFY(xor2 != xor3);
+    QCOMPARE(xor1, QLatin1String("PzArLTcyKwc/MicGPwsdWQsJHQ4="));
+    QCOMPARE(xor13, QLatin1String("JTA1Ni0yNRwlMjkdJQsDQhEJAxU="));
+    QCOMPARE(xor2, QLatin1String("DA8jGyMiKwY3VT8pPA8oFiMfPF4gDw5bITEsUg=="));
+    QCOMPARE(xor3, QLatin1String("IjEoFiMcXAc3CCMEIjEsGCMmXA45MwUtIjRQUg=="));
+
+    QCOMPARE(a->decodeConfigurationValue(b641, "base64", "test"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(b641, "base64"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(b641), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(b642), inputTwo);
+
+    QCOMPARE(a->decodeConfigurationValue(rot1, "rot", "test"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(rot1, "rot"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(rot2, "rot"), inputTwo);
+    QCOMPARE(a->decodeConfigurationValue(rot3, "rot"), inputThree);
+
+    QCOMPARE(a->decodeConfigurationValue(xor13, "xor", "test"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(xor12, "xor", "nemo"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(xor1, "xor"), inputOne);
+    QCOMPARE(a->decodeConfigurationValue(xor2, "xor"), inputTwo);
+    QCOMPARE(a->decodeConfigurationValue(xor3, "xor"), inputThree);
+}
+
 
 void tst_AccountInterface::expectedUsage()
 {
@@ -609,46 +720,6 @@ void tst_AccountInterface::expectedUsage()
     newAccount->remove(); // removing one should remove both.
     QTRY_COMPARE(newAccount->status(), AccountInterface::Invalid);
     QTRY_COMPARE(existingAccount->status(), AccountInterface::Invalid);
-}
-
-void tst_AccountInterface::loadSavedAccount()
-{
-    QScopedPointer<AccountInterface> account(new AccountInterface);
-    account->classBegin();
-    account->setProviderName("test-provider");
-    account->setDisplayName("test-display-name");
-    account->sync();
-    account->componentComplete();
-    QTRY_COMPARE(account->status(), AccountInterface::Synced);
-    QTRY_VERIFY(account->supportedServiceNames().contains(QString(QLatin1String("test-service2"))));
-    account->enableWithService(QString(QLatin1String("test-service2")));
-    account->sync();
-    QTRY_COMPARE(account->status(), AccountInterface::Synced);
-
-    QScopedPointer<AccountInterface> readOnlyAccount(new AccountInterface);
-    QSignalSpy spyIdentityIdentifiers(readOnlyAccount.data(), SIGNAL(identityIdentifiersChanged()));
-    QSignalSpy spyProviderName(readOnlyAccount.data(), SIGNAL(providerNameChanged()));
-    QSignalSpy spyDisplayName(readOnlyAccount.data(), SIGNAL(displayNameChanged()));
-    QSignalSpy spySupportedServiceNames(readOnlyAccount.data(), SIGNAL(supportedServiceNamesChanged()));
-    QSignalSpy spyEnabledServiceNames(readOnlyAccount.data(), SIGNAL(enabledServiceNamesChanged()));
-
-    readOnlyAccount->classBegin();
-    readOnlyAccount->setIdentifier(account->identifier());
-    readOnlyAccount->componentComplete();
-    QTRY_COMPARE(readOnlyAccount->status(), AccountInterface::Initialized);
-    QCOMPARE(readOnlyAccount->providerName(), account->providerName());
-    QCOMPARE(readOnlyAccount->displayName(), account->displayName());
-    QCOMPARE(readOnlyAccount->identifier(), account->identifier());
-    QCOMPARE(readOnlyAccount->supportedServiceNames(), account->supportedServiceNames());
-    QCOMPARE(readOnlyAccount->enabledServiceNames(), account->enabledServiceNames());
-
-    QCOMPARE(spyIdentityIdentifiers.count(), 1);
-    QCOMPARE(spyProviderName.count(), 1);
-    QCOMPARE(spyDisplayName.count(), 1);
-    QCOMPARE(spySupportedServiceNames.count(), 1);
-    QCOMPARE(spyEnabledServiceNames.count(), 1);
-
-    account->remove();
 }
 
 #include "tst_accountinterface.moc"
