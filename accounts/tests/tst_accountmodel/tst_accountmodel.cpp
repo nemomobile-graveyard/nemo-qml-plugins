@@ -149,6 +149,13 @@ void tst_AccountModel::updateAccount()
     QTRY_COMPARE(spyDataChanged.count(), 1);
     QCOMPARE(model.data(model.index(0), AccountModel::AccountDisplayNameRole).toString(), account->displayName());
 
+    QVERIFY(account->enabled());
+    account->setEnabled(true);
+    account->sync();
+    QTRY_COMPARE(account->status(), AccountInterface::Synced);
+    QTRY_COMPARE(spyDataChanged.count(), 2);
+    QVERIFY(model.data(model.index(0), AccountModel::AccountEnabledRole).toBool());
+
     account->remove();
 }
 
