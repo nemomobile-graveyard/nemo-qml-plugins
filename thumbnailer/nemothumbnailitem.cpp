@@ -154,7 +154,7 @@ void NemoThumbnailItem::setMimeType(const QString &mimeType)
     if (m_mimeType != mimeType) {
         m_mimeType = mimeType;
         emit mimeTypeChanged();
-        updateThumbnail(false);
+        updateThumbnail(!m_request);
     }
 }
 
