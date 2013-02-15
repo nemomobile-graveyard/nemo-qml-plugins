@@ -35,6 +35,8 @@
 #include "contentiteminterface.h"
 #include "identifiablecontentiteminterface.h"
 
+#include <QtCore/QByteArray>
+#include <QtCore/QUrl>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
@@ -69,6 +71,131 @@ CacheEntry::~CacheEntry()
         delete item;
 }
 
+ArbitraryRequestHandler::ArbitraryRequestHandler(SocialNetworkInterface *parent)
+    : QObject(parent), q(parent), reply(0), isError(false)
+{
+}
+
+ArbitraryRequestHandler::~ArbitraryRequestHandler()
+{
+    if (reply) {
+        disconnect(reply);
+        reply->deleteLater();
+    }
+}
+
+bool ArbitraryRequestHandler::request(int requestType, const QString &requestUri, const QVariantMap &queryItems, const QString &postData)
+{
+    if (reply) {
+        qWarning() << Q_FUNC_INFO << "Warning: cannot start arbitrary request: another arbitrary request is in progress";
+        return false;
+    }
+
+    QList<QPair<QString, QString> > qil;
+    QStringList queryItemKeys = queryItems.keys();
+    foreach (const QString &qik, queryItemKeys)
+        qil.append(qMakePair<QString, QString>(qik, queryItems.value(qik).toString()));
+
+    QUrl url(requestUri);
+    url.setQueryItems(qil);
+
+    QNetworkReply *sniReply = 0;
+    switch (requestType) {
+        case SocialNetworkInterface::Get: sniReply = q->d->qnam->get(QNetworkRequest(url)); break;
+        case SocialNetworkInterface::Post: sniReply = q->d->qnam->post(QNetworkRequest(url), QByteArray::fromBase64(postData.toLatin1())); break;
+        default: sniReply = q->d->qnam->deleteResource(QNetworkRequest(url)); break;
+    }
+
+    if (sniReply) {
+        reply = sniReply;
+        connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+        connect(reply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+        return true;
+    }
+
+    qWarning() << Q_FUNC_INFO << "Warning: cannot start arbitrary request: null reply";
+    return false;
+}
+
+void ArbitraryRequestHandler::finishedHandler()
+{
+    QByteArray replyData;
+    if (reply) {
+        replyData = reply->readAll();
+        disconnect(reply);
+        reply->deleteLater();
+        reply = 0;
+    }
+
+    QVariantMap responseData;
+    bool errorOccurred = isError;
+    if (isError) {
+        // note that errors to arbitrary requests don't cause the SocialNetwork
+        // to transition to the Error state.  They are unrelated to the model.
+        responseData.insert(QLatin1String("error"), errorMessage);
+        errorMessage = QString();
+        isError = false;
+    } else {
+        bool ok = false;
+        QVariantMap parsed = ContentItemInterface::parseReplyData(replyData, &ok);
+        if (!ok) {
+            responseData.insert(QLatin1String("response"), replyData);
+        } else {
+            responseData = parsed;
+        }
+    }
+
+    emit q->arbitraryRequestResponseReceived(errorOccurred, responseData);
+}
+
+void ArbitraryRequestHandler::errorHandler(QNetworkReply::NetworkError err)
+{
+    switch (err) {
+        case QNetworkReply::NoError: errorMessage = QLatin1String("QNetworkReply::NoError"); break;
+        case QNetworkReply::ConnectionRefusedError: errorMessage = QLatin1String("QNetworkReply::ConnectionRefusedError"); break;
+        case QNetworkReply::RemoteHostClosedError: errorMessage = QLatin1String("QNetworkReply::RemoteHostClosedError"); break;
+        case QNetworkReply::HostNotFoundError: errorMessage = QLatin1String("QNetworkReply::HostNotFoundError"); break;
+        case QNetworkReply::TimeoutError: errorMessage = QLatin1String("QNetworkReply::TimeoutError"); break;
+        case QNetworkReply::OperationCanceledError: errorMessage = QLatin1String("QNetworkReply::OperationCanceledError"); break;
+        case QNetworkReply::SslHandshakeFailedError: errorMessage = QLatin1String("QNetworkReply::SslHandshakeFailedError"); break;
+        case QNetworkReply::TemporaryNetworkFailureError: errorMessage = QLatin1String("QNetworkReply::TemporaryNetworkFailureError"); break;
+        case QNetworkReply::ProxyConnectionRefusedError: errorMessage = QLatin1String("QNetworkReply::ProxyConnectionRefusedError"); break;
+        case QNetworkReply::ProxyConnectionClosedError: errorMessage = QLatin1String("QNetworkReply::ProxyConnectionClosedError"); break;
+        case QNetworkReply::ProxyNotFoundError: errorMessage = QLatin1String("QNetworkReply::ProxyNotFoundError"); break;
+        case QNetworkReply::ProxyTimeoutError: errorMessage = QLatin1String("QNetworkReply::ProxyTimeoutError"); break;
+        case QNetworkReply::ProxyAuthenticationRequiredError: errorMessage = QLatin1String("QNetworkReply::ProxyAuthenticationRequiredError"); break;
+        case QNetworkReply::ContentAccessDenied: errorMessage = QLatin1String("QNetworkReply::ContentAccessDenied"); break;
+        case QNetworkReply::ContentOperationNotPermittedError: errorMessage = QLatin1String("QNetworkReply::ContentOperationNotPermittedError"); break;
+        case QNetworkReply::ContentNotFoundError: errorMessage = QLatin1String("QNetworkReply::ContentNotFoundError"); break;
+        case QNetworkReply::AuthenticationRequiredError: errorMessage = QLatin1String("QNetworkReply::AuthenticationRequiredError"); break;
+        case QNetworkReply::ContentReSendError: errorMessage = QLatin1String("QNetworkReply::ContentReSendError"); break;
+        case QNetworkReply::ProtocolUnknownError: errorMessage = QLatin1String("QNetworkReply::ProtocolUnknownError"); break;
+        case QNetworkReply::ProtocolInvalidOperationError: errorMessage = QLatin1String("QNetworkReply::ProtocolInvalidOperationError"); break;
+        case QNetworkReply::UnknownNetworkError: errorMessage = QLatin1String("QNetworkReply::UnknownNetworkError"); break;
+        case QNetworkReply::UnknownProxyError: errorMessage = QLatin1String("QNetworkReply::UnknownProxyError"); break;
+        case QNetworkReply::UnknownContentError: errorMessage = QLatin1String("QNetworkReply::UnknownContentError"); break;
+        case QNetworkReply::ProtocolFailure: errorMessage = QLatin1String("QNetworkReply::ProtocolFailure"); break;
+        default: errorMessage = QLatin1String("Unknown QNetworkReply::NetworkError"); break;
+    }
+
+    isError = true;
+}
+
+void ArbitraryRequestHandler::sslErrorsHandler(const QList<QSslError> &sslErrors)
+{
+    errorMessage = QLatin1String("SSL error: ");
+    if (sslErrors.isEmpty()) {
+        errorMessage += QLatin1String("unknown SSL error");
+    } else {
+        foreach (const QSslError &sslE, sslErrors)
+            errorMessage += sslE.errorString() + QLatin1String("; ");
+        errorMessage.chop(2);
+    }
+
+    isError = true;
+}
+
 SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterface *parent)
     : q(parent)
     , qnam(new QNetworkAccessManager(parent))
@@ -78,6 +205,7 @@ SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterf
     , status(SocialNetworkInterface::Initializing)
     , currentNodePosition(-1)
     , nodeStackSize(5)
+    , arbitraryRequestHandler(0)
 {
     // Construct the placeholder node.  This node is used as a placeholder
     // when the client sets a specific nodeIdentifier until the node can
@@ -898,6 +1026,27 @@ QVariant SocialNetworkInterface::headerData(int section, Qt::Orientation orienta
     }
 
     return QVariant();
+}
+
+/*!
+    \qmlmethod bool SocialNetwork::arbitraryRequest(SocialNetwork::RequestType requestType, const QString &requestUri, const QVariantMap &queryItems = QVariantMap(), const QString &postData = QString())
+
+    Performs the HTTP request of the specified \a requestType (\c Get, \c Post or \c Delete) with
+    the specified \a requestUri and \a queryItems.  If the request is a Post request, the given
+    \a postData will be converted to a QByteArray via \c{QByteArray::fromBase64(postData.toLatin1())}
+    and used as the \c Post data.
+
+    When a successfully started request is completed, the \c arbitraryRequestResponseReceived()
+    signal will be emitted, with the response data included as the \c data parameter.
+
+    The request will not be started successfully if another arbitrary request is in progress.
+    Returns true if the request could be started successfully, false otherwise. 
+*/
+bool SocialNetworkInterface::arbitraryRequest(int requestType, const QString &requestUri, const QVariantMap &queryItems, const QString &postData)
+{
+    if (!d->arbitraryRequestHandler)
+        d->arbitraryRequestHandler = new ArbitraryRequestHandler(this);
+    return d->arbitraryRequestHandler->request(requestType, requestUri, queryItems, postData);
 }
 
 QVariantMap SocialNetworkInterface::contentItemData(ContentItemInterface *contentItem) const
