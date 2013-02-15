@@ -76,6 +76,7 @@ class SocialNetworkInterface : public QAbstractListModel, public QDeclarativePar
     Q_ENUMS(Status)
     Q_ENUMS(ErrorType)
     Q_ENUMS(ContentType)
+    Q_ENUMS(RequestType)
 
 public:
     enum Status {
@@ -107,6 +108,12 @@ public:
     enum ContentType {
         NotInitialized = 0,
         Unknown = 1
+    };
+
+    enum RequestType {
+        Get = 0,
+        Post,
+        Delete
     };
 
 public:
@@ -155,6 +162,11 @@ Q_SIGNALS:
     void relevanceCriteriaChanged();
     void countChanged();
 
+public:
+    Q_INVOKABLE bool arbitraryRequest(int requestType, const QString &requestUri, const QVariantMap &queryItems = QVariantMap(), const QString &postData = QString());
+Q_SIGNALS:
+    void arbitraryRequestResponseReceived(bool isError, const QVariantMap &data);
+
 protected:
     virtual QNetworkReply *getRequest(const QString &objectIdentifier, const QString &extraPath, const QStringList &whichFields, const QVariantMap &extraData);
     virtual QNetworkReply *postRequest(const QString &objectIdentifier, const QString &extraPath, const QVariantMap &data, const QVariantMap &extraData);
@@ -178,6 +190,7 @@ protected:
 private:
     QList<CacheEntry*> internalData() const;       // this is the model data, which is set via updateInternalData().
     friend class SocialNetworkInterfacePrivate;
+    friend class ArbitraryRequestHandler;
     Q_DISABLE_COPY(SocialNetworkInterface)
 };
 
