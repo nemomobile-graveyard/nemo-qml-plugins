@@ -117,7 +117,7 @@ void EmailAccountListModel::onAccountsUpdated(const QMailAccountIdList &ids)
     QMailAccountListModel::reset();
 }
 
-QVariant EmailAccountListModel::indexFromAccountId(QVariant id)
+int EmailAccountListModel::indexFromAccountId(QVariant id)
 {
     int idx = 0;
 
@@ -150,7 +150,7 @@ int EmailAccountListModel::getRowCount()
     return rowCount();
 }
 
-QVariant EmailAccountListModel::getAllDisplayNames()
+QStringList EmailAccountListModel::getAllDisplayNames()
 {
     QStringList displayNameList;
     for (int row = 0; row < rowCount(); row++) {
@@ -160,7 +160,7 @@ QVariant EmailAccountListModel::getAllDisplayNames()
     return displayNameList;
 }
 
-QVariant EmailAccountListModel::getAllEmailAddresses()
+QStringList EmailAccountListModel::getAllEmailAddresses()
 {
     QStringList emailAddressList;
     for (int row = 0; row < rowCount(); row++) {
@@ -173,4 +173,14 @@ QVariant EmailAccountListModel::getAllEmailAddresses()
 QVariant EmailAccountListModel::getAccountIdByIndex(int idx)
 {
     return data(index(idx), EmailAccountListModel::MailAccountId);
+}
+
+QDateTime EmailAccountListModel::lastUpdatedAccountTime()
+{
+    QDateTime lastUpdatedAccTime;
+    for (int row = 0; row < rowCount(); row++) {
+        if ((data(index(row), EmailAccountListModel::LastSynchronized)).toDateTime() > lastUpdatedAccTime)
+            lastUpdatedAccTime = (data(index(row), EmailAccountListModel::LastSynchronized)).toDateTime();
+    }
+    return lastUpdatedAccTime;
 }

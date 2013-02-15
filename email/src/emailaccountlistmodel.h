@@ -37,13 +37,14 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const;
 
 public slots:
-    Q_INVOKABLE QVariant indexFromAccountId(QVariant id);
+    Q_INVOKABLE int indexFromAccountId(QVariant id);
     Q_INVOKABLE QVariant getDisplayNameByIndex(int idx);
     Q_INVOKABLE QVariant getEmailAddressByIndex(int idx);
     Q_INVOKABLE int getRowCount();
-    Q_INVOKABLE QVariant getAllEmailAddresses();
-    Q_INVOKABLE QVariant getAllDisplayNames();
+    Q_INVOKABLE QStringList getAllEmailAddresses();
+    Q_INVOKABLE QStringList getAllDisplayNames();
     Q_INVOKABLE QVariant getAccountIdByIndex(int idx);
+    Q_INVOKABLE QDateTime lastUpdatedAccountTime();
 
 signals:
     void accountAdded(QVariant accountId);
