@@ -107,6 +107,7 @@ private slots:
     void contactIdsAvailable();
     void requestStateChanged(QContactAbstractRequest::State state);
     void contactsRemoved(const QList<QContactLocalId> &contactIds);
+    void updateContacts();
     void updateContacts(const QList<QContactLocalId> &contactIds);
     void displayLabelOrderChanged();
 

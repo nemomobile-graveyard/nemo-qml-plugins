@@ -177,6 +177,12 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
             return phone.number();
     }
 
+    // This is last because the custom label is often source from this function, so we want to
+    // overwrite that value in many cases.
+    if (!name.customLabel().isNull())
+        return name.customLabel();
+
+
     return "(Unnamed)"; // TODO: localisation
 }
 
