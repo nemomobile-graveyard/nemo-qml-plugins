@@ -174,3 +174,13 @@ QVariant EmailAccountListModel::getAccountIdByIndex(int idx)
 {
     return data(index(idx), EmailAccountListModel::MailAccountId);
 }
+
+QVariant EmailAccountListModel::lastUpdatedAccountTime()
+{
+    QDateTime lastUpdatedAccTime;
+    for (int row = 0; row < rowCount(); row++) {
+        if ((data(index(row), EmailAccountListModel::LastSynchronized)).toDateTime() > lastUpdatedAccTime)
+            lastUpdatedAccTime = (data(index(row), EmailAccountListModel::LastSynchronized)).toDateTime();
+    }
+    return lastUpdatedAccTime;
+}
