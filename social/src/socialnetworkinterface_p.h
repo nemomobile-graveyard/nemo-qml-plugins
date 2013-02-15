@@ -41,6 +41,9 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 
+#include <QtNetwork/QSslError>
+#include <QtNetwork/QNetworkReply>
+
 class QNetworkAccessManager;
 class IdentifiableContentItemInterface;
 class FilterInterface;
@@ -59,6 +62,27 @@ public:
 private:
     int refcount;
     friend class SocialNetworkInterfacePrivate;
+};
+
+class ArbitraryRequestHandler : public QObject
+{
+    Q_OBJECT
+
+public:
+    ArbitraryRequestHandler(SocialNetworkInterface *parent);
+    ~ArbitraryRequestHandler();
+
+    SocialNetworkInterface *q;
+    QNetworkReply *reply;
+    QString errorMessage;
+    bool isError;
+
+    bool request(int requestType, const QString &requestUri, const QVariantMap &queryItems = QVariantMap(), const QString &postData = QString());
+
+public Q_SLOTS:
+    void finishedHandler();
+    void errorHandler(QNetworkReply::NetworkError err);
+    void sslErrorsHandler(const QList<QSslError> &sslErrors);
 };
 
 class SocialNetworkInterfacePrivate
@@ -134,6 +158,8 @@ private:
     QList<CacheEntry*> cache; // the actual cache
     QHash<ContentItemInterface*, CacheEntry*> cachedItems; // "index" of cache entries which have items constructed.
     QMultiHash<IdentifiableContentItemInterface*, CacheEntry*> nodeContent; // cache entries which are connections/related content for a given node
+
+    ArbitraryRequestHandler *arbitraryRequestHandler;
 
     friend class SocialNetworkInterface;
 };
