@@ -90,6 +90,7 @@ SeasideCache::SeasideCache()
         m_displayLabelOrder = SeasideFilteredModel::DisplayLabelOrder(displayLabelOrder.toInt());
 #endif
 
+    connect(&m_manager, SIGNAL(dataChanged()), this, SLOT(updateContacts()));
     connect(&m_manager, SIGNAL(contactsChanged(QList<QContactLocalId>)),
             this, SLOT(updateContacts(QList<QContactLocalId>)));
     connect(&m_manager, SIGNAL(contactsAdded(QList<QContactLocalId>)),
@@ -358,6 +359,8 @@ bool SeasideCache::event(QEvent *event)
         !m_fetchRequest.start();
     } else if (m_refreshRequired) {
         m_resultsRead = 0;
+        m_refreshRequired = false;
+        m_fetchFilter = SeasideFilteredModel::FilterFavorites;
 
 #ifdef SEASIDE_SPARQL_QUERIES
         m_contactIdRequest.setFavoritesOnly(true);
@@ -400,6 +403,17 @@ void SeasideCache::contactsRemoved(const QList<QContactLocalId> &)
     requestUpdate();
 }
 
+void SeasideCache::updateContacts()
+{
+    typedef QHash<QContactLocalId, SeasideCacheItem>::iterator iterator;
+    for (iterator it = m_people.begin(); it != m_people.end(); ++it) {
+        if (it->hasCompleteContact)
+            m_changedContacts.append(it->contact.localId());
+    }
+    m_refreshRequired = true;
+    requestUpdate();
+}
+
 void SeasideCache::updateContacts(const QList<QContactLocalId> &contactIds)
 {
     m_changedContacts.append(contactIds);
@@ -429,7 +443,7 @@ void SeasideCache::contactsAvailable()
             }
 
             const bool roleDataChanged = newName != oldName
-                    || contact.detail<QContactAvatar>() != item.contact.detail<QContactAvatar>();
+                    || contact.detail<QContactAvatar>().imageUrl() != item.contact.detail<QContactAvatar>().imageUrl();
 
             item.contact = contact;
             item.hasCompleteContact = true;
@@ -473,7 +487,7 @@ void SeasideCache::contactIdsAvailable()
 void SeasideCache::finalizeUpdate(SeasideFilteredModel::FilterType filter)
 {
     const QList<QContactLocalId> queryIds = m_contactIdRequest.ids();
-    QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
+    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
 
     if (m_cacheIndex < cacheIds.count())
         removeRange(filter, m_cacheIndex, cacheIds.count() - m_cacheIndex);
@@ -490,7 +504,7 @@ void SeasideCache::finalizeUpdate(SeasideFilteredModel::FilterType filter)
 void SeasideCache::removeRange(
         SeasideFilteredModel::FilterType filter, int index, int count)
 {
-    QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
+    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
 
     for (int i = 0; i < models.count(); ++i)
@@ -513,7 +527,7 @@ int SeasideCache::insertRange(
         const QList<QContactLocalId> &queryIds,
         int queryIndex)
 {
-    QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
+    QVector<QContactLocalId> &cacheIds = m_contacts[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
 
     int end = index + count - 1;
@@ -626,7 +640,9 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
         }
 
         if (!(m_populated & AllPopulated)) {
-#ifndef SEASIDE_SPARQL_QUERIES
+#ifdef SEASIDE_SPARQL_QUERIES
+            m_contactIdRequest.setQueryData(false);
+#else
             m_fetchRequest.setFetchHint(QContactFetchHint());
 #endif
             qDebug() << "All queried in" << m_timer.elapsed() << "ms";
