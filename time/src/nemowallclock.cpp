@@ -67,6 +67,8 @@ void WallClockPrivate::setEnabled(bool e)
     m_enabled = e;
     update();
     emit q->enabledChanged();
+    if (m_enabled)
+        emit q->timeChanged();
 }
 
 QDateTime WallClockPrivate::time() const

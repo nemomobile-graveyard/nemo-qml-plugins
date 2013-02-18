@@ -106,6 +106,16 @@ void tst_WallClock::update()
     upCount = updateSpy.count();
     QTest::qWait(1100);
     QVERIFY(updateSpy.count() == upCount);
+
+    // enable and ensure updates happen.
+    obj->setProperty("enabled", QVariant(true));
+
+    // should get an update immediately.
+    QVERIFY(updateSpy.count() == upCount + 1);
+
+    // and another within a second
+    QTest::qWait(1100);
+    QVERIFY(updateSpy.count() > upCount + 1);
 }
 
 
