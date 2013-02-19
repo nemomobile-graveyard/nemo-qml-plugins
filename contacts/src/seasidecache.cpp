@@ -199,6 +199,9 @@ SeasideFilteredModel::DisplayLabelOrder SeasideCache::displayLabelOrder()
 
 SeasidePerson *SeasideCache::personById(QContactLocalId id)
 {
+    if (id == 0)
+        return 0;
+
     QHash<QContactLocalId, SeasideCacheItem>::iterator it = instance->m_people.find(id);
     if (it != instance->m_people.end()) {
         return person(&(*it));
