@@ -73,6 +73,7 @@ private slots:
     void birthday();
     void anniversary();
     void address();
+    void presenceState();
     void marshalling();
     void setContact();
 };
@@ -397,6 +398,19 @@ void tst_SeasidePerson::address()
     QCOMPARE(person->addressTypes().count(), 2);
     QCOMPARE(person->addressTypes().at(0), (int)SeasidePerson::AddressHomeType);
     QCOMPARE(person->addressTypes().at(1), (int)SeasidePerson::AddressWorkType);
+}
+
+void tst_SeasidePerson::presenceState()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    QCOMPARE(person->presenceState(), SeasidePerson::PresenceUnknown);
+    QSignalSpy spy(person.data(), SIGNAL(presenceStateChanged()));
+    person->setPresenceState(SeasidePerson::PresenceAvailable);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(person->presenceState(), SeasidePerson::PresenceAvailable);
+    person->setPresenceState(SeasidePerson::PresenceBusy);
+    QCOMPARE(spy.count(), 2);
+    QCOMPARE(person->presenceState(), SeasidePerson::PresenceBusy);
 }
 
 
