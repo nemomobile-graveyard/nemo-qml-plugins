@@ -684,6 +684,19 @@ void SeasidePerson::setAnniversary(const QDateTime &av)
     emit anniversaryChanged();
 }
 
+SeasidePerson::PresenceState SeasidePerson::presenceState() const
+{
+    return static_cast<SeasidePerson::PresenceState>(mContact.detail<QContactPresence>().presenceState());
+}
+
+void SeasidePerson::setPresenceState(PresenceState state)
+{
+    QContactPresence presence = mContact.detail<QContactPresence>();
+    presence.setPresenceState(static_cast<QContactPresence::PresenceState>(state));
+    mContact.saveDetail(&presence);
+    emit presenceStateChanged();
+}
+
 // TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD
 #define LIST_PROPERTY_FROM_FIELD_NAME(detailType, fieldName) \
     QStringList list; \
@@ -743,6 +756,12 @@ void SeasidePerson::setContact(const QContact &contact)
 
     if (oldAvatar.imageUrl() != newAvatar.imageUrl())
         emit avatarPathChanged();
+
+    QContactPresence oldPresence = oldContact.detail<QContactPresence>();
+    QContactPresence newPresence = mContact.detail<QContactPresence>();
+
+    if (oldPresence.presenceState() != newPresence.presenceState())
+        emit presenceStateChanged();
 
     // TODO: differencing of list type details
     emit phoneNumbersChanged();
