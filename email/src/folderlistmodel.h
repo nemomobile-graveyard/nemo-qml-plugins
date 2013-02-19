@@ -41,6 +41,7 @@ public:
     Q_INVOKABLE QVariant inboxFolderId ();
     Q_INVOKABLE QVariant inboxFolderName();
     Q_INVOKABLE int totalNumberOfFolders();
+    Q_INVOKABLE QVariant folderUnreadCount(QVariant folderId);
 
 private:
     QMailFolderIdList m_mailFolderIds;
