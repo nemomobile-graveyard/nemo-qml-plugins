@@ -157,3 +157,9 @@ int FolderListModel::totalNumberOfFolders()
 {
     return m_mailFolderIds.count();
 }
+
+QVariant FolderListModel::folderUnreadCount(QVariant folderId)
+{
+    int folderIndex = indexFromFolderId(folderId);
+    return data(index(folderIndex), FolderUnreadCount);
+}
