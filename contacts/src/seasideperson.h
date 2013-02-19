@@ -38,6 +38,7 @@
 
 // Mobility
 #include <QContact>
+#include <QContactPresence>
 
 // Seaside
 #include "seasideproxymodel.h"
@@ -50,6 +51,7 @@ class SeasidePerson : public QObject
 {
     Q_OBJECT
     Q_ENUMS(DetailType)
+    Q_ENUMS(PresenceState)
 
 public:
     /**
@@ -89,7 +91,19 @@ public:
         WebsiteOtherType,
         // Dates
         BirthdayType,
-        AnniversaryType
+        AnniversaryType,
+        // Presence information
+        PresenceStateType
+    };
+
+    enum PresenceState {
+        PresenceUnknown = QContactPresence::PresenceUnknown,
+        PresenceAvailable = QContactPresence::PresenceAvailable,
+        PresenceHidden = QContactPresence::PresenceHidden,
+        PresenceBusy = QContactPresence::PresenceBusy,
+        PresenceAway = QContactPresence::PresenceAway,
+        PresenceExtendedAway = QContactPresence::PresenceExtendedAway,
+        PresenceOffline = QContactPresence::PresenceOffline
     };
 
     explicit SeasidePerson(QObject *parent = 0);
@@ -180,6 +194,10 @@ public:
     QDateTime anniversary() const;
     void setAnniversary(const QDateTime &av);
 
+    Q_PROPERTY(PresenceState presenceState READ presenceState WRITE setPresenceState NOTIFY presenceStateChanged)
+    PresenceState presenceState() const;
+    void setPresenceState(PresenceState state);
+
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
 
@@ -219,6 +237,7 @@ signals:
     void websiteTypesChanged();
     void birthdayChanged();
     void anniversaryChanged();
+    void presenceStateChanged();
     void accountUrisChanged();
     void accountPathsChanged();
 
