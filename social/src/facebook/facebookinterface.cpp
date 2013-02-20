@@ -76,6 +76,8 @@ FacebookInterfacePrivate::FacebookInterfacePrivate(FacebookInterface *parent, So
     , q(parent)
     , d(parentData)
     , populatePending(false)
+    , populateDataForUnseenPending(false)
+    , continuationRequestActive(false)
     , internalStatus(FacebookInterfacePrivate::Idle)
     , currentReply(0)
 {
@@ -236,6 +238,7 @@ void FacebookInterfacePrivate::finishedHandler()
     }
 
     QByteArray replyData = currentReply->readAll();
+    QUrl requestUrl = currentReply->request().url();
     deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
@@ -252,7 +255,7 @@ void FacebookInterfacePrivate::finishedHandler()
         q->continuePopulateDataForUnseenNode(responseData);
     } else if (internalStatus == FacebookInterfacePrivate::PopulatingSeenNode) {
         // This one should be simpler because each of the requested fields/connections is a property.
-        q->continuePopulateDataForSeenNode(responseData);
+        q->continuePopulateDataForSeenNode(responseData, requestUrl);
     } else {
         qWarning() << Q_FUNC_INFO << "Error: network reply finished while in unexpectant state!  Received:" << responseData;
     }
@@ -262,9 +265,6 @@ void FacebookInterfacePrivate::finishedHandler()
 void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 {
     qWarning() << Q_FUNC_INFO << "Error: network error occurred:" << err;
-    //deleteReply(); // XXX TODO: we seem to get "UnknownContentError" all the time.
-                     // So, for now, don't delete reply on error, as we still get the
-                     // finished signal, and need to handle the "unknown" data.
 
     switch (err) {
         case QNetworkReply::NoError: d->errorMessage = QLatin1String("QNetworkReply::NoError"); break;
@@ -297,6 +297,19 @@ void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
     d->error = SocialNetworkInterface::RequestError;
     d->status = SocialNetworkInterface::Error;
 
+    if ((internalStatus == FacebookInterfacePrivate::PopulatingUnseenNode
+            || internalStatus == FacebookInterfacePrivate::PopulatingSeenNode)
+            && d->repopulatingCurrentNode) {
+        // failed repopulating, either at "get node" step, or at "get related data" step.
+        d->repopulatingCurrentNode = false;
+    }
+
+    if (continuationRequestActive) {
+        // failed during a continuation request.  This shouldn't be a huge deal,
+        // since we have been populating the cache as we received more data anyway
+        continuationRequestActive = false;
+    }
+
     emit q->statusChanged();
     emit q->errorChanged();
     emit q->errorMessageChanged();
@@ -305,8 +318,6 @@ void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 /*! \internal */
 void FacebookInterfacePrivate::sslErrorsHandler(const QList<QSslError> &errs)
 {
-    deleteReply();
-
     d->errorMessage = QLatin1String("SSL error: ");
     if (errs.isEmpty()) {
         d->errorMessage += QLatin1String("unknown SSL error");
@@ -667,54 +678,72 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
     // eg: with currentNode = Photo; connectionTypes == comments,likes,tags; whichFields = id,name; limit = 10:
     // GET https://graph.facebook.com/<photo_id>/fields=comments.limit(10).fields(id,name),likes.limit(10).fields(id,name),tags.fields(id,name).limit(10)
 
-    QString totalFieldsQuery;
-    for (int i = 0; i < connectionTypes.size(); ++i) {
-        bool addExtra = false;
-        bool append = false;
-        FacebookInterface::ContentItemType cit = static_cast<FacebookInterface::ContentItemType>(connectionTypes.at(i));
-        switch (cit) {
-            case FacebookInterface::NotInitialized:  qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: NotInitialized";  break;
-            case FacebookInterface::Unknown:         qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: NotInitialized";  break;
-            case FacebookInterface::ObjectReference: qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: ObjectReference"; break;
-            case FacebookInterface::Like:     addExtra = true;  append = true; totalFieldsQuery.append(QLatin1String("likes"));    break;
-            case FacebookInterface::Tag:      addExtra = true;  append = true; totalFieldsQuery.append(QLatin1String("tags"));     break;
-            case FacebookInterface::Picture:  addExtra = false; append = true; totalFieldsQuery.append(QLatin1String("picture"));  break;
-            case FacebookInterface::Location: addExtra = true; append = false; totalFieldsQuery.append(QLatin1String("location")); break; // not supported?
-            case FacebookInterface::Comment:  addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("comments")); break;
-            case FacebookInterface::User:     addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("friends"));  break; // subscriptions etc?
-            case FacebookInterface::Album:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("albums"));   break;
-            case FacebookInterface::Photo:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("photos"));   break;
-            case FacebookInterface::Event:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("events"));   break;
-            default: break;
+    // XXX TODO: in the future, each of the Facebook-specific IdentifiableContentItemType classes should
+    // provide private helper functions for the FacebookInterface to build the appropriate query.
+    // e.g: QString FacebookAlbumInterface::relatedDataQuery(types, limits, whichfields);
+    // That way we can provide "special case" code for every type in a neat, modular fashion.
+    if (connectionTypes.size() == 1 && connectionTypes.at(0) == FacebookInterface::Photo
+            && connectionLimits.at(0) == -1 && whichNode->type() == FacebookInterface::Album) {
+        // special case code for FacebookAlbum "populate all photos" request
+        QVariantMap extraData;
+        extraData.insert(QLatin1String("limit"), QLatin1String("25"));
+        f->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS, QStringList(), extraData);
+        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
+        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+    } else {
+        // generic query
+        QString totalFieldsQuery;
+        for (int i = 0; i < connectionTypes.size(); ++i) {
+            bool addExtra = false;
+            bool append = false;
+            FacebookInterface::ContentItemType cit = static_cast<FacebookInterface::ContentItemType>(connectionTypes.at(i));
+            switch (cit) {
+                case FacebookInterface::NotInitialized:  qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: NotInitialized";  break;
+                case FacebookInterface::Unknown:         qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: NotInitialized";  break;
+                case FacebookInterface::ObjectReference: qWarning() << Q_FUNC_INFO << "Invalid content item type specified in filter: ObjectReference"; break;
+                case FacebookInterface::Like:     addExtra = true;  append = true; totalFieldsQuery.append(QLatin1String("likes"));    break;
+                case FacebookInterface::Tag:      addExtra = true;  append = true; totalFieldsQuery.append(QLatin1String("tags"));     break;
+                case FacebookInterface::Picture:  addExtra = false; append = true; totalFieldsQuery.append(QLatin1String("picture"));  break;
+                case FacebookInterface::Location: addExtra = true; append = false; totalFieldsQuery.append(QLatin1String("location")); break; // not supported?
+                case FacebookInterface::Comment:  addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("comments")); break;
+                case FacebookInterface::User:     addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("friends"));  break; // subscriptions etc?
+                case FacebookInterface::Album:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("albums"));   break;
+                case FacebookInterface::Photo:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("photos"));   break;
+                case FacebookInterface::Event:    addExtra = true; append = true; totalFieldsQuery.append(QLatin1String("events"));   break;
+                default: break;
+            }
+
+            QString whichFieldsString;
+            QStringList whichFields = connectionWhichFields.at(i);
+            if (!whichFields.isEmpty())
+                whichFieldsString = QLatin1String(".fields(") + whichFields.join(",") + QLatin1String(")");
+
+            QString limitString;
+            int limit = connectionLimits.at(i);
+            if (limit == -1)
+                limitString = QLatin1String(".limit(0)");
+            else if (limit > 0)
+                limitString = QLatin1String(".limit(") + QString::number(limit) + QLatin1String(")");
+
+            if (append && addExtra && !limitString.isEmpty())
+                totalFieldsQuery.append(limitString);
+            if (append && addExtra && !whichFieldsString.isEmpty())
+                totalFieldsQuery.append(whichFieldsString);
+            if (append)
+                totalFieldsQuery.append(QLatin1String(","));
         }
 
-        QString whichFieldsString;
-        QStringList whichFields = connectionWhichFields.at(i);
-        if (!whichFields.isEmpty())
-            whichFieldsString = QLatin1String(".fields(") + whichFields.join(",") + QLatin1String(")");
+        totalFieldsQuery.chop(1); // remove trailing comma.
+        QVariantMap extraData;
+        extraData.insert("fields", totalFieldsQuery);
 
-        QString limitString;
-        int limit = connectionLimits.at(i);
-        if (limit > 0)
-            limitString = QLatin1String(".limit(") + QString::number(limit) + QLatin1String(")");
-
-        if (append && addExtra && !limitString.isEmpty())
-            totalFieldsQuery.append(limitString);
-        if (append && addExtra && !whichFieldsString.isEmpty())
-            totalFieldsQuery.append(whichFieldsString);
-        if (append)
-            totalFieldsQuery.append(QLatin1String(","));
+        // now start the request.
+        f->currentReply = getRequest(whichNode->identifier(), QString(), QStringList(), extraData);
+        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
+        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
     }
-
-    totalFieldsQuery.chop(1); // remove trailing comma.
-    QVariantMap extraData;
-    extraData.insert("fields", totalFieldsQuery);
-
-    // now start the request.
-    f->currentReply = getRequest(whichNode->identifier(), QString(), QStringList(), extraData);
-    connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-    connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
 }
 
 /*! \reimp */
@@ -744,72 +773,82 @@ void FacebookInterface::populateDataForNode(IdentifiableContentItemInterface *cu
     // continued in continuePopulateDataForSeenNode().
 }
 
+#define FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(data, type)                                \
+    do {                                                                                    \
+        QVariantList itemsList = data.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();   \
+        foreach (const QVariant &currVar, itemsList) {                                      \
+            QVariantMap currMap = currVar.toMap();                                          \
+            currMap.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, type);                    \
+            currMap.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID,                             \
+                    currMap.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());               \
+            relatedContent.append(d->createUncachedEntry(currMap));                         \
+        }                                                                                   \
+    } while (0)
+
 /*! \internal */
-void FacebookInterface::continuePopulateDataForSeenNode(const QVariantMap &relatedData)
+void FacebookInterface::continuePopulateDataForSeenNode(const QVariantMap &relatedData, const QUrl &requestUrl)
 {
     // We receive the related data and transform it into ContentItems.
     // Finally, we populate the cache for the node and update the internal model data.
 
+    QString continuationRequestUri;
     QList<CacheEntry *> relatedContent;
+    if (f->continuationRequestActive) {
+        // we are continuing a request, and thus don't overwrite the existing
+        // cache entries, but instead append to them.
+        bool ok = true;
+        relatedContent = d->cachedContent(d->currentNode(), &ok);
+        if (!ok) {
+            qWarning() << Q_FUNC_INFO << "Clobbering cached content in continuation request for node:" << d->currentNode()->identifier();
+        }
+    }
+
+    // construct related content items from the request results.
     QStringList keys = relatedData.keys();
     foreach (const QString &key, keys) {
 #if 0
 qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DATA(key, relatedData);
 #endif
-        if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_LIKES) {
-            QVariantMap likesObject = relatedData.value(key).toMap();
-            QVariantList likesData = likesObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currLike, likesData) {
-                QVariantMap clm = currLike.toMap();
-                clm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::Like);
-                clm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, clm.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(clm));
+        if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_DATA) {
+            // contains a list of objects, whose type should be described by the request uri
+            QString reqPath = requestUrl.path();
+            if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_LIKES)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::Like);
+            } else if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_COMMENTS)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::Comment);
+            } else if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_TAGS)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::Tag);
+            } else if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::Photo);
+            } else if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_ALBUMS)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::Album);
+            } else if (reqPath.endsWith(FACEBOOK_ONTOLOGY_CONNECTIONS_FRIENDS)) {
+                FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(relatedData, FacebookInterface::User);
+            } else {
+                qWarning() << Q_FUNC_INFO << "Informative: Unsupported data retrieved via edge:" << reqPath;
             }
+        } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_LIKES) {
+            QVariantMap likesObject = relatedData.value(key).toMap();
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(likesObject, FacebookInterface::Like);
         } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_COMMENTS) {
             QVariantMap commentsObject = relatedData.value(key).toMap();
-            QVariantList commentsData = commentsObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currComm, commentsData) {
-                QVariantMap ccm = currComm.toMap();
-                ccm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::Comment);
-                ccm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, ccm.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(ccm));
-            }
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(commentsObject, FacebookInterface::Comment);
         } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_TAGS) {
             QVariantMap tagsObject = relatedData.value(key).toMap();
-            QVariantList tagsData = tagsObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currTag, tagsData) {
-                QVariantMap ctm = currTag.toMap();
-                ctm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::Tag);
-                ctm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, ctm.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(ctm));
-            }
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(tagsObject, FacebookInterface::Tag);
         } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS) {
             QVariantMap photosObject = relatedData.value(key).toMap();
-            QVariantList photosData = photosObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currPhoto, photosData) {
-                QVariantMap cpm = currPhoto.toMap();
-                cpm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::Photo);
-                cpm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, cpm.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(cpm));
-            }
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(photosObject, FacebookInterface::Photo);
         } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_ALBUMS) {
             QVariantMap albumsObject = relatedData.value(key).toMap();
             QVariantList albumsData = albumsObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currAlbum, albumsData) {
-                QVariantMap cam = currAlbum.toMap();
-                cam.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::Album);
-                cam.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, cam.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(cam));
-            }
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(albumsObject, FacebookInterface::Album);
         } else if (key == FACEBOOK_ONTOLOGY_CONNECTIONS_FRIENDS) {
             QVariantMap friendsObject = relatedData.value(key).toMap();
-            QVariantList friendsData = friendsObject.value(FACEBOOK_ONTOLOGY_CONNECTIONS_DATA).toList();
-            foreach (const QVariant &currFriend, friendsData) {
-                QVariantMap cfm = currFriend.toMap();
-                cfm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE, FacebookInterface::User);
-                cfm.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, cfm.value(FACEBOOK_ONTOLOGY_METADATA_ID).toString());
-                relatedContent.append(d->createUncachedEntry(cfm));
-            }
+            FACEBOOK_CREATE_UNCACHED_ENTRY_FROM_DATA(friendsObject, FacebookInterface::User);
+        } else if (key == FACEBOOK_ONTOLOGY_METADATA_PAGING) {
+            QVariantMap pagingObject = relatedData.value(key).toMap();
+            continuationRequestUri = pagingObject.value(FACEBOOK_ONTOLOGY_METADATA_PAGING_NEXT).toString();
         } else if (key == FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER
                 || key == FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTPICTURE) {
             // can ignore this data - it's for the current node, which we already know.
@@ -822,13 +861,34 @@ qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DAT
     // XXX TODO: make the entire filter/sort codepath more efficient, by guaranteeing that whatever
     // comes out of the cache must be sorted/filtered already?  Requires invalidating the entire
     // cache on filter/sorter change, however... hrm...
+
     bool ok = false;
     d->populateCache(d->currentNode(), relatedContent, &ok);
-    if (!ok)
+    if (!ok) {
         qWarning() << Q_FUNC_INFO << "Error: Unable to populate the cache for the current node:" << d->currentNode()->identifier();
+    }
 
-    // Finally, update the model data.
+    // Update the model data.
     updateInternalData(relatedContent);
+
+    // If we need to request more (paged) data, do so.
+    if (continuationRequestUri.isEmpty()) {
+        // there are no more results / result pages to retrieve.
+        f->continuationRequestActive = false;
+        d->status = SocialNetworkInterface::Idle;
+        emit statusChanged();
+    } else {
+        // there are more results to retrieve.  Start a continuation request.
+        f->continuationRequestActive = true;
+        // grab the relevant parts of the continuation uri to create a new request.
+        QUrl continuationUrl(continuationRequestUri);
+        if (continuationUrl.queryItemValue(QLatin1String("access_token")).isEmpty())
+            continuationUrl.addQueryItem(QLatin1String("access_token"), f->accessToken);
+        f->currentReply = d->qnam->get(QNetworkRequest(continuationUrl));
+        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
+        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+    }
 }
 
 /*! \reimp */
