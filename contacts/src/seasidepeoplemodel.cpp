@@ -147,9 +147,7 @@ SeasidePerson *SeasidePeopleModel::personByRow(int row) const
 
 SeasidePerson *SeasidePeopleModel::personById(int id) const
 {
-    // TODO: can this crash? probably
-    SeasidePerson *person = priv->idToContact.value(id);
-    return person;
+    return priv->idToContact.value(id);
 }
 
 SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) const
@@ -242,12 +240,13 @@ QString SeasidePeopleModel::exportContacts() const
     contacts.reserve(priv->contactIds.size());
 
     foreach (const QContactLocalId &contactId, priv->contactIds) {
-        SeasidePerson *p = personById(contactId);
-
-        if (p->id() == manager()->selfContactId())
-            continue;
-
-        contacts.append(p->contact());
+        if ((contactId != 0) && (contactId != manager()->selfContactId())) {
+            if (SeasidePerson *p = personById(contactId)) {
+                contacts.append(p->contact());
+            } else {
+                qWarning() << Q_FUNC_INFO << "Failed to retrieve contact for export: " << contactId;
+            }
+        }
     }
 
     if (!exporter.exportContacts(contacts)) {
