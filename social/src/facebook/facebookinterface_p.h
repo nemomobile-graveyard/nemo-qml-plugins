@@ -32,6 +32,8 @@
 #ifndef FACEBOOKINTERFACE_P_H
 #define FACEBOOKINTERFACE_P_H
 
+#include "socialnetworkinterface_p.h"
+
 #include <QtCore/QObject>
 #include <QtCore/QVariantMap>
 #include <QtCore/QStringList>
@@ -60,6 +62,7 @@ public:
 
     bool populatePending;
     bool populateDataForUnseenPending;
+    bool continuationRequestActive;
 
     enum InternalStatus {
         Idle = 0,
