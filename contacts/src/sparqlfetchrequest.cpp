@@ -42,7 +42,10 @@
 #include <QSparqlResult>
 
 #include <QContactAvatar>
+#include <QContactEmailAddress>
 #include <QContactName>
+#include <QContactOnlineAccount>
+#include <QContactOrganization>
 #include <QContactPhoneNumber>
 
 #include <QElapsedTimer>
@@ -271,7 +274,11 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
                 "\n tracker:coalesce("
                 "\n  nie:url(nco:photo(?x)),"
                 "\n  nco:imAvatar(?imAccount))"
-                "\n GROUP_CONCAT(nco:phoneNumber(?phoneNumber), ';')");
+                "\n GROUP_CONCAT(nco:phoneNumber(?phoneNumber), ';')"
+                "\n GROUP_CONCAT(nco:emailAddress(?emailAddress), ';')"
+                "\n GROUP_CONCAT(nco:fullname(?organization), ';')"
+                "\n GROUP_CONCAT(nco:imID(?imAccount), ';')"
+                "\n GROUP_CONCAT(nco:imAccountType(?imAccount), ';')");
     }
 
     queryString += QLatin1String(
@@ -354,6 +361,28 @@ QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *r
                 QContactPhoneNumber number;
                 number.setNumber(string);
                 contact.saveDetail(&number);
+            }
+
+            foreach (const QString &string, results->value(6).toString().split(QLatin1Char(';'))) {
+                QContactEmailAddress address;
+                address.setEmailAddress(string);
+                contact.saveDetail(&address);
+            }
+
+            foreach (const QString &string, results->value(7).toString().split(QLatin1Char(';'))) {
+                QContactOrganization organization;
+                organization.setName(string);
+                contact.saveDetail(&organization);
+            }
+
+            const QStringList imIds = results->value(8).toString().split(QLatin1Char(';'));
+            const QStringList imTypes = results->value(9).toString().split(QLatin1Char(';'));
+
+            for (int i = 0; i < imIds.count() || i < imTypes.count(); ++i) {
+                QContactOnlineAccount account;
+                account.setAccountUri(imIds.value(i));
+                account.setServiceProvider(imTypes.value(i));
+                contact.saveDetail(&account);
             }
 
             contacts.append(contact);
