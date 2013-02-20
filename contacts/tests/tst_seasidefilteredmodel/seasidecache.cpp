@@ -34,6 +34,7 @@
 
 #include <QContactName>
 #include <QContactAvatar>
+#include <QContactEmailAddress>
 
 #include <QtDebug>
 
@@ -44,17 +45,19 @@ struct Contact
     const char *fullName;
     const char *avatar;
     const bool isFavorite;
+    const char *email;
+
 };
 
 static const Contact contactsData[] =
 {
-    { "Aaron", "Aaronson", "Aaron Aaronson", 0, false },            // 0
-    { "Aaron", "Arthur", "Aaron Arthur", 0, false },                // 1
-    { "Aaron", "Johns", "Aaron Johns", 0, true },                   // 2
-    { "Arthur", "Johns", "Arthur Johns", 0, false },                // 3
-    { "Jason", "Aaronson", "Jason Aaronson", 0, false },            // 4
-    { "Joe", "Johns", "Joe Johns", "file:///cache/joe.jpg", true }, // 5
-    { "Robin", "Burchell", "Robin Burchell", 0, true }              // 6
+    { "Aaron", "Aaronson", "Aaron Aaronson", 0, false, "aaronaa@example.com" },        // 0
+    { "Aaron", "Arthur", "Aaron Arthur", 0, false, "aaronar@example.com" },            // 1
+    { "Aaron", "Johns", "Aaron Johns", 0, true, "johns@example.com" },               // 2
+    { "Arthur", "Johns", "Arthur Johns", 0, false, "arthur1.johnz@example.org" },      // 3
+    { "Jason", "Aaronson", "Jason Aaronson", 0, false, "jay@examplez.org" },           // 4
+    { "Joe", "Johns", "Joe Johns", "file:///cache/joe.jpg", true, "jj@examplez.org" }, // 5
+    { "Robin", "Burchell", "Robin Burchell", 0, true, 0 }                                 // 6
 };
 
 SeasideCache *SeasideCache::instance = 0;
@@ -96,6 +99,13 @@ void SeasideCache::reset()
             avatar.setImageUrl(QUrl(QLatin1String(contactsData[i].avatar)));
             contact.saveDetail(&avatar);
         }
+
+        if (contactsData[i].email) {
+            QContactEmailAddress email;
+            email.setEmailAddress(QLatin1String(contactsData[i].email));
+            contact.saveDetail(&email);
+        }
+
         m_cache.append(SeasideCacheItem(contact));
     }
 }
