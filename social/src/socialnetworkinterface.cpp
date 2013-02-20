@@ -201,6 +201,7 @@ SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterf
     , qnam(new QNetworkAccessManager(parent))
     , placeHolderNode(new IdentifiableContentItemInterface(parent))
     , initialized(false)
+    , repopulatingCurrentNode(false)
     , error(SocialNetworkInterface::NoError)
     , status(SocialNetworkInterface::Initializing)
     , currentNodePosition(-1)
@@ -399,12 +400,13 @@ void SocialNetworkInterfacePrivate::pushNode(IdentifiableContentItemInterface *n
         currentNode = nodeStack.at(currentNodePosition);
 
     if (currentNode == n && currentNode != placeHolderNode)
-        return; // XXX TODO MAYBE: trigger reload of cache data for this node?
+        return; // nothing to do.
 
-    // Check to see if we need to replace the placeholder node.
-    if (currentNode == placeHolderNode) {
+    // Check to see if we need to replace the placeholder or current node.
+    if (currentNode == placeHolderNode || repopulatingCurrentNode) {
         // this will happen when the node data that the
         // derived type requested is received.
+        repopulatingCurrentNode = false;
         if (currentNodePosition != (nodeStack.size() - 1)) {
             qWarning() << Q_FUNC_INFO << "Error: placeholder node not the ToS!";
         } else {
@@ -555,10 +557,15 @@ void SocialNetworkInterfacePrivate::addEntryToNodeContent(IdentifiableContentIte
 /*! \internal */
 void SocialNetworkInterfacePrivate::removeEntryFromNodeContent(IdentifiableContentItemInterface *item, CacheEntry *entry)
 {
+    if (entry == 0)
+        return;
+
     int removeCount = nodeContent.remove(item, entry);
     if (removeCount == 0) {
         qWarning() << Q_FUNC_INFO << "Entry:" << entry << "is not cached as content for node:" << item;
         return;
+    } else if (removeCount > 1) {
+        qWarning() << Q_FUNC_INFO << "Entry:" << entry << "was cached" << removeCount << "times as content for node:" << item;
     }
 
     derefCacheEntry(entry);
@@ -629,16 +636,17 @@ void SocialNetworkInterfacePrivate::populateCache(IdentifiableContentItemInterfa
 
     *ok = true;
 
-    QList<CacheEntry*> newData;
+    QList<CacheEntry*> existingGoodEntries;
+    QList<CacheEntry*> newCacheEntries;
     if (nodeContent.contains(n)) {
         // updating existing cache entry.
         QList<CacheEntry*> oldData = nodeContent.values(n);
         QList<CacheEntry*> doomedData;
         foreach (CacheEntry *currData, oldData) {
-            if (!c.contains(currData)) {
-                doomedData.append(currData);
+            if (c.contains(currData)) {
+                existingGoodEntries.append(currData);
             } else {
-                newData.append(currData);
+                doomedData.append(currData);
             }
         }
 
@@ -647,13 +655,20 @@ void SocialNetworkInterfacePrivate::populateCache(IdentifiableContentItemInterfa
             // not contained in the updated cache.
             removeEntryFromNodeContent(n, doomedContent);
         }
+
+        // add new entries to the cache
+        foreach (CacheEntry *newEntry, c) {
+            if (!existingGoodEntries.contains(newEntry)) {
+                newCacheEntries.append(newEntry);
+            }
+        }
     } else {
         // new cache entry.
-        newData = c;
+        newCacheEntries = c;
     }
 
     // populate the cache for the node n from the content c.
-    foreach (CacheEntry *currData, newData) {
+    foreach (CacheEntry *currData, newCacheEntries) {
         addEntryToNodeContent(n, currData);
     }
 }
@@ -857,6 +872,10 @@ QString SocialNetworkInterface::errorMessage() const
     in the node stack, the \c node property will be set to an empty placeholder
     node until the network request completes and the node can be populated with
     the downloaded data.
+
+    If the \c nodeIdentifier is set to the identifier of the current node,
+    the cached data for the node will be cleared and the node and its related
+    data will be reloaded from the network.
 */
 QString SocialNetworkInterface::nodeIdentifier() const
 {
@@ -868,7 +887,13 @@ QString SocialNetworkInterface::nodeIdentifier() const
 void SocialNetworkInterface::setNodeIdentifier(const QString &contentItemIdentifier)
 {
     IdentifiableContentItemInterface *cachedNode = d->findCachedNode(contentItemIdentifier);
-    if (!cachedNode) {
+    if (d->currentNode() && contentItemIdentifier == d->currentNode()->identifier()) {
+        // resetting the current node.  This tells us to reload the node, clear its cache and repopulate.
+        d->repopulatingCurrentNode = true;
+        d->pendingCurrentNodeIdentifier = contentItemIdentifier;
+        populateDataForNode(contentItemIdentifier); // "unseen node" without pushing placeholder.
+    } else if (!cachedNode) {
+        // Unseen node.
         // call derived class data populate:
         //   d->populateCache() etc once it's finished retrieving.
         //   d->pushNode(newNodePtr).
@@ -878,6 +903,7 @@ void SocialNetworkInterface::setNodeIdentifier(const QString &contentItemIdentif
         emit nodeChanged();
         populateDataForNode(contentItemIdentifier); // XXX TODO: do we really want to trigger populate?  or wait for user to call populate?
     } else {
+        // We've seen this node before and have it cached.
         bool hasCachedContent = false;
         QList<CacheEntry*> data = d->cachedContent(cachedNode, &hasCachedContent);
         if (hasCachedContent) {

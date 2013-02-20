@@ -96,6 +96,7 @@ public:
     IdentifiableContentItemInterface *placeHolderNode;
 
     bool initialized;
+    bool repopulatingCurrentNode;
 
     QString errorMessage;
     SocialNetworkInterface::ErrorType error;

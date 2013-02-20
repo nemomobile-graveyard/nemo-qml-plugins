@@ -55,6 +55,8 @@
 #define FACEBOOK_ONTOLOGY_METADATA_FIELDS                  QLatin1String("fields")
 #define FACEBOOK_ONTOLOGY_METADATA_TYPE                    QLatin1String("type")
 #define FACEBOOK_ONTOLOGY_METADATA_ID                      QLatin1String("id")
+#define FACEBOOK_ONTOLOGY_METADATA_PAGING                  QLatin1String("paging")
+#define FACEBOOK_ONTOLOGY_METADATA_PAGING_NEXT             QLatin1String("next")
 
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_LIKES                QLatin1String("likes")
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_COMMENTS             QLatin1String("comments")

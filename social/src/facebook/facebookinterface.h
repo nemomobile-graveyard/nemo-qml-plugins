@@ -124,7 +124,7 @@ private:
 private:
     void retrieveRelatedContent(IdentifiableContentItemInterface *whichNode);
     void continuePopulateDataForUnseenNode(const QVariantMap &nodeData);
-    void continuePopulateDataForSeenNode(const QVariantMap &nodeData);
+    void continuePopulateDataForSeenNode(const QVariantMap &nodeData, const QUrl &requestUrl);
 
     // private data.
 private:
