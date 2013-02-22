@@ -137,8 +137,13 @@ QUrl NemoThumbnailItem::source() const
 
 void NemoThumbnailItem::setSource(const QUrl &source)
 {
-    if (m_source != source) {
-        m_source = source;
+    QString strSource = source.toString();
+    if (strSource.contains(QChar('%'))) {
+        strSource = QUrl::fromPercentEncoding(source.toString().toUtf8());
+    }
+
+    if (m_source != strSource) {
+        m_source = strSource;
         emit sourceChanged();
         updateThumbnail(true);
     }
