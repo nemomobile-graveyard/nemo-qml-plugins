@@ -161,5 +161,9 @@ int FolderListModel::totalNumberOfFolders()
 QVariant FolderListModel::folderUnreadCount(QVariant folderId)
 {
     int folderIndex = indexFromFolderId(folderId);
+
+    if (folderIndex < 0)
+        return 0;
+
     return data(index(folderIndex), FolderUnreadCount);
 }
