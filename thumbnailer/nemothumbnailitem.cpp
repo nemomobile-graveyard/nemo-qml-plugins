@@ -56,6 +56,7 @@ struct ThumbnailRequest
     QSize size;
     QImage image;
     NemoThumbnailItem::FillMode fillMode;
+    bool decodeFileName;
 };
 
 ThumbnailRequest::ThumbnailRequest(
@@ -68,6 +69,7 @@ ThumbnailRequest::ThumbnailRequest(
     , mimeType(item->m_mimeType)
     , size(item->m_sourceSize)
     , fillMode(item->m_fillMode)
+    , decodeFileName(false)
 {
 }
 
@@ -137,13 +139,8 @@ QUrl NemoThumbnailItem::source() const
 
 void NemoThumbnailItem::setSource(const QUrl &source)
 {
-    QString strSource = source.toString();
-    if (strSource.contains(QChar('%'))) {
-        strSource = QUrl::fromPercentEncoding(source.toString().toLatin1());
-    }
-
-    if (m_source != strSource) {
-        m_source = strSource;
+    if (m_source != source) {
+        m_source = source;
         emit sourceChanged();
         updateThumbnail(true);
     }
@@ -372,9 +369,16 @@ bool NemoThumbnailLoader::event(QEvent *event)
                     completedRequest->item->setImplicitHeight(completedRequest->item->m_pixmap.height());
                     emit completedRequest->item->statusChanged();
                 } else {
-                    completedRequest->item->m_pixmap = QPixmap();
-                    completedRequest->item->m_status = NemoThumbnailItem::Error;
-                    emit completedRequest->item->statusChanged();
+                    if(!completedRequest->decodeFileName){
+                        completedRequest->decodeFileName = true;
+                        QUrl newUrl(QByteArray::fromPercentEncoding(completedRequest->item->m_source.toString().toLatin1()));
+                        completedRequest->item->setSource(newUrl);
+                    } else {
+                        completedRequest->item->m_pixmap = QPixmap();
+                        completedRequest->item->m_status = NemoThumbnailItem::Error;
+                        emit completedRequest->item->statusChanged();
+                    }
+
                 }
                 completedRequest->item->update();
             }
