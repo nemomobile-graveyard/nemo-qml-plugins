@@ -289,6 +289,11 @@ void AccountInterfacePrivate::invalidate()
 void AccountInterfacePrivate::handleSynced()
 {
     if (status == AccountInterface::SyncInProgress) {
+        if (!account) {
+            qWarning() << Q_FUNC_INFO << "Account not valid";
+            return;
+        }
+
         // check to see if the id was updated
         int newIdentifier = account->id();
         if (identifier != newIdentifier) {
