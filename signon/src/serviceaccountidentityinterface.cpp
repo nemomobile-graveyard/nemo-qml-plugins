@@ -477,17 +477,22 @@ void ServiceAccountIdentityInterface::signOut()
     The ServiceAccountIdentity will have a status of Invalid
     until its identifier is set to the identifier of a valid
     Identity in the database.
-
-    Once set, you may not change the identifier.
 */
 
 void ServiceAccountIdentityInterface::setIdentifier(int identityId)
 {
     // XXX TODO: make this more robust using QDeclarativeParserStatus / Initializing.
-    if (identityId == 0)
+    if (identityId == 0 || identityId == identifier())
         return;
 
     if (!d->startedInitialization) {
+        d->startedInitialization = true;
+        SignOn::Identity *ident = SignOn::Identity::existingIdentity(identityId, d);
+        d->setIdentity(ident, true, true);
+        emit identifierChanged();
+    } else {
+        d->deleteLater();
+        d = new ServiceAccountIdentityInterfacePrivate(0, this);
         d->startedInitialization = true;
         SignOn::Identity *ident = SignOn::Identity::existingIdentity(identityId, d);
         d->setIdentity(ident, true, true);

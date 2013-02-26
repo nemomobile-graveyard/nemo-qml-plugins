@@ -77,6 +77,18 @@ void IdentityInterfacePrivate::setIdentity(SignOn::Identity *ident)
 
     identity = ident;
     identifier = identity->id();
+    if (status != IdentityInterface::Initializing) {
+        status = IdentityInterface::Initializing;
+        bool needsEmit = false;
+        if (statusMessage != QLatin1String("Initializing due to identifier change")) {
+            statusMessage = QLatin1String("Initializing due to identifier change");
+            needsEmit = true;
+        }
+        emit q->statusChanged();
+        if (needsEmit) {
+            emit q->statusMessageChanged();
+        }
+    }
 
     connect(identity, SIGNAL(info(SignOn::IdentityInfo)), this, SLOT(handleInfo(SignOn::IdentityInfo)));
     connect(identity, SIGNAL(removed()), this, SLOT(handleRemoved()));
@@ -474,9 +486,6 @@ void IdentityInterface::componentComplete()
 
     If the \c identifier is set, the identity in the database
     with the specified identifier will be loaded.
-
-    You cannot change identifier of the Identity after initialization,
-    unless you initialize the identifierPending property to true.
 */
 
 int IdentityInterface::identifier() const
@@ -496,15 +505,29 @@ void IdentityInterface::setIdentifier(int id)
                 emit identifierChanged();
             componentComplete(); // now initialize.
         }
+    } else if (id != 0 && id != d->identifier) {
+        // changing identifier after initialisation.
+        if (d->identity && d->identity->parent() == this) {
+            disconnect(d->identity);
+            d->identity->deleteLater();
+        }
+
+        d->identity = 0;
+        d->identifier = id;
+        componentComplete();
     }
 }
 
 /*!
     \qmlproperty int Identity::identifierPending
+
     This property should be set to true if the Identity is an existing
     identity, but the identifier is not available at initialization time.
     When this property is set, the Identity will remain in the Initializing
     state until the identifier is set.
+
+    If this property is not set, and no identifier is set for the Identity,
+    a new signon identity will be instantiated for the Identity.
 */
 bool IdentityInterface::identifierPending() const
 {

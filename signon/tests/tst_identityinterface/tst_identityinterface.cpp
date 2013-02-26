@@ -108,8 +108,35 @@ void tst_IdentityInterface::identifier()
     QTRY_COMPARE(spy.count(), 1);
     QVERIFY(identity->identifier() > 0);
 
+    QScopedPointer<IdentityInterface> identityTwo(new IdentityInterface);
+    identityTwo->classBegin();
+    identityTwo->componentComplete();
+    QTRY_COMPARE(identityTwo->status(), IdentityInterface::Initialized);
+    QCOMPARE(identityTwo->identifier(), 0);
+    QSignalSpy spyTwo(identityTwo.data(), SIGNAL(identifierChanged()));
+    identityTwo->setUserName(QString(QLatin1String("test-username-two")));
+    identityTwo->setSecret(QString(QLatin1String("test-secret")));
+    identityTwo->setCaption(QString(QLatin1String("test-caption")));
+    identityTwo->setMethodMechanisms(QString(QLatin1String("password")), QStringList() << QString(QLatin1String("ClientLogin")));
+    identityTwo->sync();
+    QTRY_COMPARE(spyTwo.count(), 1);
+    QVERIFY(identityTwo->identifier() > 0);
+
+    // this one doesn't create a new identity, but references an existing identity
+    QScopedPointer<IdentityInterface> identityThree(new IdentityInterface);
+    identityThree->classBegin();
+    identityThree->setIdentifier(identity->identifier());
+    identityThree->componentComplete();
+    QTRY_COMPARE(identityThree->status(), IdentityInterface::Initialized);
+    QCOMPARE(identityThree->userName(), QLatin1String("test-username"));
+    identityThree->setIdentifier(identityTwo->identifier()); // test that you can set it after initialization.
+    QCOMPARE(identityThree->status(), IdentityInterface::Initializing);
+    QTRY_COMPARE(identityThree->status(), IdentityInterface::Synced);
+    QCOMPARE(identityThree->userName(), QLatin1String("test-username-two"));
+
     // cleanup
     identity->remove();
+    identityTwo->remove();
 }
 
 void tst_IdentityInterface::identifierPending()
