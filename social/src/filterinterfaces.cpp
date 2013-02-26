@@ -38,7 +38,7 @@
 
 // ------------------------------ FilterInterface
 
-FilterInterface::FilterInterface(QObject *parent) : QObject(parent)
+FilterInterface::FilterInterface(QObject *parent) : QObject(parent), m_ownedBySni(false)
 {
 }
 

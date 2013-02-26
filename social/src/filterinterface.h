@@ -35,6 +35,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QVariantMap>
 
+class SocialNetworkInterfacePrivate;
 class ContentItemInterface;
 
 class FilterInterface : public QObject
@@ -46,6 +47,10 @@ public:
     virtual ~FilterInterface();
     virtual Q_INVOKABLE bool matches(ContentItemInterface *content) const;
     virtual Q_INVOKABLE bool matches(const QVariantMap &contentData) const;
+
+private:
+    bool m_ownedBySni;
+    friend class SocialNetworkInterfacePrivate;
 };
 
 #endif // FILTERINTERFACE_H
