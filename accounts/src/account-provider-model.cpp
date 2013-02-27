@@ -77,6 +77,7 @@ AccountProviderModel::AccountProviderModel(QObject* parent)
 
     setRoleNames(d->headerData);
     Accounts::Manager m;
+    Accounts::ServiceList allServices = m.serviceList(); // force reload of service files.
     Accounts::ProviderList providers = m.providerList();
 
     for (int i = 0; i < providers.size(); i++)

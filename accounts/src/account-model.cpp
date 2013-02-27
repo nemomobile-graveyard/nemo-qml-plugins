@@ -71,6 +71,7 @@ AccountModel::AccountModel(QObject* parent)
 {
     Q_D(AccountModel);
     d->manager = new Accounts::Manager();
+    Accounts::ServiceList allServices = d->manager->serviceList(); // force reload of service files.
     d->headerData.insert(AccountIdRole, "accountId");
     d->headerData.insert(AccountDisplayNameRole, "accountDisplayName");
     d->headerData.insert(AccountIconRole, "accountIcon" );
