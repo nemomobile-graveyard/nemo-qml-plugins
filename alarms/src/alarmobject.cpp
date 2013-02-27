@@ -137,6 +137,7 @@ void AlarmObject::save()
         ev.setAlarmFlag();
         // Trigger the voland alarm/reminder dialog
         ev.setReminderFlag();
+        ev.setBootFlag();
 
         ev.setAttribute(QLatin1String("APPLICATION"), QLatin1String("nemoalarms"));
         ev.setAttribute(QLatin1String("createdDate"), m_createdDate.toString());
