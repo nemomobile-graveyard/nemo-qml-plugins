@@ -44,6 +44,9 @@
 #include <QContactOrganization>
 #include <QContactUrl>
 
+#include <QVersitWriter>
+#include <QVersitContactExporter>
+
 #include "seasideperson.h"
 
 SeasidePerson::SeasidePerson(QObject *parent)
@@ -772,3 +775,21 @@ void SeasidePerson::setContact(const QContact &contact)
     recalculateDisplayLabel();
 }
 
+QString SeasidePerson::vCard() const
+{
+    QVersitContactExporter exporter;
+    if (!exporter.exportContacts(QList<QContact>() << mContact, QVersitDocument::VCard21Type)) {
+        qWarning() << Q_FUNC_INFO << "Failed to create vCard: " << exporter.errorMap();
+        return QString();
+    }
+
+    QByteArray vcard;
+    QVersitWriter writer(&vcard);
+    if (!writer.startWriting(exporter.documents())) {
+        qWarning() << Q_FUNC_INFO << "Can't start writing vcard " << writer.error();
+        return QString();
+    }
+    writer.waitForFinished();
+
+    return QString::fromUtf8(vcard);
+}
