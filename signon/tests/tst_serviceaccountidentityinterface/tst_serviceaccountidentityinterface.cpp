@@ -216,13 +216,16 @@ void tst_ServiceAccountIdentityInterface::signIn()
     QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
     int identityIdentifier = identity->identifier();
 
-    QScopedPointer<ServiceAccountIdentityInterface> saidentity(new ServiceAccountIdentityInterface);
+    ServiceAccountIdentityInterface *saidentity = new ServiceAccountIdentityInterface;
     saidentity->setIdentifier(identityIdentifier);
     QTRY_COMPARE(saidentity->status(), ServiceAccountIdentityInterface::Initialized);
     QCOMPARE(saidentity->methods(), QStringList() << QString(QLatin1String("password")));
     QCOMPARE(saidentity->methodMechanisms("password"), QStringList() << QString(QLatin1String("ClientLogin")));
     QVERIFY(saidentity->signIn("password", "ClientLogin", QVariantMap()));
     // not expecting a response, as the client login signon plugin may not exist.
+    QSignalSpy spy(saidentity, SIGNAL(statusChanged()));
+    delete saidentity; // delete should also sign out
+    QCOMPARE(spy.count(), 1); // (some signIn() state) -> NotStarted
 
     // cleanup
     identity->remove();

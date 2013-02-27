@@ -80,8 +80,8 @@ void IdentityInterfacePrivate::setIdentity(SignOn::Identity *ident)
     if (status != IdentityInterface::Initializing) {
         status = IdentityInterface::Initializing;
         bool needsEmit = false;
-        if (statusMessage != QLatin1String("Initializing due to identifier change")) {
-            statusMessage = QLatin1String("Initializing due to identifier change");
+        if (!statusMessage.isEmpty()) {
+            statusMessage = QString();
             needsEmit = true;
         }
         emit q->statusChanged();
@@ -451,6 +451,7 @@ IdentityInterface::IdentityInterface(SignOn::Identity *ident, QObject *parent)
 
 IdentityInterface::~IdentityInterface()
 {
+    signOut(); // sign out of the currently active authsession
 }
 
 // QDeclarativeParserStatus
@@ -927,6 +928,13 @@ void IdentityInterface::remove()
     if (!d->identity)
         return;
 
+    // since we are removing the SignOn::Identity itself, we not only sign
+    // out of the active auth session via IdentityInterface::signOut() but
+    // we actually sign out of all active auth sessions via
+    // SignOn::Identity::signOut().
+    d->identity->signOut();
+
+    // remove the identity
     d->setStatus(IdentityInterface::SyncInProgress);
     d->identity->remove();
     d->identity = 0; // seems like libsignon-qt doesn't propagate the signal correctly.  assume it worked...

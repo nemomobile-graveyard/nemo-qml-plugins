@@ -267,6 +267,7 @@ ServiceAccountIdentityInterface::ServiceAccountIdentityInterface(SignOn::Identit
 
 ServiceAccountIdentityInterface::~ServiceAccountIdentityInterface()
 {
+    signOut();
 }
 
 /*!
