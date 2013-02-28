@@ -101,19 +101,33 @@ void tst_ServiceAccountIdentityInterface::identifier()
     int identityIdentifier = identity->identifier();
     QVERIFY(identityIdentifier > 0); // ensure save succeeded.
 
+    // second, create another new Identity so that we can try post-initialization identifier change
+    QScopedPointer<IdentityInterface> identityTwo(new IdentityInterface);
+    identityTwo->classBegin();
+    identityTwo->componentComplete();
+    QTRY_COMPARE(identityTwo->status(), IdentityInterface::Initialized);
+    identityTwo->setUserName(QString(QLatin1String("test-username-two")));
+    identityTwo->sync(); // begin sync.
+    QTRY_COMPARE(identityTwo->status(), IdentityInterface::Synced);
+    int identityIdentifierTwo = identityTwo->identifier();
+    QVERIFY(identityIdentifierTwo > 0); // ensure save succeeded.
+
     QScopedPointer<ServiceAccountIdentityInterface> saidentity(new ServiceAccountIdentityInterface);
     QCOMPARE(saidentity->identifier(), 0);
     QSignalSpy spy(saidentity.data(), SIGNAL(identifierChanged()));
     saidentity->setIdentifier(identityIdentifier);
     QTRY_COMPARE(spy.count(), 1);
     QCOMPARE(saidentity->identifier(), identityIdentifier);
-    saidentity->setIdentifier(identityIdentifier + 1);
-    QTest::qWait(500);
-    QCOMPARE(saidentity->identifier(), identityIdentifier); // once set, cannot be set to anything else.
-    QCOMPARE(spy.count(), 1);
+    saidentity->setIdentifier(identityIdentifier + 999999); // some invalid identifier
+    QCOMPARE(saidentity->status(), ServiceAccountIdentityInterface::Initializing);
+    QTRY_COMPARE(saidentity->status(), ServiceAccountIdentityInterface::Error); // invalid identifier
+    saidentity->setIdentifier(identityIdentifierTwo);
+    QCOMPARE(saidentity->status(), ServiceAccountIdentityInterface::Initializing);
+    QTRY_COMPARE(saidentity->status(), ServiceAccountIdentityInterface::Initialized);
 
     // cleanup
     identity->remove();
+    identityTwo->remove();
 }
 
 void tst_ServiceAccountIdentityInterface::status()
@@ -202,13 +216,16 @@ void tst_ServiceAccountIdentityInterface::signIn()
     QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
     int identityIdentifier = identity->identifier();
 
-    QScopedPointer<ServiceAccountIdentityInterface> saidentity(new ServiceAccountIdentityInterface);
+    ServiceAccountIdentityInterface *saidentity = new ServiceAccountIdentityInterface;
     saidentity->setIdentifier(identityIdentifier);
     QTRY_COMPARE(saidentity->status(), ServiceAccountIdentityInterface::Initialized);
     QCOMPARE(saidentity->methods(), QStringList() << QString(QLatin1String("password")));
     QCOMPARE(saidentity->methodMechanisms("password"), QStringList() << QString(QLatin1String("ClientLogin")));
     QVERIFY(saidentity->signIn("password", "ClientLogin", QVariantMap()));
     // not expecting a response, as the client login signon plugin may not exist.
+    QSignalSpy spy(saidentity, SIGNAL(statusChanged()));
+    delete saidentity; // delete should also sign out
+    QCOMPARE(spy.count(), 1); // (some signIn() state) -> NotStarted
 
     // cleanup
     identity->remove();

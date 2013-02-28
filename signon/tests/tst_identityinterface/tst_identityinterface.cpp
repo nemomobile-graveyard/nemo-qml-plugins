@@ -108,8 +108,35 @@ void tst_IdentityInterface::identifier()
     QTRY_COMPARE(spy.count(), 1);
     QVERIFY(identity->identifier() > 0);
 
+    QScopedPointer<IdentityInterface> identityTwo(new IdentityInterface);
+    identityTwo->classBegin();
+    identityTwo->componentComplete();
+    QTRY_COMPARE(identityTwo->status(), IdentityInterface::Initialized);
+    QCOMPARE(identityTwo->identifier(), 0);
+    QSignalSpy spyTwo(identityTwo.data(), SIGNAL(identifierChanged()));
+    identityTwo->setUserName(QString(QLatin1String("test-username-two")));
+    identityTwo->setSecret(QString(QLatin1String("test-secret")));
+    identityTwo->setCaption(QString(QLatin1String("test-caption")));
+    identityTwo->setMethodMechanisms(QString(QLatin1String("password")), QStringList() << QString(QLatin1String("ClientLogin")));
+    identityTwo->sync();
+    QTRY_COMPARE(spyTwo.count(), 1);
+    QVERIFY(identityTwo->identifier() > 0);
+
+    // this one doesn't create a new identity, but references an existing identity
+    QScopedPointer<IdentityInterface> identityThree(new IdentityInterface);
+    identityThree->classBegin();
+    identityThree->setIdentifier(identity->identifier());
+    identityThree->componentComplete();
+    QTRY_COMPARE(identityThree->status(), IdentityInterface::Initialized);
+    QCOMPARE(identityThree->userName(), QLatin1String("test-username"));
+    identityThree->setIdentifier(identityTwo->identifier()); // test that you can set it after initialization.
+    QCOMPARE(identityThree->status(), IdentityInterface::Initializing);
+    QTRY_COMPARE(identityThree->status(), IdentityInterface::Synced);
+    QCOMPARE(identityThree->userName(), QLatin1String("test-username-two"));
+
     // cleanup
     identity->remove();
+    identityTwo->remove();
 }
 
 void tst_IdentityInterface::identifierPending()
@@ -307,22 +334,54 @@ void tst_IdentityInterface::methods()
 
 void tst_IdentityInterface::signInOut()
 {
-    // first, create a new Identity so that we can use it for authentication.
+    // test that signIn / signOut work, and that remove() signs out if necessary
+    {
+        // first, create a new Identity so that we can use it for authentication.
+        QScopedPointer<IdentityInterface> identity(new IdentityInterface);
+        identity->classBegin();
+        identity->componentComplete();
+        QTRY_COMPARE(identity->status(), IdentityInterface::Initialized);
+        identity->setUserName(QString(QLatin1String("test-username")));
+        identity->setMethodMechanisms(QString(QLatin1String("password")), QStringList() << QString(QLatin1String("ClientLogin")));
+        identity->sync(); // begin sync.
+        QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
+        QVERIFY(identity->signIn("password", "ClientLogin", QVariantMap())); // start new auth session
+        // not expecting a response, as the client login signon plugin may not exist.
+        QVERIFY(!identity->signIn("password", "ClientLogin", QVariantMap())); // already in progress
+        identity->process(QVariantMap()); // shouldn't crash
+        identity->signOut(); // shouldn't crash
+        QVERIFY(identity->signIn("password", "ClientLogin", QVariantMap())); // start new auth session
+        QSignalSpy spy(identity.data(), SIGNAL(statusChanged()));
+        identity->remove(); // remove should also signOut.
+        QCOMPARE(spy.count(), 3); // (some signIn() state) -> NotStarted -> SyncInProgress -> Invalid
+    }
+
+    // test that dtor signs out if necessary
+    int identityToRemove = 0;
+    {
+        // first, create a new Identity so that we can use it for authentication.
+        IdentityInterface *identity = new IdentityInterface;
+        identity->classBegin();
+        identity->componentComplete();
+        QTRY_COMPARE(identity->status(), IdentityInterface::Initialized);
+        identity->setUserName(QString(QLatin1String("test-username")));
+        identity->setMethodMechanisms(QString(QLatin1String("password")), QStringList() << QString(QLatin1String("ClientLogin")));
+        identity->sync(); // begin sync.
+        QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
+        identityToRemove = identity->identifier();
+        QVERIFY(identity->signIn("password", "ClientLogin", QVariantMap())); // start new auth session
+        // not expecting a response, as the client login signon plugin may not exist.
+        QSignalSpy spy(identity, SIGNAL(statusChanged()));
+        delete identity; // delete should also sign out
+        QCOMPARE(spy.count(), 1); // (some signIn() state) -> NotStarted
+    }
+
+    // clean up
     QScopedPointer<IdentityInterface> identity(new IdentityInterface);
     identity->classBegin();
+    identity->setIdentifier(identityToRemove);
     identity->componentComplete();
-    QTRY_COMPARE(identity->status(), IdentityInterface::Initialized);
-    identity->setUserName(QString(QLatin1String("test-username")));
-    identity->setMethodMechanisms(QString(QLatin1String("password")), QStringList() << QString(QLatin1String("ClientLogin")));
-    identity->sync(); // begin sync.
-    QTRY_COMPARE(identity->status(), IdentityInterface::Synced);
-    QVERIFY(identity->signIn("password", "ClientLogin", QVariantMap())); // start new auth session
-    // not expecting a response, as the client login signon plugin may not exist.
-    QVERIFY(!identity->signIn("password", "ClientLogin", QVariantMap())); // already in progress
-    identity->process(QVariantMap()); // shouldn't crash
-    identity->signOut(); // shouldn't crash
-
-    // cleanup
+    QTRY_VERIFY(identity->status() == IdentityInterface::Initialized || identity->status() == IdentityInterface::Synced);
     identity->remove();
 }
 

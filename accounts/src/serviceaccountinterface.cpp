@@ -113,17 +113,21 @@ ServiceAccountInterface::~ServiceAccountInterface()
 
 bool ServiceAccountInterface::enabled() const
 {
-    return d->serviceAccount->enabled();
+    if (d->serviceAccount)
+        return d->serviceAccount->enabled();
+    return false;
 }
 
 /*!
     \qmlproperty int ServiceAccount::identifier
-    Returns the identifier of the account
+    Returns the identifier of the account, or zero if not initialized
 */
 
 int ServiceAccountInterface::identifier() const
 {
-    return d->serviceAccount->account()->id();
+    if (d->serviceAccount && d->serviceAccount->account())
+        return d->serviceAccount->account()->id();
+    return 0;
 }
 
 /*!
@@ -171,8 +175,12 @@ void ServiceAccountInterface::setConfigurationValue(const QString &key, const QV
         return;
     }
 
-    d->serviceAccount->setValue(key, value);
-    d->serviceAccount->account()->sync();
+    if (d->serviceAccount) {
+        d->serviceAccount->setValue(key, value);
+        if (d->serviceAccount->account()) {
+            d->serviceAccount->account()->sync();
+        }
+    }
 }
 
 /*!
@@ -184,8 +192,12 @@ void ServiceAccountInterface::setConfigurationValue(const QString &key, const QV
 */
 void ServiceAccountInterface::removeConfigurationValue(const QString &key)
 {
-    d->serviceAccount->remove(key);
-    d->serviceAccount->account()->sync();
+    if (d->serviceAccount) {
+        d->serviceAccount->remove(key);
+        if (d->serviceAccount->account()) {
+            d->serviceAccount->account()->sync();
+        }
+    }
 }
 
 /*!
@@ -217,6 +229,8 @@ QVariantMap ServiceAccountInterface::unrelatedValues() const
     // doesn't emit a changed() signal the way Accounts::AccountService does.
     // Since we can't notify on changes, let's not pretend it's a property.
     Accounts::Account *acct = d->serviceAccount->account();
+    if (!acct)
+        return QVariantMap();
     Accounts::Service srv = acct->selectedService();
     acct->selectService(Accounts::Service());
     QStringList allKeys = acct->allKeys();

@@ -36,7 +36,7 @@
 // ------------------------------ SorterInterface
 
 SorterInterface::SorterInterface(QObject *parent)
-    : QObject(parent)
+    : QObject(parent), m_ownedBySni(false)
 {
 }
 

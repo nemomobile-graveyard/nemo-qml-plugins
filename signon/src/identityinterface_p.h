@@ -40,6 +40,8 @@
 #include <SignOn/Identity>
 #include <SignOn/identityinfo.h>
 
+using namespace SignOn;
+
 class IdentityInterfacePrivate : public QObject
 {
     Q_OBJECT
@@ -98,7 +100,7 @@ public Q_SLOTS:
 
     // auth session related
     void handleResponse(const SignOn::SessionData &sd);
-    void handleStateChanged(SignOn::AuthSession::AuthSessionState newState, const QString &message);
+    void handleStateChanged(AuthSession::AuthSessionState newState, const QString &message);
 
 public:
     void setUpSessionSignals();
