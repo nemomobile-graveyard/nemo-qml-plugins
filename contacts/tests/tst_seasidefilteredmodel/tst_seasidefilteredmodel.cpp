@@ -213,7 +213,7 @@ void tst_SeasideFilteredModel::filterPattern()
     patternSpy.clear();
     removedSpy.clear();
 
-    //
+    // empty
     model.setFilterType(SeasideFilteredModel::FilterFavorites);
     QCOMPARE(model.filterPattern(), QString("aaronso"));
     QCOMPARE(model.rowCount(), 0);
@@ -297,7 +297,7 @@ void tst_SeasideFilteredModel::filterPattern()
     insertedSpy.clear();
     removedSpy.clear();
 
-    //
+    // empty
     model.setFilterPattern(QString());
     QCOMPARE(model.filterPattern(), QString());
     QCOMPARE(model.rowCount(), 0);

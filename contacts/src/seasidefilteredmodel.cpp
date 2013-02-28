@@ -53,6 +53,8 @@ static void insert(
         destination->insert(to + i, source.at(i));
 }
 
+// Splits a string at word boundaries identified by QTextBoundaryFinder and returns a list of
+// of the fragments that occur between StartWord and EndWord boundaries.
 static QStringList splitWords(const QString &string)
 {
     QStringList words;
