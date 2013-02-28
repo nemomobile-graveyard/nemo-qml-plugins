@@ -227,8 +227,11 @@ SocialNetworkInterfacePrivate::~SocialNetworkInterfacePrivate()
 void SocialNetworkInterfacePrivate::filters_append(QDeclarativeListProperty<FilterInterface> *list, FilterInterface *filter)
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
-    if (sni) {
-        filter->setParent(sni);
+    if (sni && filter) {
+        if (!filter->parent()) {
+            filter->setParent(sni);
+            filter->m_ownedBySni = true;
+        }
         sni->d->filters.append(filter);
     }
 }
@@ -247,8 +250,11 @@ void SocialNetworkInterfacePrivate::filters_clear(QDeclarativeListProperty<Filte
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
-        foreach (FilterInterface *cf, sni->d->filters)
-            cf->deleteLater();
+        foreach (FilterInterface *cf, sni->d->filters) {
+            if (cf->m_ownedBySni) {
+                cf->deleteLater();
+            }
+        }
         sni->d->filters.clear();
     }
 }
@@ -266,8 +272,11 @@ int SocialNetworkInterfacePrivate::filters_count(QDeclarativeListProperty<Filter
 void SocialNetworkInterfacePrivate::sorters_append(QDeclarativeListProperty<SorterInterface> *list, SorterInterface *sorter)
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
-    if (sni) {
-        sorter->setParent(sni);
+    if (sni && sorter) {
+        if (!sorter->parent()) {
+            sorter->setParent(sni);
+            sorter->m_ownedBySni = true;
+        }
         sni->d->sorters.append(sorter);
     }
 }
@@ -286,8 +295,11 @@ void SocialNetworkInterfacePrivate::sorters_clear(QDeclarativeListProperty<Sorte
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
-        foreach (SorterInterface *cs, sni->d->sorters)
-            cs->deleteLater();
+        foreach (SorterInterface *cs, sni->d->sorters) {
+            if (cs->m_ownedBySni) {
+                cs->deleteLater();
+            }
+        }
         sni->d->sorters.clear();
     }
 }

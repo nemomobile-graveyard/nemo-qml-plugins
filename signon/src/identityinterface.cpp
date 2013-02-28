@@ -77,6 +77,18 @@ void IdentityInterfacePrivate::setIdentity(SignOn::Identity *ident)
 
     identity = ident;
     identifier = identity->id();
+    if (status != IdentityInterface::Initializing) {
+        status = IdentityInterface::Initializing;
+        bool needsEmit = false;
+        if (!statusMessage.isEmpty()) {
+            statusMessage = QString();
+            needsEmit = true;
+        }
+        emit q->statusChanged();
+        if (needsEmit) {
+            emit q->statusMessageChanged();
+        }
+    }
 
     connect(identity, SIGNAL(info(SignOn::IdentityInfo)), this, SLOT(handleInfo(SignOn::IdentityInfo)));
     connect(identity, SIGNAL(removed()), this, SLOT(handleRemoved()));
@@ -439,6 +451,7 @@ IdentityInterface::IdentityInterface(SignOn::Identity *ident, QObject *parent)
 
 IdentityInterface::~IdentityInterface()
 {
+    signOut(); // sign out of the currently active authsession
 }
 
 // QDeclarativeParserStatus
@@ -474,9 +487,6 @@ void IdentityInterface::componentComplete()
 
     If the \c identifier is set, the identity in the database
     with the specified identifier will be loaded.
-
-    You cannot change identifier of the Identity after initialization,
-    unless you initialize the identifierPending property to true.
 */
 
 int IdentityInterface::identifier() const
@@ -496,15 +506,29 @@ void IdentityInterface::setIdentifier(int id)
                 emit identifierChanged();
             componentComplete(); // now initialize.
         }
+    } else if (id != 0 && id != d->identifier) {
+        // changing identifier after initialisation.
+        if (d->identity && d->identity->parent() == this) {
+            disconnect(d->identity);
+            d->identity->deleteLater();
+        }
+
+        d->identity = 0;
+        d->identifier = id;
+        componentComplete();
     }
 }
 
 /*!
     \qmlproperty int Identity::identifierPending
+
     This property should be set to true if the Identity is an existing
     identity, but the identifier is not available at initialization time.
     When this property is set, the Identity will remain in the Initializing
     state until the identifier is set.
+
+    If this property is not set, and no identifier is set for the Identity,
+    a new signon identity will be instantiated for the Identity.
 */
 bool IdentityInterface::identifierPending() const
 {
@@ -904,6 +928,13 @@ void IdentityInterface::remove()
     if (!d->identity)
         return;
 
+    // since we are removing the SignOn::Identity itself, we not only sign
+    // out of the active auth session via IdentityInterface::signOut() but
+    // we actually sign out of all active auth sessions via
+    // SignOn::Identity::signOut().
+    d->identity->signOut();
+
+    // remove the identity
     d->setStatus(IdentityInterface::SyncInProgress);
     d->identity->remove();
     d->identity = 0; // seems like libsignon-qt doesn't propagate the signal correctly.  assume it worked...
