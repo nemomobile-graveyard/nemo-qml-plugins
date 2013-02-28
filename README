@@ -7,10 +7,8 @@ make sure it's a good fit
 the current maintainer is: Robin Burchell (robin+mer@viroteck.net)
 
 current plugins:
- - thumbnailer: offers an image provider for fast thumbnailing/sharing of
-   thumbnail cache between multiple applications
-
-   to use, access image://nemoThumbnail/path/to/file.jpg in an Image element.
+- thumbnailer: offers an image provider for fast thumbnailing/sharing of
+  thumbnail cache between multiple applications
 
 - contacts: offers an API similar to QtMobility.contacts, except without the
   fail
@@ -24,4 +22,7 @@ current plugins:
 - email: offers a QML-friendly email API using Qt Messaging Framework as a backend.
 
 - time: provides WallClock element useful for clock displays, including keeping
-  time in sync with system time changes.
+time in sync with system time changes.
+
+- alarms: provides QML APIs for creating, editing, and fetching information
+  about alarms
