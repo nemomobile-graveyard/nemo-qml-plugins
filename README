@@ -25,4 +25,6 @@ current plugins:
 time in sync with system time changes.
 
 - alarms: provides QML APIs for creating, editing, and fetching information
-  about alarms
+about alarms
+
+- calendar: offers a QML interface for calendars, backed by mkcal
