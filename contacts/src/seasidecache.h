@@ -67,10 +67,16 @@ struct SeasideCacheItem
     bool hasCompleteContact;
 };
 
+class SeasideVersitExport;
+class SeasideVersitImport;
+
 class SeasideCache : public QObject
 {
     Q_OBJECT
 public:
+    static void reference();
+    static void release();
+
     static void registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type);
     static void unregisterModel(SeasideFilteredModel *model);
 
@@ -86,10 +92,19 @@ public:
     static bool savePerson(SeasidePerson *person);
     static void removePerson(SeasidePerson *person);
 
+    static void createContacts(const QList<QContact> &contacts, SeasideVersitImport *importer);
+    static void populateCache(
+            SeasideVersitExport *exporter, const QList<QContactLocalId> &contactIds);
+
+    static void cancelImport(SeasideVersitImport *importer);
+    static void cancelExport(SeasideVersitExport *exporter);
+
+    static QList<QContact> contacts(const QList<QContactLocalId> &contactIds);
+
     static int importContacts(const QString &path);
     static QString exportContacts();
 
-    static const QVector<QContactLocalId> *contacts(SeasideFilteredModel::FilterType filterType);
+    static const QVector<QContactLocalId> *index(SeasideFilteredModel::FilterType filterType);
     static bool isPopulated(SeasideFilteredModel::FilterType filterType);
 
     bool event(QEvent *event);
@@ -143,8 +158,10 @@ private:
     QList<QContact> m_contactsToCreate;
     QList<QContactLocalId> m_contactsToRemove;
     QList<QContactLocalId> m_changedContacts;
-    QVector<QContactLocalId> m_contacts[3];
+    QVector<QContactLocalId> m_index[3];
     QList<SeasideFilteredModel *> m_models[3];
+    QList<SeasideVersitExport *> m_pendingExports;
+    QList<SeasideVersitImport *> m_pendingImports;
     QHash<QContactLocalId,int> m_expiredContacts;
     QContactManager m_manager;
     QContactFetchRequest m_fetchRequest;
@@ -158,6 +175,7 @@ private:
 #ifdef HAS_MLITE
     MGConfItem m_displayLabelOrderConf;
 #endif
+    int m_refCount;
     int m_resultsRead;
     int m_populated;
     int m_cacheIndex;
