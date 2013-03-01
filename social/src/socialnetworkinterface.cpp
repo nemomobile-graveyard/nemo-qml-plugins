@@ -922,6 +922,7 @@ void SocialNetworkInterface::setNodeIdentifier(const QString &contentItemIdentif
             // call derived class data update:
             //   perform filtering/sorting based on the defined stuff.
             //   and then emit dataChanged() etc signals.
+            d->pushNode(cachedNode);
             updateInternalData(data);
         } else {
             qWarning() << Q_FUNC_INFO << "Error: cached node has no cached content!";
