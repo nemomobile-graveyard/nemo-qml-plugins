@@ -40,6 +40,7 @@
 #include <QContactOnlineAccount>
 #include <QContactOrganization>
 #include <QContactPhoneNumber>
+#include <QTextBoundaryFinder>
 
 #include <QtDebug>
 
@@ -50,6 +51,29 @@ static void insert(
 {
     for (int i = 0; i < source.count(); ++i)
         destination->insert(to + i, source.at(i));
+}
+
+// Splits a string at word boundaries identified by QTextBoundaryFinder and returns a list of
+// of the fragments that occur between StartWord and EndWord boundaries.
+static QStringList splitWords(const QString &string)
+{
+    QStringList words;
+    QTextBoundaryFinder finder(QTextBoundaryFinder::Word, string);
+
+    for (int start = 0; finder.position() != -1 && finder.position() < string.length();) {
+        if (!(finder.boundaryReasons() & QTextBoundaryFinder::StartWord)) {
+            finder.toNextBoundary();
+            start = finder.position();
+        }
+
+        finder.toNextBoundary();
+
+        if (finder.position() > start && finder.boundaryReasons() & QTextBoundaryFinder::EndWord) {
+            words.append(string.mid(start, finder.position() - start));
+            start = finder.position();
+        }
+    }
+    return words;
 }
 
 SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
@@ -149,7 +173,7 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
         const bool subFilter = !wasEmpty && pattern.startsWith(m_filterPattern, Qt::CaseInsensitive);
 
         m_filterPattern = pattern;
-        m_filterParts = m_filterPattern.split(QLatin1Char(' '));
+        m_filterParts = splitWords(m_filterPattern);
         m_referenceIndex = 0;
         m_filterIndex = 0;
 
@@ -206,17 +230,17 @@ bool SeasideFilteredModel::filterId(QContactLocalId contactId) const
     // other locales, see MBreakIterator
 
     if (item->filterKey.isEmpty()) {
-        item->filterKey = item->contact.detail<QContactName>().customLabel().split(QLatin1Char(' '));
+        item->filterKey = splitWords(item->contact.detail<QContactName>().customLabel());
 
         foreach (const QContactPhoneNumber &detail, item->contact.details<QContactPhoneNumber>())
-            item->filterKey.append(detail.number());
+            item->filterKey.append(splitWords(detail.number()));
         foreach (const QContactEmailAddress &detail, item->contact.details<QContactEmailAddress>())
-            item->filterKey.append(detail.emailAddress());
+            item->filterKey.append(splitWords(detail.emailAddress()));
         foreach (const QContactOrganization &detail, item->contact.details<QContactOrganization>())
-            item->filterKey.append(detail.name().split(QLatin1Char(' ')));
+            item->filterKey.append(splitWords(detail.name()));
         foreach (const QContactOnlineAccount &detail, item->contact.details<QContactOnlineAccount>()) {
-            item->filterKey.append(detail.accountUri());
-            item->filterKey.append(detail.serviceProvider());
+            item->filterKey.append(splitWords(detail.accountUri()));
+            item->filterKey.append(splitWords(detail.serviceProvider()));
         }
     }
 
@@ -317,7 +341,6 @@ void SeasideFilteredModel::populateIndex()
         if (filterId(m_referenceContactIds->at(i)))
             m_filteredContactIds.append(m_referenceContactIds->at(i));
     }
-
     if (!m_filteredContactIds.isEmpty())
         beginInsertRows(QModelIndex(), 0, m_filteredContactIds.count() - 1);
 
