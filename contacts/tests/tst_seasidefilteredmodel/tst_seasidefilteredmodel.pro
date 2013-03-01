@@ -5,7 +5,7 @@ CONFIG -= app_bundle
 SRCDIR = $$PWD/../../src
 
 CONFIG += mobility
-MOBILITY += contacts
+MOBILITY += contacts versit
 
 QT += declarative
 
