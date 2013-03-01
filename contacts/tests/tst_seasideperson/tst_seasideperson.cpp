@@ -76,6 +76,7 @@ private slots:
     void presenceState();
     void marshalling();
     void setContact();
+    void vcard();
 };
 
 void tst_SeasidePerson::firstName()
@@ -483,6 +484,20 @@ void tst_SeasidePerson::setContact()
         QCOMPARE(spyThree.count(), 1);
         QCOMPARE(spyFour.count(), 1);
     }
+}
+
+void tst_SeasidePerson::vcard()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    person->setFirstName("Star");
+    person->setLastName("Fish");
+    person->setPhoneNumbers(QStringList() << "12345678");
+
+    QString vcard = person->vCard();
+
+    QVERIFY(vcard.indexOf("N:Fish;Star;") > 0);
+    QVERIFY(vcard.indexOf("FN:Star Fish") > 0);
+    QVERIFY(vcard.indexOf("TEL:12345678") > 0);
 }
 
 

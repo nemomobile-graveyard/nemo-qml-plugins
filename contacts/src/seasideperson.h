@@ -210,6 +210,8 @@ public:
     Q_INVOKABLE QVariant contactData() const { return QVariant::fromValue(contact()); }
     Q_INVOKABLE void setContactData(const QVariant &data) { setContact(data.value<QContact>()); }
 
+    Q_INVOKABLE QString vCard() const;
+
     static QString generateDisplayLabel(
                 const QContact &mContact,
                 SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
