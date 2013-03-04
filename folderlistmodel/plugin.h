@@ -29,25 +29,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
+#ifndef NEMO_QML_PLUGINS_FOLDERLISTMODEL
+#define NEMO_QML_PLUGINS_FOLDERLISTMODEL
+
+#include <QtGlobal>
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtDeclarative>
+#include <QDeclarativeEngine>
+#include <QDeclarativeExtensionPlugin>
 #include <QVector>
 #include <QFileInfo>
 
-#include "plugin.h"
+#define PLUGIN_CLASS_EXPORT
+#define PLUGIN_CLASS_EXTERNAL_EXPORT Q_EXPORT_PLUGIN2(nemofolderlistmodel, NemoFolderListModelPlugin);
+#define PLUGIN_CLASS_EXTEND
+typedef QDeclarativeExtensionPlugin QmlPluginParent;
+typedef QDeclarativeEngine QmlEngine;
+Q_DECLARE_METATYPE(QVector<QFileInfo>)
 
-NemoFolderListModelPlugin::NemoFolderListModelPlugin() { }
+#else
+#include <QQmlComponent>
+#include <QQmlEngine>
+#include <QQmlContext>
+#include <QQmlExtensionPlugin>
 
-NemoFolderListModelPlugin::~NemoFolderListModelPlugin() { }
+#define PLUGIN_CLASS_EXPORT Q_DECL_EXPORT
+#define PLUGIN_CLASS_EXTERNAL_EXPORT
+#define PLUGIN_CLASS_EXTEND \
+    Q_OBJECT \
+    Q_PLUGIN_METADATA(IID "org.nemomobile.folderlistmodel")
+typedef QQmlExtensionPlugin QmlPluginParent;
+typedef QQmlEngine QmlEngine;
+#endif
 
-void NemoFolderListModelPlugin::initializeEngine(QmlEngine *engine, const char *uri)
+#include "dirmodel.h"
+
+class PLUGIN_CLASS_EXPORT NemoFolderListModelPlugin  : public QmlPluginParent
 {
-    Q_UNUSED(engine)
-    Q_ASSERT(uri == QLatin1String("org.nemomobile.folderlistmodel"));
-}
+    PLUGIN_CLASS_EXTEND
 
-void NemoFolderListModelPlugin::registerTypes(const char *uri)
-{
-    Q_ASSERT(uri == QLatin1String("org.nemomobile.folderlistmodel"));
-    qRegisterMetaType<QVector<QFileInfo> >();
-    qmlRegisterType<DirModel>(uri, 1, 0, "FolderListModel");
-}
+public:
+    NemoFolderListModelPlugin();
+    virtual ~NemoFolderListModelPlugin();
 
+    void initializeEngine(QmlEngine *engine, const char *uri);
+    void registerTypes(const char *uri);
+};
+
+PLUGIN_CLASS_EXTERNAL_EXPORT
+
+#endif // NEMO_QML_PLUGINS_FOLDERLISTMODEL
