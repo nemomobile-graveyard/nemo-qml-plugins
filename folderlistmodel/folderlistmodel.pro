@@ -7,7 +7,8 @@ SOURCES += plugin.cpp \
            iorequestworker.cpp \
            ioworkerthread.cpp
 
-HEADERS += dirmodel.h \
+HEADERS += plugin.h \
+           dirmodel.h \
            iorequest.h \
            iorequestworker.h \
            ioworkerthread.h
