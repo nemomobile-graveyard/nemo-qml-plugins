@@ -95,7 +95,38 @@ DirModel::DirModel(QObject *parent)
 {
     mNameFilters = QStringList() << "*";
 
-    QHash<int, QByteArray> roles = roleNames();
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    // There's no setRoleNames in Qt5.
+    setRoleNames(buildRoleNames());
+#endif
+
+    // populate reverse mapping
+    const QHash<int, QByteArray> &roles = roleNames();
+    QHash<int, QByteArray>::ConstIterator it = roles.constBegin();
+    for (;it != roles.constEnd(); ++it)
+        mRoleMapping.insert(it.value(), it.key());
+
+    // make sure we cover all roles
+//    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+// roleNames has changed between Qt4 and Qt5. In Qt5 it is a virtual
+// function and setRoleNames should not be used.
+QHash<int, QByteArray> DirModel::roleNames() const
+{
+    static QHash<int, QByteArray> roles;
+    if (roles.isEmpty()) {
+        roles = buildRoleNames();
+    }
+
+    return roles;
+}
+#endif
+
+QHash<int, QByteArray> DirModel::buildRoleNames() const
+{
+    QHash<int, QByteArray> roles;
     roles.insert(FileNameRole, QByteArray("fileName"));
     roles.insert(CreationDateRole, QByteArray("creationDate"));
     roles.insert(ModifiedDateRole, QByteArray("modifiedDate"));
@@ -107,15 +138,8 @@ DirModel::DirModel(QObject *parent)
     roles.insert(IsReadableRole, QByteArray("isReadable"));
     roles.insert(IsWritableRole, QByteArray("isWritable"));
     roles.insert(IsExecutableRole, QByteArray("isExecutable"));
-    setRoleNames(roles);
 
-    // populate reverse mapping
-    QHash<int, QByteArray>::ConstIterator it = roles.constBegin();
-    for (;it != roles.constEnd(); ++it)
-        mRoleMapping.insert(it.value(), it.key());
-
-    // make sure we cover all roles
-//    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
+    return roles;
 }
 
 QVariant DirModel::data(int row, const QByteArray &stringRole) const
