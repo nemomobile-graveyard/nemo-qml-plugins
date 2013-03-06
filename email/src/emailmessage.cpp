@@ -115,7 +115,7 @@ void EmailMessage::send()
         emailAgent->sendMessages(m_msg.parentAccountId());
     }
     else
-       qDebug() << "Error queuing message, stored: " << stored;
+       qWarning() << "Error: queuing message, stored: " << stored;
 }
 
 void EmailMessage::saveDraft()
