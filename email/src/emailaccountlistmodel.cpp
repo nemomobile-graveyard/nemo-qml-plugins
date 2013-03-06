@@ -118,21 +118,16 @@ void EmailAccountListModel::onAccountsUpdated(const QMailAccountIdList &ids)
 }
 
 int EmailAccountListModel::indexFromAccountId(QVariant id)
-{
-    int idx = 0;
-
-    if (id == 0)
-        return idx;
-    
+{ 
     QMailAccountId accountId = id.value<QMailAccountId>();
     if (!accountId.isValid())
-        return idx;
+        return -1;
 
     for (int row = 0; row < rowCount(); row++) {
         if (accountId == QMailAccountListModel::idFromIndex(index(row)))
             return row;
     }
-    return idx;
+    return -1;
 }
 
 QVariant EmailAccountListModel::getDisplayNameByIndex(int idx)
@@ -173,6 +168,16 @@ QStringList EmailAccountListModel::getAllEmailAddresses()
 QVariant EmailAccountListModel::getAccountIdByIndex(int idx)
 {
     return data(index(idx), EmailAccountListModel::MailAccountId);
+}
+
+QString EmailAccountListModel::addressFromAccountId(QVariant accountId)
+{
+    int accountIndex = indexFromAccountId(accountId);
+
+    if (accountIndex < 0)
+        return "";
+
+    return data(index(accountIndex), EmailAccountListModel::EmailAddress).toString();
 }
 
 QDateTime EmailAccountListModel::lastUpdatedAccountTime()
