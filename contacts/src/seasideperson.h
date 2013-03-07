@@ -93,7 +93,11 @@ public:
         BirthdayType,
         AnniversaryType,
         // Presence information
-        PresenceStateType
+        GlobalPresenceStateType,
+        PresenceAccountUrisType,
+        PresenceAccountProvidersType,
+        PresenceStatesType,
+        PresenceMessagesType,
     };
 
     enum PresenceState {
@@ -194,9 +198,20 @@ public:
     QDateTime anniversary() const;
     void setAnniversary(const QDateTime &av);
 
-    Q_PROPERTY(PresenceState presenceState READ presenceState WRITE setPresenceState NOTIFY presenceStateChanged)
-    PresenceState presenceState() const;
-    void setPresenceState(PresenceState state);
+    Q_PROPERTY(PresenceState globalPresenceState READ globalPresenceState NOTIFY globalPresenceStateChanged)
+    PresenceState globalPresenceState() const;
+
+    Q_PROPERTY(QStringList presenceAccountUris READ presenceAccountUris NOTIFY presenceAccountUrisChanged)
+    QStringList presenceAccountUris() const;
+
+    Q_PROPERTY(QStringList presenceAccountProviders READ presenceAccountProviders NOTIFY presenceAccountProvidersChanged)
+    QStringList presenceAccountProviders() const;
+
+    Q_PROPERTY(QList<int> presenceStates READ presenceStates NOTIFY presenceStatesChanged)
+    QList<int> presenceStates() const;
+
+    Q_PROPERTY(QStringList presenceMessages READ presenceMessages NOTIFY presenceMessagesChanged)
+    QStringList presenceMessages() const;
 
     Q_PROPERTY(QStringList accountUris READ accountUris NOTIFY accountUrisChanged)
     QStringList accountUris() const;
@@ -239,7 +254,11 @@ signals:
     void websiteTypesChanged();
     void birthdayChanged();
     void anniversaryChanged();
-    void presenceStateChanged();
+    void globalPresenceStateChanged();
+    void presenceAccountUrisChanged();
+    void presenceAccountProvidersChanged();
+    void presenceStatesChanged();
+    void presenceMessagesChanged();
     void accountUrisChanged();
     void accountPathsChanged();
 

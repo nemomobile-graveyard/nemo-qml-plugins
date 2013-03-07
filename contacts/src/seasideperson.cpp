@@ -43,6 +43,8 @@
 #include <QContactOnlineAccount>
 #include <QContactOrganization>
 #include <QContactUrl>
+#include <QContactPresence>
+#include <QContactGlobalPresence>
 
 #include <QVersitWriter>
 #include <QVersitContactExporter>
@@ -687,17 +689,84 @@ void SeasidePerson::setAnniversary(const QDateTime &av)
     emit anniversaryChanged();
 }
 
-SeasidePerson::PresenceState SeasidePerson::presenceState() const
+SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
 {
-    return static_cast<SeasidePerson::PresenceState>(mContact.detail<QContactPresence>().presenceState());
+    return static_cast<SeasidePerson::PresenceState>(mContact.detail<QContactGlobalPresence>().presenceState());
 }
 
-void SeasidePerson::setPresenceState(PresenceState state)
+namespace { // Helper functions
+
+template<class ListType, class MapType>
+typename MapType::mapped_type selectMatching(ListType list, MapType map)
 {
-    QContactPresence presence = mContact.detail<QContactPresence>();
-    presence.setPresenceState(static_cast<QContactPresence::PresenceState>(state));
-    mContact.saveDetail(&presence);
-    emit presenceStateChanged();
+    // Return the mapped value for the first supplied key that we find in the map
+    foreach (const typename ListType::value_type &item, list) {
+        const typename MapType::const_iterator it = map.constFind(item);
+        if (it != map.constEnd()) {
+            return *it;
+        }
+    }
+
+    return typename MapType::mapped_type();
+}
+
+}
+
+QStringList SeasidePerson::presenceAccountUris() const
+{
+    QStringList rv;
+
+    QMap<QString, QString> accountUris;
+    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
+        if (account.hasValue("AccountPath"))
+            accountUris.insert(account.detailUri(), account.value("AccountPath"));
+    }
+
+    // Return the account URIs as reported by the presence details
+    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
+        rv.append(selectMatching(presence.linkedDetailUris(), accountUris));
+    }
+
+    return rv;
+}
+
+QStringList SeasidePerson::presenceAccountProviders() const
+{
+    QStringList rv;
+
+    QMap<QString, QString> accountProviders;
+    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
+        accountProviders.insert(account.detailUri(), account.serviceProvider());
+    }
+
+    // Return the account provider names as reported by the presence details
+    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
+        rv.append(selectMatching(presence.linkedDetailUris(), accountProviders));
+    }
+
+    return rv;
+}
+
+QList<int> SeasidePerson::presenceStates() const
+{
+    QList<int> rv;
+
+    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
+        rv.append(static_cast<int>(presence.presenceState()));
+    }
+
+    return rv;
+}
+
+QStringList SeasidePerson::presenceMessages() const
+{
+    QStringList rv;
+
+    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
+        rv.append(presence.customMessage());
+    }
+
+    return rv;
 }
 
 // TODO: merge with LIST_PROPERTY_FROM_DETAIL_FIELD
@@ -760,11 +829,50 @@ void SeasidePerson::setContact(const QContact &contact)
     if (oldAvatar.imageUrl() != newAvatar.imageUrl())
         emit avatarPathChanged();
 
-    QContactPresence oldPresence = oldContact.detail<QContactPresence>();
-    QContactPresence newPresence = mContact.detail<QContactPresence>();
+    QContactGlobalPresence oldPresence = oldContact.detail<QContactGlobalPresence>();
+    QContactGlobalPresence newPresence = mContact.detail<QContactGlobalPresence>();
 
     if (oldPresence.presenceState() != newPresence.presenceState())
-        emit presenceStateChanged();
+        emit globalPresenceStateChanged();
+
+    QList<QContactPresence> oldPresences = oldContact.details<QContactPresence>();
+    QList<QContactPresence> newPresences = mContact.details<QContactPresence>();
+
+    {
+        bool statesChanged = false;
+        bool messagesChanged = false;
+        bool urisChanged = false;
+
+        if (oldPresences.count() != newPresences.count()) {
+            statesChanged = messagesChanged = urisChanged = true;
+        } else {
+            QList<QContactPresence>::const_iterator oldIt = oldPresences.constBegin();
+            QList<QContactPresence>::const_iterator newIt = newPresences.constBegin();
+
+            for ( ; oldIt != oldPresences.constEnd(); ++oldIt, ++newIt) {
+                if (oldIt->detailUri() != newIt->detailUri()) {
+                    // Assume the entire account has been changed
+                    statesChanged = messagesChanged = urisChanged = true;
+                    break;
+                } else if (oldIt->presenceState() != newIt->presenceState()) {
+                    statesChanged = true;
+                } else if (oldIt->customMessage() != newIt->customMessage()) {
+                    messagesChanged = true;
+                }
+            }
+        }
+
+        if (statesChanged) {
+            emit presenceStatesChanged();
+        }
+        if (messagesChanged) {
+            emit presenceMessagesChanged();
+        }
+        if (urisChanged) {
+            emit presenceAccountUrisChanged();
+            emit presenceAccountProvidersChanged();
+        }
+    }
 
     // TODO: differencing of list type details
     emit phoneNumbersChanged();
