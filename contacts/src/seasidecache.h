@@ -78,6 +78,7 @@ public:
 
     static SeasideCacheItem *cacheItemById(QContactLocalId);
     static SeasidePerson *personById(QContactLocalId id);
+    static SeasidePerson *selfPerson();
     static QContact contactById(QContactLocalId id);
 
     static SeasidePerson *person(SeasideCacheItem *item);

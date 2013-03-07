@@ -160,6 +160,11 @@ SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) co
     return priv->idToContact.value(localId);
 }
 
+SeasidePerson *SeasidePeopleModel::selfPerson() const
+{
+    return personById(manager()->selfContactId());
+}
+
 void SeasidePeopleModel::removePerson(SeasidePerson *person)
 {
     MODEL_DEBUG() << Q_FUNC_INFO << "Removing " << person;

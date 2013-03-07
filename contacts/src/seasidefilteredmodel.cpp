@@ -389,6 +389,11 @@ SeasidePerson *SeasideFilteredModel::personByPhoneNumber(const QString &msisdn) 
     return SeasideCache::personByPhoneNumber(msisdn);
 }
 
+SeasidePerson *SeasideFilteredModel::selfPerson() const
+{
+    return SeasideCache::selfPerson();
+}
+
 void SeasideFilteredModel::removePerson(SeasidePerson *person)
 {
     SeasideCache::removePerson(person);

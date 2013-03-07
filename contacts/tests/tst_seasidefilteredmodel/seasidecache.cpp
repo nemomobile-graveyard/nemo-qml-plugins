@@ -157,6 +157,11 @@ SeasidePerson *SeasideCache::personByPhoneNumber(const QString &)
     return 0;
 }
 
+SeasidePerson *SeasideCache::selfPerson()
+{
+    return 0;
+}
+
 bool SeasideCache::savePerson(SeasidePerson *)
 {
     return false;
