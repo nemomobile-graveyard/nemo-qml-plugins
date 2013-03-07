@@ -254,6 +254,11 @@ SeasidePerson * SeasideProxyModel::personByPhoneNumber(const QString &msisdn) co
     SeasidePeopleModel *model = static_cast<SeasidePeopleModel*>(sourceModel());
     return model->personByPhoneNumber(msisdn);
 }
+SeasidePerson * SeasideProxyModel::selfPerson() const
+{
+    SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());
+    return model->selfPerson();
+}
 void SeasideProxyModel::removePerson(SeasidePerson *person)
 {
     SeasidePeopleModel *model = static_cast<SeasidePeopleModel *>(sourceModel());

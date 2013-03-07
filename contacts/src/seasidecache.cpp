@@ -242,6 +242,11 @@ SeasidePerson *SeasideCache::personByPhoneNumber(const QString &msisdn)
     return 0;
 }
 
+SeasidePerson *SeasideCache::selfPerson()
+{
+    return personById(instance->m_manager.selfContactId());
+}
+
 SeasidePerson *SeasideCache::person(SeasideCacheItem *cacheItem)
 {
     if (!cacheItem->person) {
