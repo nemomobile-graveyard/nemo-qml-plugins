@@ -73,7 +73,7 @@ private slots:
     void birthday();
     void anniversary();
     void address();
-    void presenceState();
+    void globalPresenceState();
     void marshalling();
     void setContact();
     void vcard();
@@ -401,17 +401,12 @@ void tst_SeasidePerson::address()
     QCOMPARE(person->addressTypes().at(1), (int)SeasidePerson::AddressWorkType);
 }
 
-void tst_SeasidePerson::presenceState()
+void tst_SeasidePerson::globalPresenceState()
 {
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
-    QCOMPARE(person->presenceState(), SeasidePerson::PresenceUnknown);
-    QSignalSpy spy(person.data(), SIGNAL(presenceStateChanged()));
-    person->setPresenceState(SeasidePerson::PresenceAvailable);
-    QCOMPARE(spy.count(), 1);
-    QCOMPARE(person->presenceState(), SeasidePerson::PresenceAvailable);
-    person->setPresenceState(SeasidePerson::PresenceBusy);
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(person->presenceState(), SeasidePerson::PresenceBusy);
+    QCOMPARE(person->globalPresenceState(), SeasidePerson::PresenceUnknown);
+
+    // We can't test any changes, as the change is effected by a DBUS request...
 }
 
 
