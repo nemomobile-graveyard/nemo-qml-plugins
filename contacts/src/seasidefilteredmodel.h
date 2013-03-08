@@ -92,6 +92,7 @@ public:
     Q_INVOKABLE SeasidePerson *personByRow(int row) const;
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &msisdn) const;
+    Q_INVOKABLE SeasidePerson *selfPerson() const;
     Q_INVOKABLE void removePerson(SeasidePerson *person);
 
     Q_INVOKABLE int importContacts(const QString &path);
