@@ -180,6 +180,16 @@ QString EmailAccountListModel::addressFromAccountId(QVariant accountId)
     return data(index(accountIndex), EmailAccountListModel::EmailAddress).toString();
 }
 
+QString EmailAccountListModel::displayNameFromAccountId(QVariant accountId)
+{
+    int accountIndex = indexFromAccountId(accountId);
+
+    if (accountIndex < 0)
+        return "";
+
+    return data(index(accountIndex), EmailAccountListModel::DisplayName).toString();
+}
+
 QDateTime EmailAccountListModel::lastUpdatedAccountTime()
 {
     QDateTime lastUpdatedAccTime;

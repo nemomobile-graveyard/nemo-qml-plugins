@@ -45,6 +45,7 @@ public slots:
     Q_INVOKABLE QStringList getAllDisplayNames();
     Q_INVOKABLE QVariant getAccountIdByIndex(int idx);
     Q_INVOKABLE QString addressFromAccountId(QVariant accountId);
+    Q_INVOKABLE QString displayNameFromAccountId(QVariant accountId);
     Q_INVOKABLE QDateTime lastUpdatedAccountTime();
 
 signals:
