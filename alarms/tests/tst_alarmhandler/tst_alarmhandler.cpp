@@ -152,9 +152,12 @@ void tst_AlarmHandler::openDialog()
     QScopedPointer<QDBusInterface> interface(new QDBusInterface("org.nemomobile.alarms.test.voland", "/com/nokia/voland"));
     QVERIFY(interface->isValid());
 
-    AlarmDialogObject *alarm = 0;
+    QVERIFY(handler->activeDialogs().isEmpty());
 
-   {
+    AlarmDialogObject *alarm = 0;
+    QSignalSpy activeDialogsSpy(handler.data(), SIGNAL(activeDialogsChanged()));
+
+    {
         QSignalSpy spy(handler.data(), SIGNAL(alarmReady(QObject*)));
 
         TestReminder reminder;
@@ -174,6 +177,8 @@ void tst_AlarmHandler::openDialog()
         QVERIFY(reply.value());
 
         QCOMPARE(spy.count(), 1);
+        QCOMPARE(activeDialogsSpy.count(), 1);
+        QCOMPARE(handler->activeDialogs().size(), 1);
         alarm = qobject_cast<AlarmDialogObject*>(spy.takeFirst().at(0).value<QObject*>());
     }
 
@@ -184,6 +189,8 @@ void tst_AlarmHandler::openDialog()
     QSignalSpy spy(alarm, SIGNAL(closed(QObject*)));
     alarm->dismiss();
     QCOMPARE(spy.count(), 1);
+    QCOMPARE(activeDialogsSpy.count(), 2);
+    QVERIFY(handler->activeDialogs().isEmpty());
 }
 
 #include "tst_alarmhandler.moc"

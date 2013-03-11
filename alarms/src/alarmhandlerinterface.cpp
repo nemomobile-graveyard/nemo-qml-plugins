@@ -80,6 +80,7 @@ AlarmDialogObject *AlarmHandlerInterface::createDialog(const Maemo::Timed::Volan
     connect(obj, SIGNAL(closed(QObject*)), SLOT(dialogClosed(QObject*)));
 
     dialogs.insert(data.cookie(), obj);
+    emit activeDialogsChanged();
     return obj;
 }
 
@@ -119,5 +120,15 @@ void AlarmHandlerInterface::dialogClosed(QObject *obj)
         dialogs.erase(it);
 
     dialog->deleteLater();
+    emit activeDialogsChanged();
+}
+
+QObjectList AlarmHandlerInterface::activeDialogs() const
+{
+    QObjectList re;
+    re.reserve(dialogs.size());
+    foreach (AlarmDialogObject *dialog, dialogs)
+        re.append(dialog);
+    return re;
 }
 

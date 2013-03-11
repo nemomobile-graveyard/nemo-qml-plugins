@@ -54,6 +54,14 @@ class AlarmHandlerInterface : public QDeclarativeItem
 public:
     AlarmHandlerInterface(QDeclarativeItem *parent = 0);
 
+    /*!
+     *  \qmlproperty QObjectList AlarmHandler::activeDialogs
+     *
+     *  A list of \a AlarmDialogObject instances for active alarm dialogs.
+     */
+    Q_PROPERTY(QObjectList activeDialogs READ activeDialogs NOTIFY activeDialogsChanged)
+    QObjectList activeDialogs() const;
+
 signals:
     /*!
      *  \qmlsignal void AlarmHandler::alarmReady(AlarmDialog alarm)
@@ -62,13 +70,15 @@ signals:
      *  object contains properties and actions for the alarm.
      */
     void alarmReady(QObject *alarm);
-    
+
     /*!
      *  \qmlsignal void AlarmHandler::error(string message)
      *
      *  Emitted when the alarm handler interface cannot be registered.
      */
     void error(const QString &message);
+
+    void activeDialogsChanged();
 
 private slots:
     void dialogClosed(QObject *alarm);
