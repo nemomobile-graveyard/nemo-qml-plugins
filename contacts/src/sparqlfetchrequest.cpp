@@ -44,7 +44,9 @@
 #include <QContactAvatar>
 #include <QContactEmailAddress>
 #include <QContactName>
+#include <QContactNickname>
 #include <QContactOnlineAccount>
+#include <QContactPresence>
 #include <QContactOrganization>
 #include <QContactPhoneNumber>
 
@@ -263,7 +265,8 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
         queryString += QLatin1String(
                 "\n tracker:coalesce("
                 "\n  fn:string-join((%1, %2), ' '),"
-                "\n  nco:imID(?imAccount),"
+                "\n  nco:imNickname(?imAddress),"
+                "\n  nco:imID(?imAddress),"
                 "\n  nco:fullname(?organization),"
                 "\n  nco:emailAddress(?emailAddress),"
                 "\n  nco:fullname(?organization),"
@@ -273,12 +276,13 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
                 "\n ?family"
                 "\n tracker:coalesce("
                 "\n  nie:url(nco:photo(?x)),"
-                "\n  nco:imAvatar(?imAccount))"
+                "\n  nco:imAvatar(?imAddress))"
                 "\n GROUP_CONCAT(nco:phoneNumber(?phoneNumber), ';')"
                 "\n GROUP_CONCAT(nco:emailAddress(?emailAddress), ';')"
                 "\n GROUP_CONCAT(nco:fullname(?organization), ';')"
-                "\n GROUP_CONCAT(nco:imID(?imAccount), ';')"
-                "\n GROUP_CONCAT(nco:imAccountType(?imAccount), ';')");
+                "\n GROUP_CONCAT(nco:imNickname(?imAddress), ';')"
+                "\n GROUP_CONCAT(nco:imID(?imAddress), ';')"
+                "\n GROUP_CONCAT(nco:imAccountType(?imAddress), ';')");
     }
 
     queryString += QLatin1String(
@@ -297,7 +301,7 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
     queryString += QLatin1String(
             "\n OPTIONAL { ?x nco:nameGiven ?given }"
             "\n OPTIONAL { ?x nco:nameFamily ?family }"
-            "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAccount }"
+            "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?org . ?org nco:org ?organization }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?email . ?email nco:hasEmailAddress ?emailAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?phone . ?phone nco:hasPhoneNumber ?phoneNumber  }"
@@ -310,7 +314,8 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
             "\n  %1,"
             "\n  %2,"
             "\n  nco:emailAddress(?emailAddress),"
-            "\n  nco:imID(?imAccount),"
+            "\n  nco:imNickname(?imAddress),"
+            "\n  nco:imID(?imAddress),"
             "\n  nco:fullname(?organization),"
             "\n  nco:phoneNumber(?phoneNumber),"
             "\n  '(Unnamed)'))"
@@ -375,14 +380,23 @@ QContactAbstractRequest::State SparqlFetchRequest::readContacts(QSparqlResult *r
                 contact.saveDetail(&organization);
             }
 
-            const QStringList imIds = results->value(8).toString().split(QLatin1Char(';'));
-            const QStringList imTypes = results->value(9).toString().split(QLatin1Char(';'));
+            const QStringList imNicks = results->value(8).toString().split(QLatin1Char(';'));
+            const QStringList imIds = results->value(9).toString().split(QLatin1Char(';'));
+            const QStringList imTypes = results->value(10).toString().split(QLatin1Char(';'));
 
             for (int i = 0; i < imIds.count() || i < imTypes.count(); ++i) {
                 QContactOnlineAccount account;
                 account.setAccountUri(imIds.value(i));
                 account.setServiceProvider(imTypes.value(i));
+                account.setDetailUri(imIds.value(i));
                 contact.saveDetail(&account);
+
+                if (!imNicks.value(i).isEmpty()) {
+                    QContactPresence presence;
+                    presence.setNickname(imNicks.value(i));
+                    presence.setLinkedDetailUris(imIds.value(i));
+                    contact.saveDetail(&presence);
+                }
             }
 
             contacts.append(contact);

@@ -41,6 +41,8 @@
 #include <QContactEmailAddress>
 #include <QContactAddress>
 #include <QContactOnlineAccount>
+#include <QContactGlobalPresence>
+#include <QContactPresence>
 #include <QContactOrganization>
 #include <QContactUrl>
 #include <QContactPresence>
@@ -160,17 +162,39 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
         displayLabel.append(nameStr2);
     }
 
-    if (!displayLabel.isEmpty())
+    if (!displayLabel.isEmpty()) {
         return displayLabel;
+    }
+
+    foreach (const QContactNickname& nickname, mContact.details<QContactNickname>()) {
+        if (!nickname.nickname().isNull()) {
+            return nickname.nickname();
+        }
+    }
+
+    foreach (const QContactGlobalPresence& gp, mContact.details<QContactGlobalPresence>()) {
+        // should only be one of these, but qtct is strange, and doesn't list it as a unique detail in the schema...
+        if (!gp.nickname().isNull()) {
+            return gp.nickname();
+        }
+    }
+
+    foreach (const QContactPresence& presence, mContact.details<QContactPresence>()) {
+        if (!presence.nickname().isNull()) {
+            return presence.nickname();
+        }
+    }
 
     foreach (const QContactOnlineAccount& account, mContact.details<QContactOnlineAccount>()) {
-        if (!account.accountUri().isNull())
+        if (!account.accountUri().isNull()) {
             return account.accountUri();
+        }
     }
 
     foreach (const QContactEmailAddress& email, mContact.details<QContactEmailAddress>()) {
-        if (!email.emailAddress().isNull())
+        if (!email.emailAddress().isNull()) {
             return email.emailAddress();
+        }
     }
 
     QContactOrganization company = mContact.detail<QContactOrganization>();
