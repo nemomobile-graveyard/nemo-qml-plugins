@@ -8,6 +8,8 @@ HEADERS += \
     $$PWD/facebookinterface.h \
     $$PWD/facebookinterface_p.h \
     $$PWD/facebooklikeinterface.h \
+    $$PWD/facebooknotificationinterface.h \
+    $$PWD/facebooknotificationinterface_p.h \
     $$PWD/facebookobjectreferenceinterface.h \
     $$PWD/facebookontology_p.h \
     $$PWD/facebookphotointerface.h \
@@ -22,6 +24,7 @@ SOURCES += \
     $$PWD/facebookcommentinterface.cpp \
     $$PWD/facebookinterface.cpp \
     $$PWD/facebooklikeinterface.cpp \
+    $$PWD/facebooknotificationinterface.cpp \
     $$PWD/facebookobjectreferenceinterface.cpp \
     $$PWD/facebookphotointerface.cpp \
     $$PWD/facebookpictureinterface.cpp \
