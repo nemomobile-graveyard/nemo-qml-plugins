@@ -78,7 +78,8 @@ public:
         User,
         Album,
         Photo,
-        Event
+        Event,
+        Notification
     };
 
 public:
@@ -119,6 +120,7 @@ private:
     friend class FacebookPictureInterface;
     friend class FacebookTagInterface;
     friend class FacebookUserInterface;
+    friend class FacebookNotificationInterface;
 
     // impl. detail
 private:

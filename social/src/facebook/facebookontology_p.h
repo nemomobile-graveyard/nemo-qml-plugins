@@ -64,7 +64,12 @@
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS               QLatin1String("photos")
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_TAGS                 QLatin1String("tags")
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_FRIENDS              QLatin1String("friends")
+#define FACEBOOK_ONTOLOGY_CONNECTIONS_NOTIFICATIONS        QLatin1String("notifications")
+#define FACEBOOK_ONTOLOGY_CONNECTIONS_PICTURE              QLatin1String("picture")
+#define FACEBOOK_ONTOLOGY_CONNECTIONS_LOCATIONS            QLatin1String("locations")
+#define FACEBOOK_ONTOLOGY_CONNECTIONS_EVENTS               QLatin1String("events")
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_DATA                 QLatin1String("data")
+#define FACEBOOK_ONTOLOGY_CONNECTIONS_SUMMARY              QLatin1String("summary")
 
 #define FACEBOOK_ONTOLOGY_COMMENT                          QLatin1String("comment")
 #define FACEBOOK_ONTOLOGY_COMMENT_TYPE                     QLatin1String("type")
@@ -146,5 +151,17 @@
 #define FACEBOOK_ONTOLOGY_USER_SIGNIFICANTOTHER            QLatin1String("significant_other")
 #define FACEBOOK_ONTOLOGY_USER_WEBSITE                     QLatin1String("website")
 #define FACEBOOK_ONTOLOGY_USER_WORK                        QLatin1String("work")
+
+#define FACEBOOK_ONTOLOGY_NOTIFICATION                     QLatin1String("notification")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_ID                  QLatin1String("id")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_ID_PREFIX           QLatin1String("notif_")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_FROM                QLatin1String("from")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_TO                  QLatin1String("to")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_APPLICATION         QLatin1String("application")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_CREATEDTIME         QLatin1String("created_time")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_UPDATEDTIME         QLatin1String("updated_time")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_TITLE               QLatin1String("title")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_LINK                QLatin1String("link")
+#define FACEBOOK_ONTOLOGY_NOTIFICATION_UNREAD              QLatin1String("unread")
 
 #endif // FACEBOOKONTOLOGY_P_H

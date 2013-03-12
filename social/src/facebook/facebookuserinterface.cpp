@@ -130,6 +130,90 @@ void FacebookUserInterfacePrivate::finishedHandler()
 
 //-------------------------------------------
 
+/*!
+    \qmltype FacebookUser
+    \instantiates FacebookUserInterface
+    \inqmlmodule org.nemomobile.social 1
+    \brief A FacebookUser represents a User object from the Facebook OpenGraph API
+
+    Every FacebookUser has a unique identifier, and thus a User may be
+    set as the \c node (or central content item) in the Facebook
+    adapter.  The content items related to a User include albums,
+    photos, notifications, friends, and so on.
+
+    An example of usage of a FacebookUser as the node in a Facebook
+    model is as follows:
+
+    \qml
+    import QtQuick 1.1
+    import org.nemomobile.social 1.0
+
+    Item {
+        id: root
+        width: 400
+        height: 800
+
+        Flickable {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+
+            ListView {
+                model: fb
+                anchors.fill: parent
+                delegate: Label { text: "id: " + contentItemIdentifier } // will display valid Album identifiers
+            }
+        }
+
+        Facebook {
+            id: fb
+            accessToken: "your access token"    // you must supply a valid access token
+            nodeIdentifier: "me"                // the "me" user is a "special" user id
+            filters: [ ContentItemTypeFilter { type: Facebook.Album } ]
+        }
+    }
+    \endqml
+
+    A FacebookUser may also be used "directly" by clients, in order to
+    view specific information about the user or upload a new album.
+    An example of direct usage of the FacebookUser type is as follows:
+
+    \qml
+    import QtQuick 1.1
+    import org.nemomobile.social 1.0
+
+    Item {
+        id: root
+        width: 400
+        height: 800
+
+        Facebook {
+            id: fb
+            accessToken: "your access token" // you must supply a valid access token
+        }
+
+        FacebookUser {
+            id: fbu
+            socialNetwork: fb
+            identifier: "me" // some valid Facebook User fbid
+
+            onStatusChanged: {
+                if (status == SocialNetwork.Idle) {
+                    // creates a new album, into which photos can be uploaded
+                    uploadAlbum("World Cup Photos", "Photos taken at the world cup football event")
+                }
+            }
+        }
+
+        Text {
+            anchors.fill: parent
+            text: fbu.name // "name" field from the user's profile
+        }
+    }
+    \endqml
+*/
+
 FacebookUserInterface::FacebookUserInterface(QObject *parent)
     : IdentifiableContentItemInterface(parent), f(new FacebookUserInterfacePrivate(this, dd))
 {

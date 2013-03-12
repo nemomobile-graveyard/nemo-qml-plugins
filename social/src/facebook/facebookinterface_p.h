@@ -64,6 +64,8 @@ public:
     bool populateDataForUnseenPending;
     bool continuationRequestActive;
 
+    int outOfBandConnectionsLimit;
+
     enum InternalStatus {
         Idle = 0,
         PopulatingSeenNode,

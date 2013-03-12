@@ -121,7 +121,7 @@ void FacebookCommentInterfacePrivate::finishedHandler()
         height: 800
 
         Flickable {
-            anchors.top: parent.verticalCenter
+            anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -129,7 +129,7 @@ void FacebookCommentInterfacePrivate::finishedHandler()
             ListView {
                 model: fb
                 anchors.fill: parent
-                delegate: Label { text: "liker: " + contentItemData["name"] } // Users who liked the comment
+                delegate: Text { text: "liker: " + contentItemData["name"] } // Users who liked the comment
             }
         }
 
@@ -223,7 +223,7 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
     QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
     QString createdTimeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
     QString messageStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
-    int likeCountInt = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toInt();
+    QString likeCountInt = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
     QString userLikesStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
     QString typeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_TYPE).toString();
 
@@ -233,11 +233,11 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
     QString oldFromNameStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
     QString oldCreatedTimeStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
     QString oldMessageStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
-    int oldLikeCountInt = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toInt();
+    QString oldLikeCountInt = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
     QString oldUserLikesStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
 
     // determine if any of our properties have changed
-    if (!typeStr.isEmpty() && typeStr != QLatin1String("comment"))
+    if (!typeStr.isEmpty() && typeStr != FACEBOOK_ONTOLOGY_COMMENT)
         qWarning() << Q_FUNC_INFO << "data does not define a comment!  type = " + typeStr;
     if (createdTimeStr != oldCreatedTimeStr)
         emit createdTimeChanged();
@@ -339,16 +339,21 @@ QString FacebookCommentInterface::createdTime() const
 }
 
 /*!
-    \qmlproperty int FacebookPhoto::likeCount
+    \qmlproperty int FacebookComment::likeCount
     Holds the number of times this comment has been liked
 */
 int FacebookCommentInterface::likeCount() const
 {
-    return d->data().value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toInt();
+    QString countStr = d->data().value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
+    bool ok = false;
+    int retn = countStr.toInt(&ok);
+    if (ok)
+        return retn;
+    return 0;
 }
 
 /*!
-    \qmlproperty bool FacebookPhoto::liked
+    \qmlproperty bool FacebookComment::liked
     Whether the current user has liked the comment
 */
 bool FacebookCommentInterface::liked() const
