@@ -60,6 +60,8 @@ SparqlFetchRequest::SparqlFetchRequest(QObject *parent)
     , m_threadQueryData(false)
     , m_favoritesOnly(false)
     , m_threadFavoritesOnly(false)
+    , m_onlineOnly(false)
+    , m_threadOnlineOnly(false)
     , m_sortOnFirstName(true)
     , m_threadSortOnFirstName(true)
     , m_resultsAvailable(false)
@@ -100,6 +102,22 @@ bool SparqlFetchRequest::favoritesOnly() const
 void SparqlFetchRequest::setFavoritesOnly(bool favorites)
 {
     m_favoritesOnly = favorites;
+    if (m_favoritesOnly) {
+        m_onlineOnly = false;
+    }
+}
+
+bool SparqlFetchRequest::onlineOnly() const
+{
+    return  m_onlineOnly;
+}
+
+void SparqlFetchRequest::setOnlineOnly(bool online)
+{
+    m_onlineOnly = online;
+    if (m_onlineOnly) {
+        m_favoritesOnly = false;
+    }
 }
 
 bool SparqlFetchRequest::sortOnFirstName() const
@@ -136,6 +154,7 @@ void SparqlFetchRequest::start()
 
     m_threadQueryData = m_queryData;
     m_threadFavoritesOnly = m_favoritesOnly;
+    m_threadOnlineOnly = m_onlineOnly;
     m_threadSortOnFirstName = m_sortOnFirstName;
 
     {
@@ -229,11 +248,12 @@ void SparqlFetchRequest::run()
         } else if (m_threadState == QContactAbstractRequest::ActiveState) {
             const bool queryData = m_threadQueryData;
             const bool favoritesOnly = m_threadFavoritesOnly;
+            const bool onlineOnly = m_threadOnlineOnly;
             const bool sortOnFirstName = m_threadSortOnFirstName;
 
             locker.unlock();
             QContactAbstractRequest::State state = executeQuery(
-                        &connection, queryData, favoritesOnly, sortOnFirstName);
+                        &connection, queryData, favoritesOnly, onlineOnly, sortOnFirstName);
             locker.relock();
             m_threadState = state;
             if (!m_resultsAvailable) {
@@ -247,7 +267,7 @@ void SparqlFetchRequest::run()
 }
 
 QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
-        QSparqlConnection *connection, bool queryData, bool favoritesOnly, bool orderByGivenName)
+        QSparqlConnection *connection, bool queryData, bool favoritesOnly, bool onlineOnly, bool orderByGivenName)
 {
     const QString primary = orderByGivenName ? QLatin1String("?given") : QLatin1String("?family");
     const QString secondary = orderByGivenName ? QLatin1String("?family") : QLatin1String("?given");
@@ -298,10 +318,20 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
                 "\n ?favorite nao:propertyValue 'true' .");
     }
 
+    if (onlineOnly) {
+        // The best we can do here is: has at least one imAddress whose imPresence != offline
+        queryString += QLatin1String(
+                "\n ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress"
+                "\n FILTER(nco:imPresence(?imAddress) != <http://www.semanticdesktop.org/ontologies/2007/03/22/nco#presence-status-offline>)"
+                );
+    } else {
+        queryString += QLatin1String(
+                "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress }");
+    }
+
     queryString += QLatin1String(
             "\n OPTIONAL { ?x nco:nameGiven ?given }"
             "\n OPTIONAL { ?x nco:nameFamily ?family }"
-            "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?org . ?org nco:org ?organization }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?email . ?email nco:hasEmailAddress ?emailAddress }"
             "\n OPTIONAL { ?x nco:hasAffiliation ?phone . ?phone nco:hasPhoneNumber ?phoneNumber  }"

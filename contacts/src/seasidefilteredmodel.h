@@ -56,7 +56,8 @@ public:
     enum FilterType {
         FilterNone,
         FilterAll,
-        FilterFavorites
+        FilterFavorites,
+        FilterOnline
     };
 
     enum DisplayLabelOrder {

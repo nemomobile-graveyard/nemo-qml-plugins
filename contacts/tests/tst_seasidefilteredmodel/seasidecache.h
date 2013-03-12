@@ -52,11 +52,11 @@ public:
 
     void reset();
 
+    static QVector<QContactLocalId> getContactsForFilterType(SeasideFilteredModel::FilterType filterType);
 
-
-    QVector<QContactLocalId> m_contacts[3];
-    SeasideFilteredModel *m_models[3];
-    bool m_populated[3];
+    QVector<QContactLocalId> m_contacts[4];
+    SeasideFilteredModel *m_models[4];
+    bool m_populated[4];
 
     QVector<SeasideCacheItem> m_cache;
 

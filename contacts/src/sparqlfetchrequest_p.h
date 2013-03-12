@@ -68,6 +68,9 @@ public:
     bool favoritesOnly() const;
     void setFavoritesOnly(bool favorites);
 
+    bool onlineOnly() const;
+    void setOnlineOnly(bool online);
+
     bool sortOnFirstName() const;
     void setSortOnFirstName(bool first);
 
@@ -89,7 +92,7 @@ protected:
 
 private:
     QContactAbstractRequest::State executeQuery(
-            QSparqlConnection *connection, bool queryData, bool favoritesOnly, bool sortOnFirstName);
+            QSparqlConnection *connection, bool queryData, bool favoritesOnly, bool onlineOnly, bool sortOnFirstName);
     QContactAbstractRequest::State readContacts(QSparqlResult *results);
     QContactAbstractRequest::State readContactIds(QSparqlResult *results);
     QWaitCondition m_condition;
@@ -102,6 +105,8 @@ private:
     bool m_threadQueryData;
     bool m_favoritesOnly;
     bool m_threadFavoritesOnly;
+    bool m_onlineOnly;
+    bool m_threadOnlineOnly;
     bool m_sortOnFirstName;
     bool m_threadSortOnFirstName;
     bool m_resultsAvailable;

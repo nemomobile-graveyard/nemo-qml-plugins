@@ -44,6 +44,7 @@ struct Contact
     const char *lastName;
     const char *fullName;
     const bool isFavorite;
+    const bool isOnline;
     const char *email;
     const char *avatar;
 
@@ -51,13 +52,13 @@ struct Contact
 
 static const Contact contactsData[] =
 {
-/*0*/   { "Aaron",  "Aaronson", "Aaron Aaronson", false, "aaronaa@example.com", 0 },
-/*1*/   { "Aaron",  "Arthur",   "Aaron Arthur",   false, "aaronar@example.com", 0 },
-/*2*/   { "Aaron",  "Johns",    "Aaron Johns",    true,  "johns@example.com", 0 },
-/*3*/   { "Arthur", "Johns",    "Arthur Johns",   false, "arthur1.johnz@example.org", 0 },
-/*4*/   { "Jason",  "Aaronson", "Jason Aaronson", false, "jay@examplez.org", 0 },
-/*5*/   { "Joe",    "Johns",    "Joe Johns",      true,  "jj@examplez.org", "file:///cache/joe.jpg" },
-/*6*/   { "Robin",  "Burchell", "Robin Burchell", true,  0, 0 }
+/*0*/   { "Aaron",  "Aaronson", "Aaron Aaronson", false, false, "aaronaa@example.com", 0 },
+/*1*/   { "Aaron",  "Arthur",   "Aaron Arthur",   false, true,  "aaronar@example.com", 0 },
+/*2*/   { "Aaron",  "Johns",    "Aaron Johns",    true,  false, "johns@example.com", 0 },
+/*3*/   { "Arthur", "Johns",    "Arthur Johns",   false, true,  "arthur1.johnz@example.org", 0 },
+/*4*/   { "Jason",  "Aaronson", "Jason Aaronson", false, false, "jay@examplez.org", 0 },
+/*5*/   { "Joe",    "Johns",    "Joe Johns",      true,  true,  "jj@examplez.org", "file:///cache/joe.jpg" },
+/*6*/   { "Robin",  "Burchell", "Robin Burchell", true,  false, 0, 0 }
 };
 
 SeasideCache *SeasideCache::instance = 0;
@@ -65,7 +66,7 @@ SeasideCache *SeasideCache::instance = 0;
 SeasideCache::SeasideCache()
 {
     instance = this;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         m_models[i] = 0;
         m_populated[i] = false;
     }
@@ -73,7 +74,7 @@ SeasideCache::SeasideCache()
 
 void SeasideCache::reset()
 {
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         m_contacts[i].clear();
         m_populated[i] = false;
         m_models[i] = 0;
@@ -108,6 +109,25 @@ void SeasideCache::reset()
 
         m_cache.append(SeasideCacheItem(contact));
     }
+
+    insert(SeasideFilteredModel::FilterAll, 0, getContactsForFilterType(SeasideFilteredModel::FilterAll));
+    insert(SeasideFilteredModel::FilterFavorites, 0, getContactsForFilterType(SeasideFilteredModel::FilterFavorites));
+    insert(SeasideFilteredModel::FilterOnline, 0, getContactsForFilterType(SeasideFilteredModel::FilterOnline));
+}
+
+QVector<QContactLocalId> SeasideCache::getContactsForFilterType(SeasideFilteredModel::FilterType filterType)
+{
+    QVector<QContactLocalId> ids;
+
+    for (uint i = 0; i < sizeof(contactsData) / sizeof(Contact); ++i) {
+        if ((filterType == SeasideFilteredModel::FilterAll) ||
+            (filterType == SeasideFilteredModel::FilterFavorites && contactsData[i].isFavorite) ||
+            (filterType == SeasideFilteredModel::FilterOnline && contactsData[i].isOnline)) {
+            ids.append(i);
+        }
+    }
+
+    return ids;
 }
 
 SeasideCache::~SeasideCache()
@@ -117,14 +137,14 @@ SeasideCache::~SeasideCache()
 
 void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type)
 {
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 4; ++i)
         instance->m_models[i] = 0;
     instance->m_models[type] = model;
 }
 
 void SeasideCache::unregisterModel(SeasideFilteredModel *)
 {
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 4; ++i)
         instance->m_models[i] = 0;
 }
 
