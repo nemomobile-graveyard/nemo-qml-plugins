@@ -181,7 +181,7 @@ void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredMod
         new SeasideCache;
     } else {
         instance->m_expiryTimer.stop();
-        for (int i = 0; i < FilterTypesCount; ++i)
+        for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i)
             instance->m_models[i].removeAll(model);
     }
     instance->m_models[type].append(model);
@@ -190,7 +190,7 @@ void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredMod
 void SeasideCache::unregisterModel(SeasideFilteredModel *model)
 {
     bool empty = true;
-    for (int i = 0; i < FilterTypesCount; ++i) {
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
         instance->m_models[i].removeAll(model);
         empty &= instance->m_models[i].isEmpty();
     }
@@ -752,7 +752,7 @@ void SeasideCache::displayLabelOrderChanged()
             }
         }
 
-        for (int i = 0; i < FilterTypesCount; ++i) {
+        for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
             for (int j = 0; j < m_models[i].count(); ++j)
                 m_models[i].at(j)->updateDisplayLabelOrder();
         }

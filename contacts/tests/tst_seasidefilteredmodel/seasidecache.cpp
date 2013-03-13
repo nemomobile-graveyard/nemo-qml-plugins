@@ -66,7 +66,7 @@ SeasideCache *SeasideCache::instance = 0;
 SeasideCache::SeasideCache()
 {
     instance = this;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
         m_models[i] = 0;
         m_populated[i] = false;
     }
@@ -74,7 +74,7 @@ SeasideCache::SeasideCache()
 
 void SeasideCache::reset()
 {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
         m_contacts[i].clear();
         m_populated[i] = false;
         m_models[i] = 0;
@@ -137,14 +137,14 @@ SeasideCache::~SeasideCache()
 
 void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type)
 {
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i)
         instance->m_models[i] = 0;
     instance->m_models[type] = model;
 }
 
 void SeasideCache::unregisterModel(SeasideFilteredModel *)
 {
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i)
         instance->m_models[i] = 0;
 }
 

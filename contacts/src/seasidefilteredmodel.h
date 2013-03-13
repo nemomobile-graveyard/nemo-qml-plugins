@@ -57,7 +57,8 @@ public:
         FilterNone,
         FilterAll,
         FilterFavorites,
-        FilterOnline
+        FilterOnline,
+        FilterTypesCount
     };
 
     enum DisplayLabelOrder {

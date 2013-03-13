@@ -54,9 +54,9 @@ public:
 
     static QVector<QContactLocalId> getContactsForFilterType(SeasideFilteredModel::FilterType filterType);
 
-    QVector<QContactLocalId> m_contacts[4];
-    SeasideFilteredModel *m_models[4];
-    bool m_populated[4];
+    QVector<QContactLocalId> m_contacts[SeasideFilteredModel::FilterTypesCount];
+    SeasideFilteredModel *m_models[SeasideFilteredModel::FilterTypesCount];
+    bool m_populated[SeasideFilteredModel::FilterTypesCount];
 
     QVector<SeasideCacheItem> m_cache;
 
