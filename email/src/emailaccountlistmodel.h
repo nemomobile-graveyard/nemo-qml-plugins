@@ -49,8 +49,9 @@ public slots:
     Q_INVOKABLE QDateTime lastUpdatedAccountTime();
 
 signals:
-    void accountAdded(QVariant accountId);
-    void accountRemoved(QVariant accountId);
+    void accountAdded(QVariantList accountIds);
+    void accountRemoved(QVariantList accountIds);
+    void accountsUpdated(QVariantList accountIds);
     void modelReset();
 
 private slots:
