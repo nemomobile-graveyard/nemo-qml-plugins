@@ -52,6 +52,19 @@
 #include <QVersitContactExporter>
 
 #include "seasideperson.h"
+#include "seasidepeoplemodel.h"
+
+SeasidePersonAttached::SeasidePersonAttached(QObject *parent)
+    : QObject(parent)
+{
+    connect(SeasidePeopleModel::instance(), SIGNAL(populatedChanged()),
+            this, SIGNAL(selfPersonChanged()));
+}
+
+SeasidePerson *SeasidePersonAttached::selfPerson() const
+{
+    return SeasidePeopleModel::instance()->selfPerson();
+}
 
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
@@ -925,3 +938,9 @@ QString SeasidePerson::vCard() const
 
     return QString::fromUtf8(vcard);
 }
+
+SeasidePersonAttached *SeasidePerson::qmlAttachedProperties(QObject *object)
+{
+    return new SeasidePersonAttached(object);
+}
+
