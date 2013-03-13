@@ -319,11 +319,10 @@ QContactAbstractRequest::State SparqlFetchRequest::executeQuery(
     }
 
     if (onlineOnly) {
-        // The best we can do here is: has at least one imAddress whose imPresence != offline
         queryString += QLatin1String(
                 "\n ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress"
-                "\n FILTER(nco:imPresence(?imAddress) != <http://www.semanticdesktop.org/ontologies/2007/03/22/nco#presence-status-offline>)"
-                );
+                "\n FILTER(nco:imPresence(?imAddress) NOT IN (<http://www.semanticdesktop.org/ontologies/2007/03/22/nco#presence-status-offline>,"
+                                                             "<http://www.semanticdesktop.org/ontologies/2007/03/22/nco#presence-status-unknown>))");
     } else {
         queryString += QLatin1String(
                 "\n OPTIONAL { ?x nco:hasAffiliation ?im . ?im nco:hasIMAddress ?imAddress }");
