@@ -60,6 +60,7 @@ public:
 
         qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
         qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleProxyModel");
+        qmlRegisterType<SeasidePersonAttached>();
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
     }
 };

@@ -37,6 +37,17 @@
 
 Q_DECLARE_METATYPE(QModelIndex)
 
+// Needed to satisfy link dependencies:
+class SeasidePeopleModel
+{
+    SeasidePeopleModel *instance();
+    SeasidePerson *selfPerson() const;
+    bool populated() const;
+};
+SeasidePeopleModel *SeasidePeopleModel::instance() { return 0; }
+SeasidePerson *SeasidePeopleModel::selfPerson() const { return 0; }
+bool SeasidePeopleModel::populated() const { return false; }
+
 class tst_SeasideFilteredModel : public QObject
 {
     Q_OBJECT

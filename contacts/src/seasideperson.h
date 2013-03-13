@@ -35,6 +35,7 @@
 // Qt
 #include <QObject>
 #include <QUrl>
+#include <qdeclarative.h>
 
 // Mobility
 #include <QContact>
@@ -46,6 +47,22 @@
 QTM_USE_NAMESPACE
 
 Q_DECLARE_METATYPE(QContact)
+
+class SeasidePerson;
+
+class SeasidePersonAttached : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(SeasidePerson *selfPerson READ selfPerson NOTIFY selfPersonChanged)
+
+public:
+    SeasidePersonAttached(QObject *parent);
+
+    SeasidePerson *selfPerson() const;
+
+signals:
+    void selfPersonChanged();
+};
 
 class SeasidePerson : public QObject
 {
@@ -231,6 +248,8 @@ public:
                 const QContact &mContact,
                 SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
 
+    static SeasidePersonAttached *qmlAttachedProperties(QObject *object);
+
 signals:
     void contactChanged();
     void contactRemoved();
@@ -276,6 +295,8 @@ private:
     friend class SeasidePeopleModelPriv;
 };
 
-Q_DECLARE_METATYPE(SeasidePerson *);
+QML_DECLARE_TYPEINFO(SeasidePerson, QML_HAS_ATTACHED_PROPERTIES);
+
+QML_DECLARE_TYPE(SeasidePerson);
 
 #endif // SEASIDEPERSON_H
