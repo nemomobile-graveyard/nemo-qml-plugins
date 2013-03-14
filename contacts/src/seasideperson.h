@@ -113,6 +113,7 @@ public:
         GlobalPresenceStateType,
         PresenceAccountUrisType,
         PresenceAccountProvidersType,
+        PresenceServiceIconPathsType,
         PresenceStatesType,
         PresenceMessagesType,
     };
@@ -226,6 +227,9 @@ public:
     Q_PROPERTY(QStringList presenceAccountProviders READ presenceAccountProviders NOTIFY presenceAccountProvidersChanged)
     QStringList presenceAccountProviders() const;
 
+    Q_PROPERTY(QStringList presenceServiceIconPaths READ presenceServiceIconPaths NOTIFY presenceServiceIconPathsChanged)
+    QStringList presenceServiceIconPaths() const;
+
     Q_PROPERTY(QList<int> presenceStates READ presenceStates NOTIFY presenceStatesChanged)
     QList<int> presenceStates() const;
 
@@ -278,6 +282,7 @@ signals:
     void globalPresenceStateChanged();
     void presenceAccountUrisChanged();
     void presenceAccountProvidersChanged();
+    void presenceServiceIconPathsChanged();
     void presenceStatesChanged();
     void presenceMessagesChanged();
     void accountUrisChanged();

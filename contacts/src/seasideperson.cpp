@@ -794,6 +794,24 @@ QStringList SeasidePerson::presenceAccountProviders() const
     return rv;
 }
 
+QStringList SeasidePerson::presenceServiceIconPaths() const
+{
+    QStringList rv;
+
+    QMap<QString, QString> serviceIconPaths;
+    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
+        if (account.hasValue("ServiceIconPath"))
+            serviceIconPaths.insert(account.detailUri(), account.value("ServiceIconPath"));
+    }
+
+    // Return the service icon paths as reported by the presence details
+    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
+        rv.append(selectMatching(presence.linkedDetailUris(), serviceIconPaths));
+    }
+
+    return rv;
+}
+
 QList<int> SeasidePerson::presenceStates() const
 {
     QList<int> rv;
@@ -918,6 +936,7 @@ void SeasidePerson::setContact(const QContact &contact)
         if (urisChanged) {
             emit presenceAccountUrisChanged();
             emit presenceAccountProvidersChanged();
+            emit presenceServiceIconPathsChanged();
         }
     }
 
