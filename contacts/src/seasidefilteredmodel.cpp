@@ -125,14 +125,15 @@ void SeasideFilteredModel::setFilterType(FilterType type)
 {
     if (m_filterType != type) {
         const bool wasPopulated = SeasideCache::isPopulated(m_filterType);
+
         // FilterNone == FilterAll when there is a filter pattern.
-        const bool effectiveFilterChanged = m_filterPattern.isEmpty()
-                || m_filterType == FilterFavorites
-                || type == FilterFavorites;
+        const bool equivalentFilter = (type == FilterAll || type == FilterNone) &&
+                                      (m_filterType == FilterAll || m_filterType == FilterNone) &&
+                                      !m_filterPattern.isEmpty();
 
         m_filterType = type;
 
-        if (effectiveFilterChanged) {
+        if (!equivalentFilter) {
             m_referenceIndex = 0;
             m_filterIndex = 0;
 
@@ -154,7 +155,6 @@ void SeasideFilteredModel::setFilterType(FilterType type)
 
             if (SeasideCache::isPopulated(m_filterType) != wasPopulated)
                 emit populatedChanged();
-
         }
 
         emit filterTypeChanged();
