@@ -22,6 +22,7 @@
 class EmailMessageListModel : public QMailMessageListModel
 {
     Q_OBJECT
+    Q_ENUMS(Priority)
 
 public:
     enum Roles
@@ -42,9 +43,9 @@ public:
         MessageTimeStampRole,                                  // returns timestamp in QDateTime format
         MessageSelectModeRole,                                 // returns the select mode
         MessagePreviewRole,                                    // returns message preview if available
-        MessageTimeSectionRole                                 // returns time section relative to the current time
+        MessageTimeSectionRole,                                // returns time section relative to the current time
+        MessagePriorityRole                                    // returns message priority
     };
-
 
     EmailMessageListModel (QObject *parent = 0);
     ~EmailMessageListModel();
@@ -52,6 +53,8 @@ public:
     QVariant data (const QModelIndex & index, int role = Qt::DisplayRole) const;
     QString bodyHtmlText(const QMailMessage &) const;
     QString bodyPlainText(const QMailMessage &) const;
+
+    enum Priority { LowPriority, NormalPriority, HighPriority };
 
 signals:
     void messageDownloadCompleted();
