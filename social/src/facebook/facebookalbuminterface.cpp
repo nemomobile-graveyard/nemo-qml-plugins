@@ -314,7 +314,9 @@ void FacebookAlbumInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
     }
 
     // call the super class implementation
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldData, newData);
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
+    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 /*!

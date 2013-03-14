@@ -261,7 +261,9 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
     }
 
     // then, call super class implementation.
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldData, newData);
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
+    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 /*!
