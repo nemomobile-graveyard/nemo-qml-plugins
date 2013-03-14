@@ -132,11 +132,6 @@ private:
     void removeContactData(QContactLocalId contactId, SeasideFilteredModel::FilterType filter);
     void makePopulated(SeasideFilteredModel::FilterType filter);
 
-    enum {
-        AllPopulated       = 0x3,
-        FavoritesPopulated = 0x4
-    };
-
     QBasicTimer m_expiryTimer;
     QHash<QContactLocalId, SeasideCacheItem> m_people;
     QHash<QString, QContactLocalId> m_phoneNumberIds;
@@ -144,8 +139,8 @@ private:
     QList<QContact> m_contactsToCreate;
     QList<QContactLocalId> m_contactsToRemove;
     QList<QContactLocalId> m_changedContacts;
-    QVector<QContactLocalId> m_contacts[3];
-    QList<SeasideFilteredModel *> m_models[3];
+    QVector<QContactLocalId> m_contacts[SeasideFilteredModel::FilterTypesCount];
+    QList<SeasideFilteredModel *> m_models[SeasideFilteredModel::FilterTypesCount];
     QHash<QContactLocalId,int> m_expiredContacts;
     QContactManager m_manager;
     QContactFetchRequest m_fetchRequest;
