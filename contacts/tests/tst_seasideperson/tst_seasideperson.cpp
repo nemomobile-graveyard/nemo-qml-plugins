@@ -356,6 +356,10 @@ void tst_SeasidePerson::birthday()
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
+    person->resetBirthday();
+    QCOMPARE(spy.count(), 2);
+    QCOMPARE(person->birthday(), QDateTime());
+    QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
 }
 
 void tst_SeasidePerson::anniversary()
@@ -366,6 +370,10 @@ void tst_SeasidePerson::anniversary()
     person->setAnniversary(QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(spy.count(), 1);
     QCOMPARE(person->anniversary(), QDateTime::fromString("05/01/1980 15:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(person->property("anniversary").toDateTime(), person->anniversary());
+    person->resetAnniversary();
+    QCOMPARE(spy.count(), 2);
+    QCOMPARE(person->anniversary(), QDateTime());
     QCOMPARE(person->property("anniversary").toDateTime(), person->anniversary());
 }
 

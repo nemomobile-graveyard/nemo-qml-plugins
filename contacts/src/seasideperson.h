@@ -207,13 +207,15 @@ public:
     QList<int> websiteTypes() const;
     Q_INVOKABLE void setWebsiteType(int which, DetailType type);
 
-    Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)
+    Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged RESET resetBirthday)
     QDateTime birthday() const;
     void setBirthday(const QDateTime &bd);
+    void resetBirthday();
 
-    Q_PROPERTY(QDateTime anniversary READ anniversary WRITE setAnniversary NOTIFY anniversaryChanged)
+    Q_PROPERTY(QDateTime anniversary READ anniversary WRITE setAnniversary NOTIFY anniversaryChanged RESET resetAnniversary)
     QDateTime anniversary() const;
     void setAnniversary(const QDateTime &av);
+    void resetAnniversary();
 
     Q_PROPERTY(PresenceState globalPresenceState READ globalPresenceState NOTIFY globalPresenceStateChanged)
     PresenceState globalPresenceState() const;
