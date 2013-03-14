@@ -72,6 +72,7 @@
 #define FACEBOOK_ONTOLOGY_CONNECTIONS_SUMMARY              QLatin1String("summary")
 
 #define FACEBOOK_ONTOLOGY_COMMENT                          QLatin1String("comment")
+#define FACEBOOK_ONTOLOGY_COMMENT_ID                       QLatin1String("id")
 #define FACEBOOK_ONTOLOGY_COMMENT_TYPE                     QLatin1String("type")
 #define FACEBOOK_ONTOLOGY_COMMENT_FROM                     QLatin1String("from")
 #define FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME              QLatin1String("created_time")

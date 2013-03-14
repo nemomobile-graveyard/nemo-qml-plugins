@@ -208,6 +208,12 @@ bool ContentItemInterface::isInitialized() const
     and \c newData is examined, and appropriate property change signals emitted.
     All ContentItem derived types must then call the \c emitPropertyChangeSignals()
     function of its immediate superclass.
+
+    If the derived type is an IdentifiableContentItem derived type, it MUST
+    fill the NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID (defined in identifiablecontentiteminterface.h)
+    field of both the oldData and newData maps with the social-network-and-type-specific
+    identifier for that content item PRIOR to calling the emitPropertyChangeSignals()
+    function of its super class.
 */
 void ContentItemInterface::emitPropertyChangeSignals(const QVariantMap &, const QVariantMap &)
 {
