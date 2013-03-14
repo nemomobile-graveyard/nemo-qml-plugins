@@ -83,6 +83,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessageSelectModeRole] = "selected";
     roles[MessagePreviewRole] = "preview";
     roles[MessageTimeSectionRole] = "timeSection";
+    roles[MessagePriorityRole] = "priority";
     setRoleNames(roles);
 
     EmailAgent::instance()->initMailServer();
@@ -223,6 +224,16 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         else {
             //returns epoch time for items older than a week
             return QDateTime::fromTime_t(0);
+        }
+    }
+    else if (role == MessagePriorityRole) {
+        if (messageMetaData.status() & QMailMessage::HighPriority) {
+            return HighPriority;
+        } else if (messageMetaData.status() & QMailMessage::LowPriority) {
+            return LowPriority;
+        }
+        else {
+            return NormalPriority;
         }
     }
     return QMailMessageListModel::data(index, role);
