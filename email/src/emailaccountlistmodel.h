@@ -45,11 +45,13 @@ public slots:
     Q_INVOKABLE QStringList getAllDisplayNames();
     Q_INVOKABLE QVariant getAccountIdByIndex(int idx);
     Q_INVOKABLE QString addressFromAccountId(QVariant accountId);
+    Q_INVOKABLE QString displayNameFromAccountId(QVariant accountId);
     Q_INVOKABLE QDateTime lastUpdatedAccountTime();
 
 signals:
-    void accountAdded(QVariant accountId);
-    void accountRemoved(QVariant accountId);
+    void accountAdded(QVariantList accountIds);
+    void accountRemoved(QVariantList accountIds);
+    void accountsUpdated(QVariantList accountIds);
     void modelReset();
 
 private slots:

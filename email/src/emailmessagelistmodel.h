@@ -36,6 +36,7 @@ public:
         MessageUuidRole,			                           // returns a unique string id
         MessageSenderDisplayNameRole,                          // returns sender's display name
         MessageSenderEmailAddressRole,                         // returns sender's email address
+        MessageToRole,                                         // returns a list of To (email + displayName)
         MessageCcRole,                                         // returns a list of Cc (email + displayName)
         MessageBccRole,                                        // returns a list of Bcc (email + displayName)
         MessageTimeStampRole,                                  // returns timestamp in QDateTime format
