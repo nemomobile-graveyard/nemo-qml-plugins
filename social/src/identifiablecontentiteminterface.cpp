@@ -344,9 +344,14 @@ void IdentifiableContentItemInterface::emitPropertyChangeSignals(const QVariantM
     // }
     // But this one is a bit special, since if the id changed, it's a terrible error.
 
-    // check identifier
-    QString oldId = oldData.value(QLatin1String("id")).toString();
-    QString newId = newData.value(QLatin1String("id")).toString();
+    // check identifier - NOTE: derived types MUST fill out this field before calling this class' implementation of emitPropertyChangeSignals.
+    QString oldId = oldData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
+    QString newId = newData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
+    if (newId.isEmpty() && oldId.isEmpty()) {
+        // this will fall through to being reported as an error due to identifier change (to empty) below.
+        qWarning() << Q_FUNC_INFO << "ERROR: derived types MUST set the NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID field appropriately prior to calling the superclass emitPropertyChangeSignals() function!";
+    }
+
     if (oldId.isEmpty())
         oldId = dd->identifier; // might have been set directly by client via icii.setIdentifier() which sets dd->identifier.
 
