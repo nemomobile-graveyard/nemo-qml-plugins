@@ -713,6 +713,11 @@ void SeasidePerson::setBirthday(const QDateTime &bd)
     emit birthdayChanged();
 }
 
+void SeasidePerson::resetBirthday()
+{
+    setBirthday(QDateTime());
+}
+
 QDateTime SeasidePerson::anniversary() const
 {
     return mContact.detail<QContactAnniversary>().originalDateTime();
@@ -724,6 +729,11 @@ void SeasidePerson::setAnniversary(const QDateTime &av)
     anniv.setOriginalDateTime(av);
     mContact.saveDetail(&anniv);
     emit anniversaryChanged();
+}
+
+void SeasidePerson::resetAnniversary()
+{
+    setAnniversary(QDateTime());
 }
 
 SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
