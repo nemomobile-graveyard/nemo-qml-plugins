@@ -76,6 +76,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessageUuidRole] = "messageUuid";
     roles[MessageSenderDisplayNameRole] = "senderDisplayName";
     roles[MessageSenderEmailAddressRole] = "senderEmailAddress";
+    roles[MessageToRole] = "to";
     roles[MessageCcRole] = "cc";
     roles[MessageBccRole] = "bcc";
     roles[MessageTimeStampRole] = "qDateTime";
@@ -188,13 +189,17 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
     else if (role == MessageSenderEmailAddressRole) {
         return messageMetaData.from().address();
     }
+    else if (role == MessageToRole) {
+        QMailMessage message (msgId);
+        return QMailAddress::toStringList(message.to());
+    }
     else if (role == MessageCcRole) {
         QMailMessage message (msgId);
-        return QMailAddress::toStringList (message.cc());
+        return QMailAddress::toStringList(message.cc());
     }
     else if (role == MessageBccRole) {
         QMailMessage message (msgId);
-        return QMailAddress::toStringList (message.bcc());
+        return QMailAddress::toStringList(message.bcc());
     }
     else if (role == MessageTimeStampRole) {
         return (messageMetaData.date().toLocalTime());
@@ -220,7 +225,6 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
             return QDateTime::fromTime_t(0);
         }
     }
-
     return QMailMessageListModel::data(index, role);
 }
 
@@ -428,25 +432,12 @@ QVariant EmailMessageListModel::numberOfAttachments (int idx)
 
 QVariant EmailMessageListModel::toList (int idx)
 {
-    return data(index(idx), MessageRecipientsRole);
+    return data(index(idx), MessageToRole);
 }
 
 QVariant EmailMessageListModel::recipients (int idx)
 {
-    QMailMessageId msgId = idFromIndex(index(idx));
-    QMailMessageMetaData messageMetaData(msgId);
-    QStringList recipients;
-     
-    QMailAccount mailAccount (messageMetaData.parentAccountId());
-    QString myEmailAddress = mailAccount.fromAddress().address();
-
-    // Since 1468833f, QMMMD::recipients() returns To: CC: and BCC: recipients
-    foreach (const QMailAddress &address, messageMetaData.recipients()) {
-        QString emailAddress = address.address();
-        if (QString::compare(myEmailAddress, emailAddress, Qt::CaseInsensitive) != 0)
-            recipients << address.toString();
-    }
-    return recipients;
+    return data(index(idx), MessageRecipientsRole);
 }
 
 QVariant EmailMessageListModel::ccList (int idx)
