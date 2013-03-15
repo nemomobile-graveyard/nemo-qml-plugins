@@ -131,7 +131,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
     // invokable api.
-    virtual Q_INVOKABLE void populate(); // count/startIndex?
+    Q_INVOKABLE virtual void populate(); // count/startIndex?
     Q_INVOKABLE void nextNode();
     Q_INVOKABLE void previousNode();
     Q_INVOKABLE QObject *relatedItem(int index) const;

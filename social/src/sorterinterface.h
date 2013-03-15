@@ -44,7 +44,7 @@ class SorterInterface : public QObject
 public:
     SorterInterface(QObject *parent = 0);
     virtual ~SorterInterface();
-    virtual Q_INVOKABLE bool firstLessThanSecond(ContentItemInterface *first, ContentItemInterface *second) const;
+    Q_INVOKABLE virtual bool firstLessThanSecond(ContentItemInterface *first, ContentItemInterface *second) const;
 
 private:
     bool m_ownedBySni;

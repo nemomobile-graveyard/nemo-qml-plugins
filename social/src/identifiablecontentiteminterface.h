@@ -73,9 +73,9 @@ class IdentifiableContentItemInterface : public ContentItemInterface
 
     Q_PROPERTY(QString identifier READ identifier WRITE setIdentifier NOTIFY identifierChanged)
 
-    Q_PROPERTY(SocialNetworkInterface::Status status NOTIFY statusChanged)
-    Q_PROPERTY(SocialNetworkInterface::ErrorType error NOTIFY errorChanged)
-    Q_PROPERTY(QString errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(SocialNetworkInterface::Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(SocialNetworkInterface::ErrorType error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
 
     Q_ENUMS(SocialNetworkInterface::Status)
     Q_ENUMS(SocialNetworkInterface::ErrorType)
@@ -96,8 +96,8 @@ public:
     QString errorMessage() const;
 
     // invokable api.
-    virtual Q_INVOKABLE bool remove();
-    virtual Q_INVOKABLE bool reload(const QStringList &whichFields = QStringList());
+    Q_INVOKABLE virtual bool remove();
+    Q_INVOKABLE virtual bool reload(const QStringList &whichFields = QStringList());
 
 Q_SIGNALS:
     void responseReceived(const QVariantMap &data);
@@ -128,6 +128,6 @@ private:
     Q_PRIVATE_SLOT(d_func(), void defaultSslErrorsHandler(const QList<QSslError>))
 };
 
-Q_DECLARE_METATYPE(IdentifiableContentItemInterface*);
+Q_DECLARE_METATYPE(IdentifiableContentItemInterface*)
 
 #endif // IDENTIFIABLECONTENTITEMINTERFACE_H

@@ -76,7 +76,6 @@ ContentItemInterface::ContentItemInterface(ContentItemInterfacePrivate &dd, QObj
 
 ContentItemInterface::~ContentItemInterface()
 {
-//    delete d;
 }
 
 void ContentItemInterface::classBegin()

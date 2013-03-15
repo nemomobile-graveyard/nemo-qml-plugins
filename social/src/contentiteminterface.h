@@ -112,6 +112,6 @@ private:
     friend class SocialNetworkInterface;
 };
 
-Q_DECLARE_METATYPE(ContentItemInterface*);
+Q_DECLARE_METATYPE(ContentItemInterface*)
 
 #endif // CONTENTITEMINTERFACE_H
