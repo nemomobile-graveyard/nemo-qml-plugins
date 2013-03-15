@@ -93,6 +93,7 @@ void FacebookTagInterface::emitPropertyChangeSignals(const QVariantMap &oldData,
 */
 QString FacebookTagInterface::targetIdentifier() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_TAG_TARGETIDENTIFIER).toString();
 }
 
@@ -103,6 +104,7 @@ QString FacebookTagInterface::targetIdentifier() const
 */
 QString FacebookTagInterface::userIdentifier() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_TAG_USERIDENTIFIER).toString();
 }
 
@@ -112,6 +114,7 @@ QString FacebookTagInterface::userIdentifier() const
 */
 QString FacebookTagInterface::text() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_TAG_TEXT).toString();
 }
 
@@ -121,6 +124,7 @@ QString FacebookTagInterface::text() const
 */
 qreal FacebookTagInterface::xOffset() const
 {
+    Q_D(const ContentItemInterface);
     QString xoStr = d->data().value(FACEBOOK_ONTOLOGY_TAG_XOFFSET).toString();
     bool ok = false;
     qreal retn = xoStr.toDouble(&ok);
@@ -135,6 +139,7 @@ qreal FacebookTagInterface::xOffset() const
 */
 qreal FacebookTagInterface::yOffset() const
 {
+    Q_D(const ContentItemInterface);
     QString yoStr = d->data().value(FACEBOOK_ONTOLOGY_TAG_YOFFSET).toString();
     bool ok = false;
     qreal retn = yoStr.toDouble(&ok);

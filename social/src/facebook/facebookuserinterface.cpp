@@ -41,34 +41,33 @@
 
 #include <QtDebug>
 
-FacebookUserInterfacePrivate::FacebookUserInterfacePrivate(FacebookUserInterface *parent, IdentifiableContentItemInterfacePrivate *parentData)
-    : QObject(parent)
-    , q(parent)
-    , dd(parentData)
-    , hometown(new FacebookObjectReferenceInterface(this))
-    , location(new FacebookObjectReferenceInterface(this))
-    , significantOther(new FacebookObjectReferenceInterface(this))
-    , picture(new FacebookPictureInterface(this))
+FacebookUserInterfacePrivate::FacebookUserInterfacePrivate(FacebookUserInterface *q)
+    : IdentifiableContentItemInterfacePrivate(q)
+//    , hometown(new FacebookObjectReferenceInterface(this)) // Unsafe
+//    , location(new FacebookObjectReferenceInterface(this))
+//    , significantOther(new FacebookObjectReferenceInterface(this))
+//    , picture(new FacebookPictureInterface(this))
     , action(FacebookInterfacePrivate::NoAction)
 {
 }
 
 FacebookUserInterfacePrivate::~FacebookUserInterfacePrivate()
 {
-    dd->deleteReply();
+    deleteReply();
 }
 
 /*! \internal */
 void FacebookUserInterfacePrivate::finishedHandler()
 {
-    if (!dd->reply()) {
+    Q_Q(FacebookUserInterface);
+    if (!reply()) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply";
         return;
     }
 
-    QByteArray replyData = dd->reply()->readAll();
-    dd->deleteReply();
+    QByteArray replyData = reply()->readAll();
+    deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok)
@@ -78,13 +77,13 @@ void FacebookUserInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::DeletePhotoAction: // flow down.
         case FacebookInterfacePrivate::DeleteAlbumAction: {
             if (replyData == QString(QLatin1String("true"))) {
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 emit q->statusChanged();
                 emit q->responseReceived(responseData);
             } else {
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = QLatin1String("User: request failed");
-                dd->status = SocialNetworkInterface::Error;
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = QLatin1String("User: request failed");
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
@@ -97,18 +96,18 @@ void FacebookUserInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::UploadAlbumAction: {
             if (!ok || responseData.value("id").toString().isEmpty()) {
                 // failed.
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = action == FacebookInterfacePrivate::UploadAlbumAction
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = action == FacebookInterfacePrivate::UploadAlbumAction
                     ? QLatin1String("Album: add album request failed")
                     : QLatin1String("Album: add photo request failed");
-                dd->status = SocialNetworkInterface::Error;
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
                 emit q->responseReceived(responseData);
             } else {
                 // succeeded.
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 emit q->statusChanged();
                 emit q->responseReceived(responseData);
             }
@@ -116,9 +115,9 @@ void FacebookUserInterfacePrivate::finishedHandler()
         break;
 
         default: {
-            dd->error = SocialNetworkInterface::OtherError;
-            dd->errorMessage = QLatin1String("Request finished but no action currently in progress");
-            dd->status = SocialNetworkInterface::Error;
+            error = SocialNetworkInterface::OtherError;
+            errorMessage = QLatin1String("Request finished but no action currently in progress");
+            status = SocialNetworkInterface::Error;
             emit q->statusChanged();
             emit q->errorChanged();
             emit q->errorMessageChanged();
@@ -215,8 +214,13 @@ void FacebookUserInterfacePrivate::finishedHandler()
 */
 
 FacebookUserInterface::FacebookUserInterface(QObject *parent)
-    : IdentifiableContentItemInterface(parent), f(new FacebookUserInterfacePrivate(this, dd))
+    : IdentifiableContentItemInterface(*(new FacebookUserInterfacePrivate(this)), parent)
 {
+    Q_D(FacebookUserInterface);
+    d->hometown = new FacebookObjectReferenceInterface(this);
+    d->location = new FacebookObjectReferenceInterface(this);
+    d->significantOther = new FacebookObjectReferenceInterface(this);
+    d->picture = new FacebookPictureInterface(this);
 }
 
 FacebookUserInterface::~FacebookUserInterface()
@@ -244,6 +248,7 @@ bool FacebookUserInterface::reload(const QStringList &whichFields)
 /*! \reimp */
 void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
+    Q_D(FacebookUserInterface);
     QString nameStr = newData.value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
     QString fnStr = newData.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
     QString mnStr = newData.value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
@@ -350,7 +355,7 @@ void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData
         newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
         newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
         newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->hometown, newHtData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->hometown, newHtData);
         emit hometownChanged();
     }
 
@@ -359,12 +364,12 @@ void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData
         newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
         newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
         newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->location, newLocData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->location, newLocData);
         emit locationChanged();
     }
 
     if (picMap != oldPicMap) {
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->picture, picMap);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->picture, picMap);
         emit pictureChanged();
     }
 
@@ -373,7 +378,7 @@ void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData
         newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
         newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->significantOther, newSigData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->significantOther, newSigData);
         emit significantOtherChanged();
     }
 
@@ -402,6 +407,7 @@ void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData
 */
 bool FacebookUserInterface::uploadPhoto(const QUrl &source, const QString &message)
 {
+    Q_D(FacebookUserInterface);
     // XXX TODO: privacy parameter?
 
     QVariantMap extraData; // image upload is handled specially by the facebook adapter.
@@ -419,10 +425,10 @@ bool FacebookUserInterface::uploadPhoto(const QUrl &source, const QString &messa
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::UploadPhotoAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::UploadPhotoAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -438,15 +444,16 @@ bool FacebookUserInterface::uploadPhoto(const QUrl &source, const QString &messa
 */
 bool FacebookUserInterface::removePhoto(const QString &photoIdentifier)
 {
+    Q_D(FacebookUserInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete, photoIdentifier);
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeletePhotoAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeletePhotoAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -467,6 +474,7 @@ bool FacebookUserInterface::removePhoto(const QString &photoIdentifier)
 */
 bool FacebookUserInterface::uploadAlbum(const QString &name, const QString &message, const QVariantMap &privacy)
 {
+    Q_D(FacebookUserInterface);
     QVariantMap postData;
     postData.insert("name", name);
     if (!message.isEmpty())
@@ -481,10 +489,10 @@ bool FacebookUserInterface::uploadAlbum(const QString &name, const QString &mess
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::UploadAlbumAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::UploadAlbumAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -500,15 +508,16 @@ bool FacebookUserInterface::uploadAlbum(const QString &name, const QString &mess
 */
 bool FacebookUserInterface::removeAlbum(const QString &albumIdentifier)
 {
+    Q_D(FacebookUserInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete, albumIdentifier);
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteAlbumAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteAlbumAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -519,6 +528,7 @@ bool FacebookUserInterface::removeAlbum(const QString &albumIdentifier)
 */
 QString FacebookUserInterface::name() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
 }
 
@@ -528,6 +538,7 @@ QString FacebookUserInterface::name() const
 */
 QString FacebookUserInterface::firstName() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
 }
 
@@ -537,6 +548,7 @@ QString FacebookUserInterface::firstName() const
 */
 QString FacebookUserInterface::middleName() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
 }
 
@@ -546,6 +558,7 @@ QString FacebookUserInterface::middleName() const
 */
 QString FacebookUserInterface::lastName() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_LASTNAME).toString();
 }
 
@@ -555,6 +568,7 @@ QString FacebookUserInterface::lastName() const
 */
 QString FacebookUserInterface::gender() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_GENDER).toString();
 }
 
@@ -564,6 +578,7 @@ QString FacebookUserInterface::gender() const
 */
 QString FacebookUserInterface::locale() const
 {
+   Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_LOCALE).toString();
 }
 
@@ -573,6 +588,7 @@ QString FacebookUserInterface::locale() const
 */
 QUrl FacebookUserInterface::link() const
 {
+    Q_D(const FacebookUserInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_USER_LINK).toString());
 }
 
@@ -582,6 +598,7 @@ QUrl FacebookUserInterface::link() const
 */
 QString FacebookUserInterface::userName() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_USERNAME).toString();
 }
 
@@ -591,6 +608,7 @@ QString FacebookUserInterface::userName() const
 */
 QString FacebookUserInterface::thirdPartyIdentifier() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_THIRDPARTYIDENTIFIER).toString();
 }
 
@@ -601,6 +619,7 @@ QString FacebookUserInterface::thirdPartyIdentifier() const
 */
 bool FacebookUserInterface::installed() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_INSTALLED).toString() == QLatin1String("true");
 }
 
@@ -610,6 +629,7 @@ bool FacebookUserInterface::installed() const
 */
 qreal FacebookUserInterface::timezoneOffset() const
 {
+    Q_D(const FacebookUserInterface);
     QString tzoStr = d->data().value(FACEBOOK_ONTOLOGY_USER_TIMEZONEOFFSET).toString();
     bool ok = false;
     qreal tzo = tzoStr.toDouble(&ok);
@@ -624,6 +644,7 @@ qreal FacebookUserInterface::timezoneOffset() const
 */
 QString FacebookUserInterface::updatedTime() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_UPDATEDTIME).toString();
 }
 
@@ -633,6 +654,7 @@ QString FacebookUserInterface::updatedTime() const
 */
 bool FacebookUserInterface::verified() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_VERIFIED).toString() == QLatin1String("true");
 }
 
@@ -642,6 +664,7 @@ bool FacebookUserInterface::verified() const
 */
 QString FacebookUserInterface::bio() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_BIO).toString();
 }
 
@@ -651,6 +674,7 @@ QString FacebookUserInterface::bio() const
 */
 QString FacebookUserInterface::birthday() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_BIRTHDAY).toString();
 }
 
@@ -660,6 +684,7 @@ QString FacebookUserInterface::birthday() const
 */
 QString FacebookUserInterface::email() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_EMAIL).toString();
 }
 
@@ -669,7 +694,8 @@ QString FacebookUserInterface::email() const
 */
 FacebookObjectReferenceInterface *FacebookUserInterface::hometown() const
 {
-    return f->hometown;
+    Q_D(const FacebookUserInterface);
+    return d->hometown;
 }
 
 /*!
@@ -679,6 +705,7 @@ FacebookObjectReferenceInterface *FacebookUserInterface::hometown() const
 */
 QStringList FacebookUserInterface::interestedIn() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_INTERESTEDIN).toStringList();
 }
 
@@ -688,7 +715,8 @@ QStringList FacebookUserInterface::interestedIn() const
 */
 FacebookObjectReferenceInterface *FacebookUserInterface::location() const
 {
-    return f->location;
+    Q_D(const FacebookUserInterface);
+    return d->location;
 }
 
 /*!
@@ -697,6 +725,7 @@ FacebookObjectReferenceInterface *FacebookUserInterface::location() const
 */
 QString FacebookUserInterface::political() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_POLITICAL).toString();
 }
 
@@ -706,7 +735,8 @@ QString FacebookUserInterface::political() const
 */
 FacebookPictureInterface *FacebookUserInterface::picture() const
 {
-    return f->picture;
+    Q_D(const FacebookUserInterface);
+    return d->picture;
 }
 
 /*!
@@ -715,6 +745,7 @@ FacebookPictureInterface *FacebookUserInterface::picture() const
 */
 QString FacebookUserInterface::quotes() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_QUOTES).toString();
 }
 
@@ -724,6 +755,7 @@ QString FacebookUserInterface::quotes() const
 */
 FacebookUserInterface::RelationshipStatus FacebookUserInterface::relationshipStatus() const
 {
+    Q_D(const FacebookUserInterface);
     QString statusStr = d->data().value(FACEBOOK_ONTOLOGY_USER_RELATIONSHIPSTATUS).toString();
     if (statusStr.toLower() == QLatin1String("single"))
         return FacebookUserInterface::Single;
@@ -756,6 +788,7 @@ FacebookUserInterface::RelationshipStatus FacebookUserInterface::relationshipSta
 */
 QString FacebookUserInterface::religion() const
 {
+    Q_D(const FacebookUserInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_USER_RELIGION).toString();
 }
 
@@ -766,7 +799,8 @@ QString FacebookUserInterface::religion() const
 */
 FacebookObjectReferenceInterface *FacebookUserInterface::significantOther() const
 {
-    return f->significantOther;
+    Q_D(const FacebookUserInterface);
+    return d->significantOther;
 }
 
 /*!
@@ -775,6 +809,8 @@ FacebookObjectReferenceInterface *FacebookUserInterface::significantOther() cons
 */
 QUrl FacebookUserInterface::website() const
 {
+    Q_D(const FacebookUserInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString());
 }
 
+#include "moc_facebookuserinterface.cpp"

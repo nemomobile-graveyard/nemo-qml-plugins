@@ -90,10 +90,10 @@ Q_SIGNALS:
     void linkChanged();
     void unreadChanged();
 
-protected:
-    FacebookNotificationInterfacePrivate *f;
-    friend class FacebookNotificationInterfacePrivate;
-    Q_DISABLE_COPY(FacebookNotificationInterface)
+private:
+    Q_DECLARE_PRIVATE(FacebookNotificationInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
+
 };
 
 #endif // FACEBOOKNOTIFICATIONINTERFACE_H

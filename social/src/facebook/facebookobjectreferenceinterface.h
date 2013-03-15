@@ -85,7 +85,7 @@ Q_SIGNALS:
     void objectTypeChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookObjectReferenceInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKOBJECTREFERENCEINTERFACE_H

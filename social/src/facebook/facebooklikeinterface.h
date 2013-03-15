@@ -75,7 +75,7 @@ Q_SIGNALS:
     void userNameChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookLikeInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKLIKEINTERFACE_H

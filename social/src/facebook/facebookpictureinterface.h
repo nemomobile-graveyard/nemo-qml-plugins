@@ -73,7 +73,7 @@ Q_SIGNALS:
     void isSilhouetteChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookPictureInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKPICTUREINTERFACE_H

@@ -81,7 +81,7 @@ Q_SIGNALS:
     void yOffsetChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookTagInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKTAGINTERFACE_H

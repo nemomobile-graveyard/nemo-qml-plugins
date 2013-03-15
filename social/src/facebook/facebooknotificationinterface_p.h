@@ -37,29 +37,28 @@
 #include <QtNetwork/QNetworkReply>
 
 #include "facebookinterface_p.h"
+#include "identifiablecontentiteminterface_p.h"
 
 class IdentifiableContentItemInterfacePrivate;
 class FacebookObjectReferenceInterface;
 class FacebookNotificationInterface;
 
-class FacebookNotificationInterfacePrivate : public QObject
+class FacebookNotificationInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookNotificationInterfacePrivate(FacebookNotificationInterface *parent, IdentifiableContentItemInterfacePrivate *parentData);
+    FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q);
     ~FacebookNotificationInterfacePrivate();
 
-    FacebookNotificationInterface *q;
-    IdentifiableContentItemInterfacePrivate *dd;
     FacebookObjectReferenceInterface *from;
     FacebookObjectReferenceInterface *to;
     FacebookObjectReferenceInterface *application;
 
     FacebookInterfacePrivate::FacebookAction action;
 
-public Q_SLOTS:
+    // Slots
     void finishedHandler();
+private:
+    Q_DECLARE_PUBLIC(FacebookNotificationInterface)
 };
 
 #endif // FACEBOOKNOTIFICATIONINTERFACE_P_H

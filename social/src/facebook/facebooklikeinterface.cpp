@@ -78,6 +78,7 @@ void FacebookLikeInterface::emitPropertyChangeSignals(const QVariantMap &oldData
 */
 QString FacebookLikeInterface::targetIdentifier() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_LIKE_TARGETIDENTIFIER).toString();
 }
 /*!
@@ -86,6 +87,7 @@ QString FacebookLikeInterface::targetIdentifier() const
 */
 QString FacebookLikeInterface::userIdentifier() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_LIKE_USERIDENTIFIER).toString();
 }
 /*!
@@ -94,6 +96,7 @@ QString FacebookLikeInterface::userIdentifier() const
 */
 QString FacebookLikeInterface::userName() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_LIKE_USERNAME).toString();
 }
 

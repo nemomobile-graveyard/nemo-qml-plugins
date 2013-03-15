@@ -65,13 +65,18 @@
 */
 
 ContentItemInterface::ContentItemInterface(QObject *parent)
-    : QObject(parent), d(new ContentItemInterfacePrivate(this))
+    : QObject(parent), d_ptr(new ContentItemInterfacePrivate(this))
+{
+}
+
+ContentItemInterface::ContentItemInterface(ContentItemInterfacePrivate &dd, QObject *parent)
+    : QObject(parent), d_ptr(&dd)
 {
 }
 
 ContentItemInterface::~ContentItemInterface()
 {
-    delete d;
+//    delete d;
 }
 
 void ContentItemInterface::classBegin()
@@ -80,6 +85,7 @@ void ContentItemInterface::classBegin()
 
 void ContentItemInterface::componentComplete()
 {
+    Q_D(ContentItemInterface);
     if (d->s && d->s->isInitialized()) {
         d->isInitialized = true;
         initializationComplete();
@@ -88,6 +94,7 @@ void ContentItemInterface::componentComplete()
 
 void ContentItemInterface::socialNetworkStatusChangedHandler()
 {
+    Q_D(ContentItemInterface);
     if (d->s && d->s->isInitialized()) {
         disconnect(d->s, SIGNAL(statusChanged()), this, SLOT(socialNetworkStatusChangedHandler()));
         d->isInitialized = true;
@@ -103,11 +110,13 @@ void ContentItemInterface::socialNetworkStatusChangedHandler()
 */
 SocialNetworkInterface *ContentItemInterface::socialNetwork() const
 {
+    Q_D(const ContentItemInterface);
     return d->s;
 }
 
 void ContentItemInterface::setSocialNetwork(SocialNetworkInterface *sn)
 {
+    Q_D(ContentItemInterface);
     if (d->isInitialized) {
         qWarning() << Q_FUNC_INFO << "Can't change social network after content item has been initialized!";
         return;
@@ -144,6 +153,7 @@ int ContentItemInterface::type() const
 */
 QVariantMap ContentItemInterface::data() const
 {
+    Q_D(const ContentItemInterface);
     return d->data();
 }
 
@@ -170,11 +180,13 @@ IdentifiableContentItemInterface *ContentItemInterface::asIdentifiable()
 
 void ContentItemInterface::setDataPrivate(const QVariantMap &v)
 {
+    Q_D(ContentItemInterface);
     d->setData(v);
 }
 
 QVariantMap ContentItemInterface::dataPrivate() const
 {
+    Q_D(const ContentItemInterface);
     return d->data();
 }
 
@@ -199,6 +211,7 @@ QVariantMap ContentItemInterface::parseReplyData(const QByteArray &replyData, bo
 
 bool ContentItemInterface::isInitialized() const
 {
+    Q_D(const ContentItemInterface);
     return d->isInitialized;
 }
 

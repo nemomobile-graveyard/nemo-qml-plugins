@@ -189,9 +189,8 @@ Q_SIGNALS:
     void websiteChanged();
 
 private:
-    FacebookUserInterfacePrivate *f;
-    friend class FacebookUserInterfacePrivate;
-    Q_DISABLE_COPY(FacebookUserInterface)
+    Q_DECLARE_PRIVATE(FacebookUserInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKUSERINTERFACE_H

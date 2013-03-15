@@ -39,32 +39,32 @@
 
 #include <QtDebug>
 
-FacebookNotificationInterfacePrivate::FacebookNotificationInterfacePrivate(FacebookNotificationInterface *parent, IdentifiableContentItemInterfacePrivate *parentData)
-    : QObject(parent)
-    , dd(parentData)
-    , from(new FacebookObjectReferenceInterface(this))
-    , to(new FacebookObjectReferenceInterface(this))
-    , application(new FacebookObjectReferenceInterface(this))
+FacebookNotificationInterfacePrivate::FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q)
+    : IdentifiableContentItemInterfacePrivate(q)
+//    , from(new FacebookObjectReferenceInterface(this)) // Unsafe
+//    , to(new FacebookObjectReferenceInterface(this))
+//    , application(new FacebookObjectReferenceInterface(this))
     , action(FacebookInterfacePrivate::NoAction)
 {
 }
 
 FacebookNotificationInterfacePrivate::~FacebookNotificationInterfacePrivate()
 {
-    dd->deleteReply();
+    deleteReply();
 }
 
 /*! \internal */
 void FacebookNotificationInterfacePrivate::finishedHandler()
 {
-    if (!dd->reply()) {
+    Q_Q(FacebookNotificationInterface);
+    if (!reply()) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply";
         return;
     }
 
-    QByteArray replyData = dd->reply()->readAll();
-    dd->deleteReply();
+    QByteArray replyData = reply()->readAll();
+    deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok)
@@ -72,9 +72,9 @@ void FacebookNotificationInterfacePrivate::finishedHandler()
 
     // In the future, we will have "mark notification as read" action.
     // XXX TODO: implement "mark as read".
-    dd->error = SocialNetworkInterface::OtherError;
-    dd->errorMessage = QLatin1String("Request finished but no action currently in progress");
-    dd->status = SocialNetworkInterface::Error;
+    error = SocialNetworkInterface::OtherError;
+    errorMessage = QLatin1String("Request finished but no action currently in progress");
+    status = SocialNetworkInterface::Error;
     emit q->statusChanged();
     emit q->errorChanged();
     emit q->errorMessageChanged();
@@ -158,8 +158,12 @@ void FacebookNotificationInterfacePrivate::finishedHandler()
 */
 
 FacebookNotificationInterface::FacebookNotificationInterface(QObject *parent)
-    : IdentifiableContentItemInterface(parent), f(new FacebookNotificationInterfacePrivate(this, dd))
+    : IdentifiableContentItemInterface(*(new FacebookNotificationInterfacePrivate(this)), parent)
 {
+    Q_D(FacebookNotificationInterface);
+    d->from = new FacebookObjectReferenceInterface(this);
+    d->to = new FacebookObjectReferenceInterface(this);
+    d->application = new FacebookObjectReferenceInterface(this);
 }
 
 FacebookNotificationInterface::~FacebookNotificationInterface()
@@ -187,6 +191,7 @@ bool FacebookNotificationInterface::reload(const QStringList &whichFields)
 /*! \reimp */
 void FacebookNotificationInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
+    Q_D(FacebookNotificationInterface);
     // populate our new values
     QString typeStr = newData.value(FACEBOOK_ONTOLOGY_METADATA_TYPE).toString();
     QString idStr = newData.value(FACEBOOK_ONTOLOGY_NOTIFICATION_ID).toString();
@@ -244,7 +249,7 @@ void FacebookNotificationInterface::emitPropertyChangeSignals(const QVariantMap 
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->from, newFromData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
         emit fromChanged();
     }
     if (toIdStr != oldToIdStr || toNameStr != oldToNameStr) {
@@ -252,7 +257,7 @@ void FacebookNotificationInterface::emitPropertyChangeSignals(const QVariantMap 
         newToData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newToData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, toIdStr);
         newToData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, toNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->to, newToData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->to, newToData);
         emit toChanged();
     }
     if (applicationIdStr != oldApplicationIdStr || applicationNameStr != oldApplicationNameStr) {
@@ -260,7 +265,7 @@ void FacebookNotificationInterface::emitPropertyChangeSignals(const QVariantMap 
         newApplicationData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newApplicationData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, applicationIdStr);
         newApplicationData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, applicationNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->from, newApplicationData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newApplicationData);
         emit applicationChanged();
     }
 
@@ -276,7 +281,8 @@ void FacebookNotificationInterface::emitPropertyChangeSignals(const QVariantMap 
 */
 FacebookObjectReferenceInterface *FacebookNotificationInterface::from() const
 {
-    return f->from;
+    Q_D(const FacebookNotificationInterface);
+    return d->from;
 }
 
 /*!
@@ -285,7 +291,8 @@ FacebookObjectReferenceInterface *FacebookNotificationInterface::from() const
 */
 FacebookObjectReferenceInterface *FacebookNotificationInterface::to() const
 {
-    return f->to;
+    Q_D(const FacebookNotificationInterface);
+    return d->to;
 }
 
 /*!
@@ -294,7 +301,8 @@ FacebookObjectReferenceInterface *FacebookNotificationInterface::to() const
 */
 FacebookObjectReferenceInterface *FacebookNotificationInterface::application() const
 {
-    return f->application;
+    Q_D(const FacebookNotificationInterface);
+    return d->application;
 }
 
 /*!
@@ -303,6 +311,7 @@ FacebookObjectReferenceInterface *FacebookNotificationInterface::application() c
 */
 QString FacebookNotificationInterface::createdTime() const
 {
+    Q_D(const FacebookNotificationInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_NOTIFICATION_CREATEDTIME).toString();
 }
 
@@ -312,6 +321,7 @@ QString FacebookNotificationInterface::createdTime() const
 */
 QString FacebookNotificationInterface::updatedTime() const
 {
+    Q_D(const FacebookNotificationInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_NOTIFICATION_UPDATEDTIME).toString();
 }
 
@@ -321,6 +331,7 @@ QString FacebookNotificationInterface::updatedTime() const
 */
 QString FacebookNotificationInterface::title() const
 {
+    Q_D(const FacebookNotificationInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_NOTIFICATION_TITLE).toString();
 }
 
@@ -330,6 +341,7 @@ QString FacebookNotificationInterface::title() const
 */
 QUrl FacebookNotificationInterface::link() const
 {
+    Q_D(const FacebookNotificationInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_NOTIFICATION_LINK).toString());
 }
 
@@ -339,6 +351,7 @@ QUrl FacebookNotificationInterface::link() const
 */
 int FacebookNotificationInterface::unread() const
 {
+    Q_D(const FacebookNotificationInterface);
     QString countStr = d->data().value(FACEBOOK_ONTOLOGY_NOTIFICATION_UNREAD).toString();
     bool ok = false;
     int retn = countStr.toInt(&ok);
@@ -347,4 +360,4 @@ int FacebookNotificationInterface::unread() const
     return 0;
 }
 
-
+#include "moc_facebooknotificationinterface.cpp"

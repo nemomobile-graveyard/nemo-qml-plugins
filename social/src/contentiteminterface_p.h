@@ -41,14 +41,16 @@ class SocialNetworkInterface;
 class ContentItemInterfacePrivate
 {
 public:
-    ContentItemInterfacePrivate(ContentItemInterface *parent = 0)
-        : q(parent), s(0), isInitialized(false) {}
+    ContentItemInterfacePrivate(ContentItemInterface *q)
+        : s(0), isInitialized(false), q_ptr(q) {}
 
-    ContentItemInterface *q;
     SocialNetworkInterface *s;
     bool isInitialized;
 
+protected:
+    ContentItemInterface * const q_ptr;
 private:
+    Q_DECLARE_PUBLIC(ContentItemInterface)
     QVariantMap _data;
 
 public:
@@ -59,6 +61,7 @@ public:
 
     void setData(const QVariantMap &newData)
     {
+        Q_Q(ContentItemInterface);
         if (_data != newData) {
             QVariantMap oldData = _data;
             _data = newData;

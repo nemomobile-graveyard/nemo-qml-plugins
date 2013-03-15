@@ -37,22 +37,18 @@
 #include <QtNetwork/QNetworkReply>
 
 #include "facebookinterface_p.h"
+#include "identifiablecontentiteminterface_p.h"
 
 class IdentifiableContentItemInterfacePrivate;
 class FacebookObjectReferenceInterface;
 class FacebookPictureInterface;
 class FacebookUserInterface;
 
-class FacebookUserInterfacePrivate : public QObject
+class FacebookUserInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookUserInterfacePrivate(FacebookUserInterface *parent, IdentifiableContentItemInterfacePrivate *parentData);
+    FacebookUserInterfacePrivate(FacebookUserInterface *q);
     ~FacebookUserInterfacePrivate();
-
-    FacebookUserInterface *q;
-    IdentifiableContentItemInterfacePrivate *dd;
 
     FacebookObjectReferenceInterface *hometown;
     FacebookObjectReferenceInterface *location;
@@ -61,8 +57,10 @@ public:
 
     FacebookInterfacePrivate::FacebookAction action;
 
-public Q_SLOTS:
+    // Slots
     void finishedHandler();
+private:
+    Q_DECLARE_PUBLIC(FacebookUserInterface)
 };
 
 #endif // FACEBOOKUSERINTERFACE_P_H

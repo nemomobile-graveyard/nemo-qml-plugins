@@ -34,6 +34,7 @@
 
 #include "identifiablecontentiteminterface.h"
 #include "socialnetworkinterface.h"
+#include "contentiteminterface_p.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QVariantMap>
@@ -41,18 +42,15 @@
 #include <QtNetwork/QSslError>
 
 class ContentItemInterfacePrivate;
-class IdentifiableContentItemInterfacePrivate : public QObject
+class IdentifiableContentItemInterfacePrivate : public ContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    IdentifiableContentItemInterfacePrivate(IdentifiableContentItemInterface *parent = 0);
+    IdentifiableContentItemInterfacePrivate(IdentifiableContentItemInterface *q);
     ~IdentifiableContentItemInterfacePrivate();
 
     QNetworkReply *reply(); // returns currentReply
     void deleteReply();     // disconnect()s and then deleteLater()s currentReply, sets to null.  DOES NOT SET STATE.
 
-    IdentifiableContentItemInterface *q;
     SocialNetworkInterface::Status status;
     SocialNetworkInterface::ErrorType error;
     QString identifier;
@@ -60,16 +58,14 @@ public:
 
     bool needsReload;
 
-public Q_SLOTS:
+    // Slots
     void defaultRemoveHandler();
     void defaultReloadHandler();
     void defaultErrorHandler(QNetworkReply::NetworkError err);
     void defaultSslErrorsHandler(const QList<QSslError> &sslErrors);
-
 private:
-    ContentItemInterfacePrivate *d;
+    Q_DECLARE_PUBLIC(IdentifiableContentItemInterface)
     QNetworkReply *currentReply; // may only be written to if status != Busy.  MUST be valid at all times, or zero.
-    friend class IdentifiableContentItemInterface;
 };
 
 #endif // IDENTIFIABLECONTENTITEMINTERFACE_P_H

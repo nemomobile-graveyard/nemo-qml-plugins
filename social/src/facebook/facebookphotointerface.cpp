@@ -39,11 +39,9 @@
 
 #include <QtDebug>
 
-FacebookPhotoInterfacePrivate::FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent, IdentifiableContentItemInterfacePrivate *parentData)
-    : QObject(parent)
-    , q(parent)
-    , dd(parentData)
-    , from(new FacebookObjectReferenceInterface(this))
+FacebookPhotoInterfacePrivate::FacebookPhotoInterfacePrivate(FacebookPhotoInterface *q)
+    : IdentifiableContentItemInterfacePrivate(q)
+    // , from(new FacebookObjectReferenceInterface(this)) // Unsafe
     , pendingTagToRemoveIndex(-1)
     , action(FacebookInterfacePrivate::NoAction)
     , liked(false)
@@ -52,7 +50,7 @@ FacebookPhotoInterfacePrivate::FacebookPhotoInterfacePrivate(FacebookPhotoInterf
 
 FacebookPhotoInterfacePrivate::~FacebookPhotoInterfacePrivate()
 {
-    dd->deleteReply();
+    deleteReply();
 }
 
 /*! \internal */
@@ -61,7 +59,7 @@ void FacebookPhotoInterfacePrivate::tags_append(QDeclarativeListProperty<Faceboo
     FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
     if (fci) {
         tag->setParent(fci);
-        fci->f->tags.append(tag);
+        fci->d_func()->tags.append(tag);
     }
 }
 
@@ -69,8 +67,8 @@ void FacebookPhotoInterfacePrivate::tags_append(QDeclarativeListProperty<Faceboo
 FacebookTagInterface *FacebookPhotoInterfacePrivate::tags_at(QDeclarativeListProperty<FacebookTagInterface> *list, int index)
 {
     FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
-    if (fci && index < fci->f->tags.count() && index >= 0)
-        return fci->f->tags.at(index);
+    if (fci && index < fci->d_func()->tags.count() && index >= 0)
+        return fci->d_func()->tags.at(index);
     return 0;
 }
 
@@ -79,9 +77,9 @@ void FacebookPhotoInterfacePrivate::tags_clear(QDeclarativeListProperty<Facebook
 {
     FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
     if (fci) {
-        foreach (FacebookTagInterface *tag, fci->f->tags)
+        foreach (FacebookTagInterface *tag, fci->d_func()->tags)
             tag->deleteLater();
-        fci->f->tags.clear();
+        fci->d_func()->tags.clear();
     }
 }
 
@@ -90,21 +88,22 @@ int FacebookPhotoInterfacePrivate::tags_count(QDeclarativeListProperty<FacebookT
 {
     FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
     if (fci)
-        return fci->f->tags.count();
+        return fci->d_func()->tags.count();
     return 0;
 }
 
 /*! \internal */
 void FacebookPhotoInterfacePrivate::finishedHandler()
 {
-    if (!dd->reply()) {
+    Q_Q(FacebookPhotoInterface);
+    if (!reply()) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply";
         return;
     }
 
-    QByteArray replyData = dd->reply()->readAll();
-    dd->deleteReply();
+    QByteArray replyData = reply()->readAll();
+    deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok)
@@ -117,7 +116,7 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::DeleteTagAction:  // flow
         case FacebookInterfacePrivate::DeleteCommentAction: {
             if (replyData == QString(QLatin1String("true"))) {
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 if (action == FacebookInterfacePrivate::LikeAction) {
                     liked = true;
                     emit q->likedChanged();
@@ -137,9 +136,9 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
             } else {
                 if (pendingTagToRemoveIndex != -1)
                     pendingTagToRemoveIndex = -1;
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = QLatin1String("Photo: request failed");
-                dd->status = SocialNetworkInterface::Error;
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = QLatin1String("Photo: request failed");
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
@@ -151,16 +150,16 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::UploadCommentAction: {
             if (!ok || responseData.value("id").toString().isEmpty()) {
                 // failed.
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = QLatin1String("Photo: add comment request failed");
-                dd->status = SocialNetworkInterface::Error;
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = QLatin1String("Photo: add comment request failed");
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
                 emit q->responseReceived(responseData);
             } else {
                 // succeeded.
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 emit q->statusChanged();
                 emit q->responseReceived(responseData);
             }
@@ -168,9 +167,9 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
         break;
 
         default: {
-            dd->error = SocialNetworkInterface::OtherError;
-            dd->errorMessage = QLatin1String("Request finished but no action currently in progress");
-            dd->status = SocialNetworkInterface::Error;
+            error = SocialNetworkInterface::OtherError;
+            errorMessage = QLatin1String("Request finished but no action currently in progress");
+            status = SocialNetworkInterface::Error;
             emit q->statusChanged();
             emit q->errorChanged();
             emit q->errorMessageChanged();
@@ -275,8 +274,10 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
 */
 
 FacebookPhotoInterface::FacebookPhotoInterface(QObject *parent)
-    : IdentifiableContentItemInterface(parent), f(new FacebookPhotoInterfacePrivate(this, dd))
+    : IdentifiableContentItemInterface(*(new FacebookPhotoInterfacePrivate(this)), parent)
 {
+    Q_D(FacebookPhotoInterface);
+    d->from = new FacebookObjectReferenceInterface(this);
 }
 
 FacebookPhotoInterface::~FacebookPhotoInterface()
@@ -304,6 +305,7 @@ bool FacebookPhotoInterface::reload(const QStringList &whichFields)
 /*! \reimp */
 void FacebookPhotoInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
+    Q_D(FacebookPhotoInterface);
     QString aidStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
     QVariantList tagsList = newData.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).toList();
     QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_FROM).toMap();
@@ -369,24 +371,24 @@ void FacebookPhotoInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
     if (posInt != oldPosInt)
         emit positionChanged();
     if (likedBool != oldLikedBool) {
-        f->liked = likedBool == QLatin1String("true");
+        d->liked = likedBool == QLatin1String("true");
         emit likedChanged();
     }
 
     // update tags list
     if (tagsList != oldTagsList) {
         // clear the old tags
-        foreach (FacebookTagInterface *doomedTag, f->tags)
+        foreach (FacebookTagInterface *doomedTag, d->tags)
             doomedTag->deleteLater();
-        f->tags.clear();
+        d->tags.clear();
 
         // update with the new tag data
         for (int i = 0; i < tagsList.size(); ++i) {
             QVariantMap currTagMap = tagsList.at(i).toMap();
             currTagMap.insert(FACEBOOK_ONTOLOGY_TAG_TARGETIDENTIFIER, identifier());
-            FacebookTagInterface *currTag = new FacebookTagInterface(f);
+            FacebookTagInterface *currTag = new FacebookTagInterface(this);
             qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(currTag, currTagMap);
-            f->tags.append(currTag);
+            d->tags.append(currTag);
         }
 
         // emit change signal
@@ -399,7 +401,7 @@ void FacebookPhotoInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User); // could also be a Profile ...
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->from, newFromData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
         emit fromChanged();
     }
 
@@ -420,16 +422,17 @@ void FacebookPhotoInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
 */
 bool FacebookPhotoInterface::like()
 {
+    Q_D(FacebookPhotoInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Post,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::LikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::LikeAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -444,16 +447,17 @@ bool FacebookPhotoInterface::like()
 */
 bool FacebookPhotoInterface::unlike()
 {
+    Q_D(FacebookPhotoInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteLikeAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -473,6 +477,7 @@ bool FacebookPhotoInterface::unlike()
 */
 bool FacebookPhotoInterface::tagUser(const QString &userId, qreal xOffset, qreal yOffset)
 {
+    Q_D(FacebookPhotoInterface);
     QVariantMap postData;
     postData.insert("id", userId);
     if (xOffset != -1)
@@ -487,10 +492,10 @@ bool FacebookPhotoInterface::tagUser(const QString &userId, qreal xOffset, qreal
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::TagAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::TagAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -506,13 +511,14 @@ bool FacebookPhotoInterface::tagUser(const QString &userId, qreal xOffset, qreal
 */
 bool FacebookPhotoInterface::untagUser(const QString &userId)
 {
+    Q_D(FacebookPhotoInterface);
     QVariantMap extraData;
     extraData.insert("to", userId);
 
     // try to find which tag will be removed if it succeeds
     int tempPendingTagToRemoveIndex = -1;
-    for (int i = 0; i < f->tags.count(); ++i) {
-        QString tagUid = f->tags.at(i)->userIdentifier();
+    for (int i = 0; i < d->tags.count(); ++i) {
+        QString tagUid = d->tags.at(i)->userIdentifier();
         if (!tagUid.isEmpty() && tagUid == userId) {
             tempPendingTagToRemoveIndex = i;
             break;
@@ -530,11 +536,11 @@ bool FacebookPhotoInterface::untagUser(const QString &userId)
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteTagAction;
-    f->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteTagAction;
+    d->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -554,6 +560,7 @@ bool FacebookPhotoInterface::untagUser(const QString &userId)
 */
 bool FacebookPhotoInterface::tagText(const QString &text, qreal xOffset, qreal yOffset)
 {
+    Q_D(FacebookPhotoInterface);
     QVariantMap postData;
     postData.insert("tag_text", text);
     if (xOffset != -1)
@@ -568,10 +575,10 @@ bool FacebookPhotoInterface::tagText(const QString &text, qreal xOffset, qreal y
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::TagAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::TagAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -587,13 +594,14 @@ bool FacebookPhotoInterface::tagText(const QString &text, qreal xOffset, qreal y
 */
 bool FacebookPhotoInterface::untagText(const QString &text)
 {
+    Q_D(FacebookPhotoInterface);
     QVariantMap extraData;
     extraData.insert("tag_text", text);
 
     // try to find which tag will be removed if it succeeds
     int tempPendingTagToRemoveIndex = -1;
-    for (int i = 0; i < f->tags.count(); ++i) {
-        QString tagText = f->tags.at(i)->text();
+    for (int i = 0; i < d->tags.count(); ++i) {
+        QString tagText = d->tags.at(i)->text();
         if (!tagText.isEmpty() && tagText == text) {
             tempPendingTagToRemoveIndex = i;
             break;
@@ -611,11 +619,11 @@ bool FacebookPhotoInterface::untagText(const QString &text)
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteTagAction;
-    f->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteTagAction;
+    d->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -635,6 +643,7 @@ bool FacebookPhotoInterface::untagText(const QString &text)
 */
 bool FacebookPhotoInterface::uploadComment(const QString &message)
 {
+    Q_D(FacebookPhotoInterface);
     QVariantMap postData;
     postData.insert("message", message);
 
@@ -645,10 +654,10 @@ bool FacebookPhotoInterface::uploadComment(const QString &message)
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::UploadCommentAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::UploadCommentAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -664,15 +673,16 @@ bool FacebookPhotoInterface::uploadComment(const QString &message)
 */
 bool FacebookPhotoInterface::removeComment(const QString &commentIdentifier)
 {
+    Q_D(FacebookPhotoInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete, commentIdentifier);
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteCommentAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteCommentAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -685,6 +695,7 @@ bool FacebookPhotoInterface::removeComment(const QString &commentIdentifier)
 */
 QString FacebookPhotoInterface::albumIdentifier() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
 }
 
@@ -694,7 +705,8 @@ QString FacebookPhotoInterface::albumIdentifier() const
 */
 FacebookObjectReferenceInterface *FacebookPhotoInterface::from() const
 {
-    return f->from;
+    Q_D(const FacebookPhotoInterface);
+    return d->from;
 }
 
 /*!
@@ -717,6 +729,7 @@ QDeclarativeListProperty<FacebookTagInterface> FacebookPhotoInterface::tags()
 */
 QString FacebookPhotoInterface::name() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_NAME).toString();
 }
 
@@ -726,6 +739,7 @@ QString FacebookPhotoInterface::name() const
 */
 QVariantMap FacebookPhotoInterface::nameTags() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_NAMETAGS).toMap();
 }
 
@@ -735,6 +749,7 @@ QVariantMap FacebookPhotoInterface::nameTags() const
 */
 QUrl FacebookPhotoInterface::icon() const
 {
+    Q_D(const FacebookPhotoInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_PHOTO_ICON).toString());
 }
 
@@ -744,6 +759,7 @@ QUrl FacebookPhotoInterface::icon() const
 */
 QUrl FacebookPhotoInterface::picture() const
 {
+    Q_D(const FacebookPhotoInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_PHOTO_PICTURE).toString());
 }
 
@@ -753,6 +769,7 @@ QUrl FacebookPhotoInterface::picture() const
 */
 QUrl FacebookPhotoInterface::source() const
 {
+    Q_D(const FacebookPhotoInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).toString());
 }
 
@@ -762,6 +779,7 @@ QUrl FacebookPhotoInterface::source() const
 */
 int FacebookPhotoInterface::height() const
 {
+    Q_D(const FacebookPhotoInterface);
     QString hStr = d->data().value(FACEBOOK_ONTOLOGY_PHOTO_HEIGHT).toString();
     bool ok = false;
     int retn = hStr.toInt(&ok);
@@ -776,6 +794,7 @@ int FacebookPhotoInterface::height() const
 */
 int FacebookPhotoInterface::width() const
 {
+    Q_D(const FacebookPhotoInterface);
     QString wStr = d->data().value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).toString();
     bool ok = false;
     int retn = wStr.toInt(&ok);
@@ -790,6 +809,7 @@ int FacebookPhotoInterface::width() const
 */
 QVariantMap FacebookPhotoInterface::images() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_IMAGES).toMap();
 }
 
@@ -801,6 +821,7 @@ QVariantMap FacebookPhotoInterface::images() const
 */
 QUrl FacebookPhotoInterface::link() const
 {
+    Q_D(const FacebookPhotoInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_PHOTO_LINK).toString());
 }
 
@@ -812,6 +833,7 @@ QUrl FacebookPhotoInterface::link() const
 */
 QVariantMap FacebookPhotoInterface::place() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_PLACE).toMap(); // XXX TODO: Location/Place object reference
 }
 
@@ -821,6 +843,7 @@ QVariantMap FacebookPhotoInterface::place() const
 */
 QString FacebookPhotoInterface::createdTime() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_CREATEDTIME).toString();
 }
 
@@ -830,6 +853,7 @@ QString FacebookPhotoInterface::createdTime() const
 */
 QString FacebookPhotoInterface::updatedTime() const
 {
+    Q_D(const FacebookPhotoInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PHOTO_UPDATEDTIME).toString();
 }
 
@@ -839,6 +863,7 @@ QString FacebookPhotoInterface::updatedTime() const
 */
 int FacebookPhotoInterface::position() const
 {
+    Q_D(const FacebookPhotoInterface);
     QString posStr = d->data().value(FACEBOOK_ONTOLOGY_PHOTO_POSITION).toString();
     bool ok = false;
     int retn = posStr.toInt(&ok);
@@ -853,6 +878,8 @@ int FacebookPhotoInterface::position() const
 */
 bool FacebookPhotoInterface::liked() const
 {
-    return f->liked; // XXX TODO: instead of using a variable, update the data().
+    Q_D(const FacebookPhotoInterface);
+    return d->liked; // XXX TODO: instead of using a variable, update the data().
 }
 
+#include "moc_facebookphotointerface.cpp"

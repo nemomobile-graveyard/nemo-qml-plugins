@@ -126,9 +126,8 @@ Q_SIGNALS:
     void likedChanged();
 
 private:
-    FacebookAlbumInterfacePrivate *f;
-    friend class FacebookAlbumInterfacePrivate;
-    Q_DISABLE_COPY(FacebookAlbumInterface)
+    Q_DECLARE_PRIVATE(FacebookAlbumInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKALBUMINTERFACE_H

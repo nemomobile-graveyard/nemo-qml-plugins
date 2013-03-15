@@ -37,28 +37,27 @@
 #include <QtNetwork/QNetworkReply>
 
 #include "facebookinterface_p.h"
+#include "identifiablecontentiteminterface_p.h"
 
 class IdentifiableContentItemInterfacePrivate;
 class FacebookObjectReferenceInterface;
 class FacebookCommentInterface;
 
-class FacebookCommentInterfacePrivate : public QObject
+class FacebookCommentInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookCommentInterfacePrivate(FacebookCommentInterface *parent, IdentifiableContentItemInterfacePrivate *parentData);
+    FacebookCommentInterfacePrivate(FacebookCommentInterface *q);
     ~FacebookCommentInterfacePrivate();
 
-    FacebookCommentInterface *q;
-    IdentifiableContentItemInterfacePrivate *dd;
     FacebookObjectReferenceInterface *from;
 
     FacebookInterfacePrivate::FacebookAction action;
     bool liked;
 
-public Q_SLOTS:
+    // Slots
     void finishedHandler();
+private:
+    Q_DECLARE_PUBLIC(FacebookCommentInterface)
 };
 
 #endif // FACEBOOKCOMMENTINTERFACE_P_H

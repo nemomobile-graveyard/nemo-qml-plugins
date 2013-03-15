@@ -40,12 +40,12 @@
 class QNetworkReply;
 
 class FacebookAlbumInterface;
-class FacebookCommentInterface;
-class FacebookLikeInterface;
+//class FacebookCommentInterface;
+//class FacebookLikeInterface;
 class FacebookObjectReferenceInterface;
-class FacebookPhotoInterface;
-class FacebookPictureInterface;
-class FacebookTagInterface;
+//class FacebookPhotoInterface;
+//class FacebookPictureInterface;
+//class FacebookTagInterface;
 class FacebookUserInterface;
 class IdentifiableContentItemInterface;
 

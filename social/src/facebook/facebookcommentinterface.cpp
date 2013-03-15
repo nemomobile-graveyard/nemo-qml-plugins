@@ -39,27 +39,31 @@
 
 #include <QtDebug>
 
-FacebookCommentInterfacePrivate::FacebookCommentInterfacePrivate(FacebookCommentInterface *parent, IdentifiableContentItemInterfacePrivate *parentData)
-    : QObject(parent), dd(parentData), from(new FacebookObjectReferenceInterface(this)), action(FacebookInterfacePrivate::NoAction), liked(false)
+FacebookCommentInterfacePrivate::FacebookCommentInterfacePrivate(FacebookCommentInterface *q)
+    : IdentifiableContentItemInterfacePrivate(q)
+    // , from(new FacebookObjectReferenceInterface(this)) // unsafe
+    , action(FacebookInterfacePrivate::NoAction)
+    , liked(false)
 {
 }
 
 FacebookCommentInterfacePrivate::~FacebookCommentInterfacePrivate()
 {
-    dd->deleteReply();
+    deleteReply();
 }
 
 /*! \internal */
 void FacebookCommentInterfacePrivate::finishedHandler()
 {
-    if (!dd->reply()) {
+    Q_Q(FacebookCommentInterface);
+    if (!reply()) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply";
         return;
     }
 
-    QByteArray replyData = dd->reply()->readAll();
-    dd->deleteReply();
+    QByteArray replyData = reply()->readAll();
+    deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok)
@@ -68,26 +72,26 @@ void FacebookCommentInterfacePrivate::finishedHandler()
     if (action == FacebookInterfacePrivate::LikeAction || action == FacebookInterfacePrivate::DeleteLikeAction) {
         // user initiated a "like" or "unlike" request.
         if (replyData == QString(QLatin1String("true"))) {
-            dd->status = SocialNetworkInterface::Idle;
+            status = SocialNetworkInterface::Idle;
             liked = (action == FacebookInterfacePrivate::LikeAction);
             emit q->statusChanged();
             emit q->likedChanged();
             emit q->responseReceived(responseData);
         } else {
-            dd->error = SocialNetworkInterface::RequestError;
-            dd->errorMessage = action == FacebookInterfacePrivate::LikeAction
+            error = SocialNetworkInterface::RequestError;
+            errorMessage = action == FacebookInterfacePrivate::LikeAction
                 ? QLatin1String("Comment like request failed")
                 : QLatin1String("Comment unlike request failed");
-            dd->status = SocialNetworkInterface::Error;
+            status = SocialNetworkInterface::Error;
             emit q->statusChanged();
             emit q->errorChanged();
             emit q->errorMessageChanged();
             emit q->responseReceived(responseData);
         }
     } else {
-        dd->error = SocialNetworkInterface::OtherError;
-        dd->errorMessage = QLatin1String("Request finished but no action currently in progress");
-        dd->status = SocialNetworkInterface::Error;
+        error = SocialNetworkInterface::OtherError;
+        errorMessage = QLatin1String("Request finished but no action currently in progress");
+        status = SocialNetworkInterface::Error;
         emit q->statusChanged();
         emit q->errorChanged();
         emit q->errorMessageChanged();
@@ -188,8 +192,10 @@ void FacebookCommentInterfacePrivate::finishedHandler()
 */
 
 FacebookCommentInterface::FacebookCommentInterface(QObject *parent)
-    : IdentifiableContentItemInterface(parent), f(new FacebookCommentInterfacePrivate(this, dd))
+    : IdentifiableContentItemInterface(*(new FacebookCommentInterfacePrivate(this)), parent)
 {
+    Q_D(FacebookCommentInterface);
+    d->from = new FacebookObjectReferenceInterface(this);
 }
 
 FacebookCommentInterface::~FacebookCommentInterface()
@@ -217,6 +223,7 @@ bool FacebookCommentInterface::reload(const QStringList &whichFields)
 /*! \reimp */
 void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
+    Q_D(FacebookCommentInterface);
     // populate our new values
     QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_COMMENT_FROM).toMap();
     QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
@@ -246,7 +253,7 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
     if (likeCountInt != oldLikeCountInt)
         emit likeCountChanged();
     if (userLikesStr != oldUserLikesStr) {
-        f->liked = userLikesStr == QLatin1String("true");
+        d->liked = userLikesStr == QLatin1String("true");
         emit likedChanged();
     }
 
@@ -256,7 +263,7 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->from, newFromData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
         emit fromChanged();
     }
 
@@ -277,16 +284,17 @@ void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldD
 */
 bool FacebookCommentInterface::like()
 {
+    Q_D(FacebookCommentInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Post,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::LikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::LikeAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 /*!
@@ -300,16 +308,17 @@ bool FacebookCommentInterface::like()
 */
 bool FacebookCommentInterface::unlike()
 {
+    Q_D(FacebookCommentInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteLikeAction;
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
+    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
     return true;
 }
 
@@ -319,6 +328,7 @@ bool FacebookCommentInterface::unlike()
 */
 QString FacebookCommentInterface::message() const
 {
+    Q_D(const FacebookCommentInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
 }
 
@@ -328,7 +338,8 @@ QString FacebookCommentInterface::message() const
 */
 FacebookObjectReferenceInterface *FacebookCommentInterface::from() const
 {
-    return f->from;
+    Q_D(const FacebookCommentInterface);
+    return d->from;
 }
 
 /*!
@@ -337,6 +348,7 @@ FacebookObjectReferenceInterface *FacebookCommentInterface::from() const
 */
 QString FacebookCommentInterface::createdTime() const
 {
+    Q_D(const FacebookCommentInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
 }
 
@@ -346,6 +358,7 @@ QString FacebookCommentInterface::createdTime() const
 */
 int FacebookCommentInterface::likeCount() const
 {
+    Q_D(const FacebookCommentInterface);
     QString countStr = d->data().value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
     bool ok = false;
     int retn = countStr.toInt(&ok);
@@ -360,7 +373,8 @@ int FacebookCommentInterface::likeCount() const
 */
 bool FacebookCommentInterface::liked() const
 {
-    return f->liked; // XXX TODO: instead of using a variable, update the data().
+    Q_D(const FacebookCommentInterface);
+    return d->liked; // XXX TODO: instead of using a variable, update the data().
 }
 
 

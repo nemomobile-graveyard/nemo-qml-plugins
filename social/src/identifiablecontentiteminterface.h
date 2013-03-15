@@ -39,8 +39,8 @@
 #include <QtCore/QVariantMap>
 #include <QtCore/QStringList>
 #include <QtCore/QString>
-
-class QNetworkReply;
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QSslError>
 
 #define NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID QLatin1String("org.nemomobile.social.contentitem.id")
 
@@ -107,6 +107,8 @@ Q_SIGNALS:
     void errorMessageChanged();
 
 protected:
+    explicit IdentifiableContentItemInterface(IdentifiableContentItemInterfacePrivate &dd,
+                                              QObject *parent = 0);
     virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
     virtual void initializationComplete();
     enum RequestType { Get = 0, Post, Delete };
@@ -117,12 +119,13 @@ protected:
                  const QStringList &whichFields = QStringList(), // only valid for GET  requests
                  const QVariantMap &postData = QVariantMap(),    // only valid for POST requests
                  const QVariantMap &extraData = QVariantMap());  // social-network-specific.
-    IdentifiableContentItemInterfacePrivate *dd;
 
 private:
-    ContentItemInterfacePrivate *baseClassPrivateData();
-    friend class IdentifiableContentItemInterfacePrivate;
-    Q_DISABLE_COPY(IdentifiableContentItemInterface)
+    Q_DECLARE_PRIVATE(IdentifiableContentItemInterface)
+    Q_PRIVATE_SLOT(d_func(), void defaultRemoveHandler())
+    Q_PRIVATE_SLOT(d_func(), void defaultReloadHandler())
+    Q_PRIVATE_SLOT(d_func(), void defaultErrorHandler(QNetworkReply::NetworkError))
+    Q_PRIVATE_SLOT(d_func(), void defaultSslErrorsHandler(const QList<QSslError>))
 };
 
 Q_DECLARE_METATYPE(IdentifiableContentItemInterface*);

@@ -136,9 +136,8 @@ Q_SIGNALS:
     void likedChanged();
 
 private:
-    FacebookPhotoInterfacePrivate *f;
-    friend class FacebookPhotoInterfacePrivate;
-    Q_DISABLE_COPY(FacebookPhotoInterface)
+    Q_DECLARE_PRIVATE(FacebookPhotoInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKPHOTOINTERFACE_H

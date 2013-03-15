@@ -96,20 +96,20 @@ Q_SIGNALS:
     void dataChanged();
 
 protected:
+    explicit ContentItemInterface(ContentItemInterfacePrivate &dd, QObject *parent = 0);
+    QScopedPointer<ContentItemInterfacePrivate> d_ptr;
     virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
     virtual void initializationComplete();
     bool isInitialized() const;
-    ContentItemInterfacePrivate *d;
-    friend class ContentItemInterfacePrivate;
 
 private Q_SLOTS:
     void socialNetworkStatusChangedHandler();
 
 private:
+    Q_DECLARE_PRIVATE(ContentItemInterface)
     void setDataPrivate(const QVariantMap &v);
     QVariantMap dataPrivate() const;
     friend class SocialNetworkInterface;
-    Q_DISABLE_COPY(ContentItemInterface)
 };
 
 Q_DECLARE_METATYPE(ContentItemInterface*);

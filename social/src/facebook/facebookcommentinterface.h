@@ -83,10 +83,8 @@ Q_SIGNALS:
     void likeCountChanged();
     void likedChanged();
 
-protected:
-    FacebookCommentInterfacePrivate *f;
-    friend class FacebookCommentInterfacePrivate;
-    Q_DISABLE_COPY(FacebookCommentInterface)
+private:
+    Q_DECLARE_PRIVATE(FacebookCommentInterface)
 };
 
 #endif // FACEBOOKCOMMENTINTERFACE_H
