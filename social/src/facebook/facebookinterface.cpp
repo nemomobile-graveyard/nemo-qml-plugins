@@ -72,10 +72,8 @@ QVariant FACEBOOK_DEBUG_VALUE_STRING_FROM_DATA(const QString &key, const QVarian
     return dataVal;
 }
 
-FacebookInterfacePrivate::FacebookInterfacePrivate(FacebookInterface *parent, SocialNetworkInterfacePrivate *parentData)
-    : QObject(parent)
-    , q(parent)
-    , d(parentData)
+FacebookInterfacePrivate::FacebookInterfacePrivate(FacebookInterface *q)
+    : SocialNetworkInterfacePrivate(q)
     , populatePending(false)
     , populateDataForUnseenPending(false)
     , continuationRequestActive(false)
@@ -164,6 +162,7 @@ QUrl FacebookInterfacePrivate::requestUrl(const QString &objectId, const QString
 /*! \internal */
 QNetworkReply *FacebookInterfacePrivate::uploadImage(const QString &objectId, const QString &extraPath, const QVariantMap &data, const QVariantMap &extraData)
 {
+    Q_Q(FacebookInterface);
     Q_UNUSED(extraData); // XXX TODO: privacy passed via extraData?
 
     // the implementation code for this function is taken from the transfer engine
@@ -181,7 +180,7 @@ QNetworkReply *FacebookInterfacePrivate::uploadImage(const QString &objectId, co
     if (filePath.endsWith("png"))
         mimeType = QLatin1String("image/png"); // XXX TODO: more mimetypes?  better way to do this?
 
-    QFile f(filePath, this);
+    QFile f(filePath, q);
     if(!f.open(QIODevice::ReadOnly)){
         qWarning() << Q_FUNC_INFO << "Error opening image file:" << filePath;
         return 0;
@@ -227,12 +226,13 @@ QNetworkReply *FacebookInterfacePrivate::uploadImage(const QString &objectId, co
     request.setRawHeader("Content-Type",QString("multipart/form-data; boundary="+multipartBoundary).toAscii());
     request.setHeader(QNetworkRequest::ContentLengthHeader, postData.size());
 
-    return d->qnam->post(request, postData);
+    return qnam->post(request, postData);
 }
 
 /*! \internal */
 void FacebookInterfacePrivate::finishedHandler()
 {
+    Q_Q(FacebookInterface);
     if (!currentReply) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply!";
@@ -247,9 +247,9 @@ void FacebookInterfacePrivate::finishedHandler()
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok) {
         responseData.insert("response", replyData);
-        d->error = SocialNetworkInterface::RequestError;
-        d->errorMessage = QLatin1String("Error populating node: response is invalid.  Perhaps the requested object id was incorrect?  Response: ") + QString::fromLatin1(replyData.constData());
-        d->status = SocialNetworkInterface::Error;
+        error = SocialNetworkInterface::RequestError;
+        errorMessage = QLatin1String("Error populating node: response is invalid.  Perhaps the requested object id was incorrect?  Response: ") + QString::fromLatin1(replyData.constData());
+        status = SocialNetworkInterface::Error;
         return;
     }
 
@@ -276,44 +276,45 @@ void FacebookInterfacePrivate::finishedHandler()
 /*! \internal */
 void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 {
+    Q_Q(FacebookInterface);
     qWarning() << Q_FUNC_INFO << "Error: network error occurred:" << err;
 
     switch (err) {
-        case QNetworkReply::NoError: d->errorMessage = QLatin1String("QNetworkReply::NoError"); break;
-        case QNetworkReply::ConnectionRefusedError: d->errorMessage = QLatin1String("QNetworkReply::ConnectionRefusedError"); break;
-        case QNetworkReply::RemoteHostClosedError: d->errorMessage = QLatin1String("QNetworkReply::RemoteHostClosedError"); break;
-        case QNetworkReply::HostNotFoundError: d->errorMessage = QLatin1String("QNetworkReply::HostNotFoundError"); break;
-        case QNetworkReply::TimeoutError: d->errorMessage = QLatin1String("QNetworkReply::TimeoutError"); break;
-        case QNetworkReply::OperationCanceledError: d->errorMessage = QLatin1String("QNetworkReply::OperationCanceledError"); break;
-        case QNetworkReply::SslHandshakeFailedError: d->errorMessage = QLatin1String("QNetworkReply::SslHandshakeFailedError"); break;
-        case QNetworkReply::TemporaryNetworkFailureError: d->errorMessage = QLatin1String("QNetworkReply::TemporaryNetworkFailureError"); break;
-        case QNetworkReply::ProxyConnectionRefusedError: d->errorMessage = QLatin1String("QNetworkReply::ProxyConnectionRefusedError"); break;
-        case QNetworkReply::ProxyConnectionClosedError: d->errorMessage = QLatin1String("QNetworkReply::ProxyConnectionClosedError"); break;
-        case QNetworkReply::ProxyNotFoundError: d->errorMessage = QLatin1String("QNetworkReply::ProxyNotFoundError"); break;
-        case QNetworkReply::ProxyTimeoutError: d->errorMessage = QLatin1String("QNetworkReply::ProxyTimeoutError"); break;
-        case QNetworkReply::ProxyAuthenticationRequiredError: d->errorMessage = QLatin1String("QNetworkReply::ProxyAuthenticationRequiredError"); break;
-        case QNetworkReply::ContentAccessDenied: d->errorMessage = QLatin1String("QNetworkReply::ContentAccessDenied"); break;
-        case QNetworkReply::ContentOperationNotPermittedError: d->errorMessage = QLatin1String("QNetworkReply::ContentOperationNotPermittedError"); break;
-        case QNetworkReply::ContentNotFoundError: d->errorMessage = QLatin1String("QNetworkReply::ContentNotFoundError"); break;
-        case QNetworkReply::AuthenticationRequiredError: d->errorMessage = QLatin1String("QNetworkReply::AuthenticationRequiredError"); break;
-        case QNetworkReply::ContentReSendError: d->errorMessage = QLatin1String("QNetworkReply::ContentReSendError"); break;
-        case QNetworkReply::ProtocolUnknownError: d->errorMessage = QLatin1String("QNetworkReply::ProtocolUnknownError"); break;
-        case QNetworkReply::ProtocolInvalidOperationError: d->errorMessage = QLatin1String("QNetworkReply::ProtocolInvalidOperationError"); break;
-        case QNetworkReply::UnknownNetworkError: d->errorMessage = QLatin1String("QNetworkReply::UnknownNetworkError"); break;
-        case QNetworkReply::UnknownProxyError: d->errorMessage = QLatin1String("QNetworkReply::UnknownProxyError"); break;
-        case QNetworkReply::UnknownContentError: d->errorMessage = QLatin1String("QNetworkReply::UnknownContentError"); break;
-        case QNetworkReply::ProtocolFailure: d->errorMessage = QLatin1String("QNetworkReply::ProtocolFailure"); break;
-        default: d->errorMessage = QLatin1String("Unknown QNetworkReply::NetworkError"); break;
+        case QNetworkReply::NoError: errorMessage = QLatin1String("QNetworkReply::NoError"); break;
+        case QNetworkReply::ConnectionRefusedError: errorMessage = QLatin1String("QNetworkReply::ConnectionRefusedError"); break;
+        case QNetworkReply::RemoteHostClosedError: errorMessage = QLatin1String("QNetworkReply::RemoteHostClosedError"); break;
+        case QNetworkReply::HostNotFoundError: errorMessage = QLatin1String("QNetworkReply::HostNotFoundError"); break;
+        case QNetworkReply::TimeoutError: errorMessage = QLatin1String("QNetworkReply::TimeoutError"); break;
+        case QNetworkReply::OperationCanceledError: errorMessage = QLatin1String("QNetworkReply::OperationCanceledError"); break;
+        case QNetworkReply::SslHandshakeFailedError: errorMessage = QLatin1String("QNetworkReply::SslHandshakeFailedError"); break;
+        case QNetworkReply::TemporaryNetworkFailureError: errorMessage = QLatin1String("QNetworkReply::TemporaryNetworkFailureError"); break;
+        case QNetworkReply::ProxyConnectionRefusedError: errorMessage = QLatin1String("QNetworkReply::ProxyConnectionRefusedError"); break;
+        case QNetworkReply::ProxyConnectionClosedError: errorMessage = QLatin1String("QNetworkReply::ProxyConnectionClosedError"); break;
+        case QNetworkReply::ProxyNotFoundError: errorMessage = QLatin1String("QNetworkReply::ProxyNotFoundError"); break;
+        case QNetworkReply::ProxyTimeoutError: errorMessage = QLatin1String("QNetworkReply::ProxyTimeoutError"); break;
+        case QNetworkReply::ProxyAuthenticationRequiredError: errorMessage = QLatin1String("QNetworkReply::ProxyAuthenticationRequiredError"); break;
+        case QNetworkReply::ContentAccessDenied: errorMessage = QLatin1String("QNetworkReply::ContentAccessDenied"); break;
+        case QNetworkReply::ContentOperationNotPermittedError: errorMessage = QLatin1String("QNetworkReply::ContentOperationNotPermittedError"); break;
+        case QNetworkReply::ContentNotFoundError: errorMessage = QLatin1String("QNetworkReply::ContentNotFoundError"); break;
+        case QNetworkReply::AuthenticationRequiredError: errorMessage = QLatin1String("QNetworkReply::AuthenticationRequiredError"); break;
+        case QNetworkReply::ContentReSendError: errorMessage = QLatin1String("QNetworkReply::ContentReSendError"); break;
+        case QNetworkReply::ProtocolUnknownError: errorMessage = QLatin1String("QNetworkReply::ProtocolUnknownError"); break;
+        case QNetworkReply::ProtocolInvalidOperationError: errorMessage = QLatin1String("QNetworkReply::ProtocolInvalidOperationError"); break;
+        case QNetworkReply::UnknownNetworkError: errorMessage = QLatin1String("QNetworkReply::UnknownNetworkError"); break;
+        case QNetworkReply::UnknownProxyError: errorMessage = QLatin1String("QNetworkReply::UnknownProxyError"); break;
+        case QNetworkReply::UnknownContentError: errorMessage = QLatin1String("QNetworkReply::UnknownContentError"); break;
+        case QNetworkReply::ProtocolFailure: errorMessage = QLatin1String("QNetworkReply::ProtocolFailure"); break;
+        default: errorMessage = QLatin1String("Unknown QNetworkReply::NetworkError"); break;
     }
 
-    d->error = SocialNetworkInterface::RequestError;
-    d->status = SocialNetworkInterface::Error;
+    error = SocialNetworkInterface::RequestError;
+    status = SocialNetworkInterface::Error;
 
     if ((internalStatus == FacebookInterfacePrivate::PopulatingUnseenNode
             || internalStatus == FacebookInterfacePrivate::PopulatingSeenNode)
-            && d->repopulatingCurrentNode) {
+            && repopulatingCurrentNode) {
         // failed repopulating, either at "get node" step, or at "get related data" step.
-        d->repopulatingCurrentNode = false;
+        repopulatingCurrentNode = false;
     }
 
     if (continuationRequestActive) {
@@ -330,17 +331,18 @@ void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 /*! \internal */
 void FacebookInterfacePrivate::sslErrorsHandler(const QList<QSslError> &errs)
 {
-    d->errorMessage = QLatin1String("SSL error: ");
+    Q_Q(FacebookInterface);
+    errorMessage = QLatin1String("SSL error: ");
     if (errs.isEmpty()) {
-        d->errorMessage += QLatin1String("unknown SSL error");
+        errorMessage += QLatin1String("unknown SSL error");
     } else {
         foreach (const QSslError &sslE, errs)
-            d->errorMessage += sslE.errorString() + QLatin1String("; ");
-        d->errorMessage.chop(2);
+            errorMessage += sslE.errorString() + QLatin1String("; ");
+        errorMessage.chop(2);
     }
 
-    d->error = SocialNetworkInterface::RequestError;
-    d->status = SocialNetworkInterface::Error;
+    error = SocialNetworkInterface::RequestError;
+    status = SocialNetworkInterface::Error;
 
     emit q->statusChanged();
     emit q->errorChanged();
@@ -351,7 +353,7 @@ void FacebookInterfacePrivate::sslErrorsHandler(const QList<QSslError> &errs)
 void FacebookInterfacePrivate::deleteReply()
 {
     if (currentReply) {
-        disconnect(currentReply);
+//        disconnect(currentReply); // Is this needed ?
         currentReply->deleteLater();
         currentReply = 0;
     }
@@ -442,13 +444,12 @@ void FacebookInterfacePrivate::deleteReply()
 */
 
 FacebookInterface::FacebookInterface(QObject *parent)
-    : SocialNetworkInterface(parent), f(new FacebookInterfacePrivate(this, d))
+    : SocialNetworkInterface(*(new FacebookInterfacePrivate(this)), parent)
 {
 }
 
 FacebookInterface::~FacebookInterface()
 {
-    delete f;
 }
 
 
@@ -458,13 +459,15 @@ FacebookInterface::~FacebookInterface()
 */
 QString FacebookInterface::accessToken() const
 {
-    return f->accessToken;
+    Q_D(const FacebookInterface);
+    return d->accessToken;
 }
 
 void FacebookInterface::setAccessToken(const QString &token)
 {
-    if (f->accessToken != token) {
-        f->accessToken = token;
+    Q_D(FacebookInterface);
+    if (d->accessToken != token) {
+        d->accessToken = token;
         emit accessTokenChanged();
     }
 }
@@ -472,13 +475,14 @@ void FacebookInterface::setAccessToken(const QString &token)
 /*! \reimp */
 void FacebookInterface::componentComplete()
 {
+    Q_D(FacebookInterface);
     // must set d->initialized to true.
     d->initialized = true;
 
     // now that we're initialized, perform any pending operations.
-    if (f->populatePending) {
+    if (d->populatePending) {
         populate();
-    } else if (f->populateDataForUnseenPending) {
+    } else if (d->populateDataForUnseenPending) {
         populateDataForNode(d->pendingCurrentNodeIdentifier);
     }
 }
@@ -486,11 +490,12 @@ void FacebookInterface::componentComplete()
 /*! \reimp */
 void FacebookInterface::populate()
 {
+    Q_D(FacebookInterface);
     // if no central node identifier is set by the client,
     // we load the "me" node by default.
 
     if (!d->initialized) {
-        f->populatePending = true;
+        d->populatePending = true;
         return;
     }
 
@@ -508,6 +513,7 @@ void FacebookInterface::populate()
 /*! \reimp */
 QNetworkReply *FacebookInterface::getRequest(const QString &objectIdentifier, const QString &extraPath, const QStringList &whichFields, const QVariantMap &extraData)
 {
+    Q_D(FacebookInterface);
     if (!d->initialized) {
         qWarning() << Q_FUNC_INFO << "cannot complete get request: not initialized";
         return 0;
@@ -516,12 +522,13 @@ QNetworkReply *FacebookInterface::getRequest(const QString &objectIdentifier, co
     QVariantMap modifiedExtraData = extraData;
     if (!extraData.contains(QLatin1String("metadata")))
         modifiedExtraData.insert(QLatin1String("metadata"), QLatin1String("1")); // request "type" field.
-    return d->qnam->get(QNetworkRequest(f->requestUrl(objectIdentifier, extraPath, whichFields, extraData)));
+    return d->qnam->get(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, whichFields, extraData)));
 }
 
 /*! \reimp */
 QNetworkReply *FacebookInterface::postRequest(const QString &objectIdentifier, const QString &extraPath, const QVariantMap &data, const QVariantMap &extraData)
 {
+    Q_D(FacebookInterface);
     if (!d->initialized) {
         qWarning() << Q_FUNC_INFO << "cannot complete post request: not initialized";
         return 0;
@@ -529,7 +536,7 @@ QNetworkReply *FacebookInterface::postRequest(const QString &objectIdentifier, c
 
     // image upload is handled specially.
     if (extraData.value("isImageUpload").toBool())
-        return f->uploadImage(objectIdentifier, extraPath, data, extraData);
+        return d->uploadImage(objectIdentifier, extraPath, data, extraData);
     
     // create post data
     QString multipartBoundary = QLatin1String("-------Sska2129ifcalksmqq3");
@@ -545,7 +552,7 @@ QNetworkReply *FacebookInterface::postRequest(const QString &objectIdentifier, c
     postData.append("--"+multipartBoundary+"\r\n");
 
     // create request
-    QNetworkRequest request(f->requestUrl(objectIdentifier, extraPath, QStringList(), extraData));
+    QNetworkRequest request(d->requestUrl(objectIdentifier, extraPath, QStringList(), extraData));
     request.setRawHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
     request.setRawHeader("Accept-Language", "en-us,en;q=0.5");
     request.setRawHeader("Accept-Encoding", "gzip,deflate");
@@ -562,17 +569,19 @@ QNetworkReply *FacebookInterface::postRequest(const QString &objectIdentifier, c
 /*! \reimp */
 QNetworkReply *FacebookInterface::deleteRequest(const QString &objectIdentifier, const QString &extraPath, const QVariantMap &extraData)
 {
+    Q_D(FacebookInterface);
     if (!d->initialized) {
         qWarning() << Q_FUNC_INFO << "cannot complete delete request: not initialized";
         return 0;
     }
 
-    return d->qnam->deleteResource(QNetworkRequest(f->requestUrl(objectIdentifier, extraPath, QStringList(), extraData)));
+    return d->qnam->deleteResource(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, QStringList(), extraData)));
 }
 
 /*! \reimp */
 void FacebookInterface::updateInternalData(QList<CacheEntry*> data)
 {
+    Q_D(FacebookInterface);
     qWarning() << Q_FUNC_INFO << "filtering/sorting not implemented.  TODO!";
 
     // XXX TODO: filter the data in a better manner than linear searches...
@@ -611,6 +620,7 @@ void FacebookInterface::updateInternalData(QList<CacheEntry*> data)
 /*! \internal */
 void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface *whichNode)
 {
+    Q_D(FacebookInterface);
     if (!whichNode) {
         qWarning() << Q_FUNC_INFO << "Cannot retrieve related content for null node!";
         return;
@@ -714,10 +724,10 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
         // special case code for FacebookAlbum "populate all photos" request
         QVariantMap extraData;
         extraData.insert(QLatin1String("limit"), QLatin1String("25"));
-        f->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS, QStringList(), extraData);
-        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS, QStringList(), extraData);
+        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
     } else if (connectionTypes.size() == 1 && connectionTypes.at(0) == FacebookInterface::Notification
             && whichNode->type() == FacebookInterface::User) {
         // special case code for FacebookUser "populate notifications" request
@@ -730,11 +740,11 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
             extraData.insert(QLatin1String("limit"), QString::number(connectionLimits.at(0)));
         }
         extraData.insert(QLatin1String("include_read"), QLatin1String("true"));
-        f->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_NOTIFICATIONS, QStringList(), extraData);
-        f->currentReply->setProperty("specialLimit", specialLimit); // we have to handle limit specially for notifications :-/
-        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_NOTIFICATIONS, QStringList(), extraData);
+        d->currentReply->setProperty("specialLimit", specialLimit); // we have to handle limit specially for notifications :-/
+        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
     } else {
         // generic query
         QString totalFieldsQuery;
@@ -784,23 +794,24 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
         extraData.insert("fields", totalFieldsQuery);
 
         // now start the request.
-        f->currentReply = getRequest(whichNode->identifier(), QString(), QStringList(), extraData);
-        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->currentReply = getRequest(whichNode->identifier(), QString(), QStringList(), extraData);
+        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
     }
 }
 
 /*! \reimp */
 void FacebookInterface::populateDataForNode(IdentifiableContentItemInterface *currentNode)
 {
+    Q_D(FacebookInterface);
     if (currentNode == d->placeHolderNode) {
         // actually populating an unseen / pending node.
         return; // should have been queued as pending anyway.
     }
 
     d->status = SocialNetworkInterface::Busy;
-    f->internalStatus = FacebookInterfacePrivate::PopulatingSeenNode;
+    d->internalStatus = FacebookInterfacePrivate::PopulatingSeenNode;
     emit statusChanged();
 
     // clear the internal data
@@ -833,13 +844,14 @@ void FacebookInterface::populateDataForNode(IdentifiableContentItemInterface *cu
 /*! \internal */
 void FacebookInterface::continuePopulateDataForSeenNode(const QVariantMap &relatedData, const QUrl &requestUrl)
 {
+    Q_D(FacebookInterface);
     // We receive the related data and transform it into ContentItems.
     // Finally, we populate the cache for the node and update the internal model data.
 
     int currentCount = 0;
     QString continuationRequestUri;
     QList<CacheEntry *> relatedContent;
-    if (f->continuationRequestActive) {
+    if (d->continuationRequestActive) {
         // we are continuing a request, and thus don't overwrite the existing
         // cache entries, but instead append to them.
         bool ok = true;
@@ -856,7 +868,7 @@ void FacebookInterface::continuePopulateDataForSeenNode(const QVariantMap &relat
 #if 0
 qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DATA(key, relatedData);
 #endif
-        if (f->outOfBandConnectionsLimit != -1 && currentCount >= f->outOfBandConnectionsLimit) {
+        if (d->outOfBandConnectionsLimit != -1 && currentCount >= d->outOfBandConnectionsLimit) {
             // we've already obtained enough data.
             break;
         }
@@ -930,29 +942,30 @@ qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DAT
     // If we need to request more (paged) data, do so.
     if (continuationRequestUri.isEmpty()) {
         // there are no more results / result pages to retrieve.
-        f->continuationRequestActive = false;
+        d->continuationRequestActive = false;
         d->status = SocialNetworkInterface::Idle;
         emit statusChanged();
     } else {
         // there are more results to retrieve.  Start a continuation request.
-        f->continuationRequestActive = true;
+        d->continuationRequestActive = true;
         // grab the relevant parts of the continuation uri to create a new request.
         QUrl continuationUrl(continuationRequestUri);
         if (continuationUrl.queryItemValue(QLatin1String("access_token")).isEmpty())
-            continuationUrl.addQueryItem(QLatin1String("access_token"), f->accessToken);
-        f->currentReply = d->qnam->get(QNetworkRequest(continuationUrl));
-        if (f->outOfBandConnectionsLimit != -1) {
-            f->currentReply->setProperty("specialLimit", f->outOfBandConnectionsLimit);
+            continuationUrl.addQueryItem(QLatin1String("access_token"), d->accessToken);
+        d->currentReply = d->qnam->get(QNetworkRequest(continuationUrl));
+        if (d->outOfBandConnectionsLimit != -1) {
+            d->currentReply->setProperty("specialLimit", d->outOfBandConnectionsLimit);
         }
-        connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-        connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
     }
 }
 
 /*! \reimp */
 void FacebookInterface::populateDataForNode(const QString &unseenNodeIdentifier)
 {
+    Q_D(FacebookInterface);
     // This function should be implemented so that:
     // 0) the current model data should be set to empty
     // 1) the given node is requested from the service, with the given fields loaded
@@ -968,12 +981,12 @@ void FacebookInterface::populateDataForNode(const QString &unseenNodeIdentifier)
 
     if (!d->initialized) {
         // we should delay this until we are initialized
-        f->populateDataForUnseenPending = true;
+        d->populateDataForUnseenPending = true;
         return;
     }
 
     d->status = SocialNetworkInterface::Busy;
-    f->internalStatus = FacebookInterfacePrivate::PopulatingUnseenNode;
+    d->internalStatus = FacebookInterfacePrivate::PopulatingUnseenNode;
     emit statusChanged();
 
     // clear the internal data
@@ -986,10 +999,10 @@ void FacebookInterface::populateDataForNode(const QString &unseenNodeIdentifier)
     }
 
     // get the unseen node data.
-    f->currentReply = getRequest(unseenNodeIdentifier, QString(), QStringList(), QVariantMap());
-    connect(f->currentReply, SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), f, SLOT(errorHandler(QNetworkReply::NetworkError)));
-    connect(f->currentReply, SIGNAL(sslErrors(QList<QSslError>)), f, SLOT(sslErrorsHandler(QList<QSslError>)));
+    d->currentReply = getRequest(unseenNodeIdentifier, QString(), QStringList(), QVariantMap());
+    connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
+    connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
+    connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
 
     // continued in continuePopulateDataForUnseenNode().
 }
@@ -997,6 +1010,7 @@ void FacebookInterface::populateDataForNode(const QString &unseenNodeIdentifier)
 /*! \internal */
 void FacebookInterface::continuePopulateDataForUnseenNode(const QVariantMap &nodeData)
 {
+    Q_D(FacebookInterface);
     // having retrieved the node data, we construct the node, push it, and request
     // the related data required according to the filters.
     ContentItemInterface *convertedNode = contentItemFromData(this, nodeData);
@@ -1019,22 +1033,24 @@ void FacebookInterface::continuePopulateDataForUnseenNode(const QVariantMap &nod
     emit nodeChanged();
 
     // now that we have retrieved the node, now retrieve the related content.
-    f->internalStatus = FacebookInterfacePrivate::PopulatingSeenNode;
+    d->internalStatus = FacebookInterfacePrivate::PopulatingSeenNode;
     retrieveRelatedContent(newCurrentNode);
 }
 
 /*! \internal */
 QString FacebookInterface::currentUserIdentifier() const
 {
+    Q_D(const FacebookInterface);
     // returns the object identifier associated with the "me" node, if loaded.
-    return f->currentUserIdentifier;
+    return d->currentUserIdentifier;
 }
 
 /*! \reimp */
 ContentItemInterface *FacebookInterface::contentItemFromData(QObject *parent, const QVariantMap &data) const
 {
+    Q_D(const FacebookInterface);
     // Construct the appropriate FacebookWhateverInterface for the given data.
-    FacebookInterface::ContentItemType detectedType = static_cast<FacebookInterface::ContentItemType>(f->detectTypeFromData(data));
+    FacebookInterface::ContentItemType detectedType = static_cast<FacebookInterface::ContentItemType>(d->detectTypeFromData(data));
     switch (detectedType) {
         case FacebookInterface::Like: {
             FacebookLikeInterface *retn = new FacebookLikeInterface(parent);
@@ -1143,3 +1159,4 @@ void FacebookInterface::setFacebookContentItemData(ContentItemInterface *content
     setContentItemData(contentItem, data);
 }
 
+#include "moc_facebookinterface.cpp"

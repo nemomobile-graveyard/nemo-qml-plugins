@@ -178,6 +178,7 @@ private:
     friend class ContentItemInterface;
 
 protected:
+    SocialNetworkInterface(SocialNetworkInterfacePrivate &dd, QObject *parent = 0);
     QVariantMap contentItemData(ContentItemInterface *contentItem) const;
     void setContentItemData(ContentItemInterface *contentItem, const QVariantMap &data) const;
     virtual ContentItemInterface *contentItemFromData(QObject *parent, const QVariantMap &data) const;
@@ -185,13 +186,14 @@ protected:
     virtual void populateDataForNode(IdentifiableContentItemInterface *currentNode);  // requires d->populateCache() + updateInternalData()
     virtual void populateDataForNode(const QString &unseenNodeIdentifier);            // requires d->pushNode(), d->populateCache(),
                                                                                       //     and then updateInternalData()
-    SocialNetworkInterfacePrivate *d;
+    QScopedPointer<SocialNetworkInterfacePrivate> d_ptr;
 
 private:
     QList<CacheEntry*> internalData() const;       // this is the model data, which is set via updateInternalData().
-    friend class SocialNetworkInterfacePrivate;
+//    friend class SocialNetworkInterfacePrivate;
     friend class ArbitraryRequestHandler;
-    Q_DISABLE_COPY(SocialNetworkInterface)
+//    Q_DISABLE_COPY(SocialNetworkInterface)
+    Q_DECLARE_PRIVATE(SocialNetworkInterface)
 };
 
 #endif // SOCIALNETWORKINTERFACE_H
