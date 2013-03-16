@@ -48,14 +48,13 @@ class FacebookCommentInterfacePrivate : public IdentifiableContentItemInterfaceP
 public:
     FacebookCommentInterfacePrivate(FacebookCommentInterface *q);
     ~FacebookCommentInterfacePrivate();
+    void finishedHandler();
 
     FacebookObjectReferenceInterface *from;
 
     FacebookInterfacePrivate::FacebookAction action;
     bool liked;
 
-    // Slots
-    void finishedHandler();
 private:
     Q_DECLARE_PUBLIC(FacebookCommentInterface)
 };

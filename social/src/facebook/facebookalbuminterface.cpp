@@ -51,7 +51,6 @@ FacebookAlbumInterfacePrivate::~FacebookAlbumInterfacePrivate()
 {
 }
 
-/*! \internal */
 void FacebookAlbumInterfacePrivate::finishedHandler()
 {
     Q_Q(FacebookAlbumInterface);
@@ -339,9 +338,7 @@ bool FacebookAlbumInterface::like()
         return false;
 
     d->action = FacebookInterfacePrivate::LikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -364,9 +361,7 @@ bool FacebookAlbumInterface::unlike()
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -398,9 +393,7 @@ bool FacebookAlbumInterface::uploadComment(const QString &message)
         return false;
 
     d->action = FacebookInterfacePrivate::UploadCommentAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -423,9 +416,7 @@ bool FacebookAlbumInterface::removeComment(const QString &commentIdentifier)
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteCommentAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -465,9 +456,7 @@ bool FacebookAlbumInterface::uploadPhoto(const QUrl &source, const QString &mess
         return false;
 
     d->action = FacebookInterfacePrivate::UploadPhotoAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -490,9 +479,7 @@ bool FacebookAlbumInterface::removePhoto(const QString &photoIdentifier)
         return false;
 
     d->action = FacebookInterfacePrivate::DeletePhotoAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -636,5 +623,3 @@ bool FacebookAlbumInterface::liked() const
     Q_D(const FacebookAlbumInterface);
     return d->liked;
 }
-
-#include "moc_facebookalbuminterface.cpp"

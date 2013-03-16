@@ -56,7 +56,6 @@ FacebookUserInterfacePrivate::~FacebookUserInterfacePrivate()
     deleteReply();
 }
 
-/*! \internal */
 void FacebookUserInterfacePrivate::finishedHandler()
 {
     Q_Q(FacebookUserInterface);
@@ -426,9 +425,7 @@ bool FacebookUserInterface::uploadPhoto(const QUrl &source, const QString &messa
         return false;
 
     d->action = FacebookInterfacePrivate::UploadPhotoAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -451,9 +448,7 @@ bool FacebookUserInterface::removePhoto(const QString &photoIdentifier)
         return false;
 
     d->action = FacebookInterfacePrivate::DeletePhotoAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -490,9 +485,7 @@ bool FacebookUserInterface::uploadAlbum(const QString &name, const QString &mess
         return false;
 
     d->action = FacebookInterfacePrivate::UploadAlbumAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -515,9 +508,7 @@ bool FacebookUserInterface::removeAlbum(const QString &albumIdentifier)
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteAlbumAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -812,5 +803,3 @@ QUrl FacebookUserInterface::website() const
     Q_D(const FacebookUserInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString());
 }
-
-#include "moc_facebookuserinterface.cpp"

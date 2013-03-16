@@ -58,11 +58,15 @@ public:
 
     bool needsReload;
 
+    void connectFinishedAndErrors();
+    void connectErrors();
+
     // Slots
-    void defaultRemoveHandler();
-    void defaultReloadHandler();
-    void defaultErrorHandler(QNetworkReply::NetworkError err);
-    void defaultSslErrorsHandler(const QList<QSslError> &sslErrors);
+    virtual void finishedHandler();
+    virtual void removeHandler();
+    virtual void reloadHandler();
+    virtual void errorHandler(QNetworkReply::NetworkError err);
+    virtual void sslErrorsHandler(const QList<QSslError> &sslErrors);
 private:
     Q_DECLARE_PUBLIC(IdentifiableContentItemInterface)
     QNetworkReply *currentReply; // may only be written to if status != Busy.  MUST be valid at all times, or zero.

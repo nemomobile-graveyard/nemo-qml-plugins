@@ -134,10 +134,8 @@ Q_SIGNALS:
     void updatedTimeChanged();
     void positionChanged();
     void likedChanged();
-
 private:
     Q_DECLARE_PRIVATE(FacebookPhotoInterface)
-    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKPHOTOINTERFACE_H

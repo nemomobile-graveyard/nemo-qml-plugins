@@ -50,6 +50,7 @@ class FacebookPhotoInterfacePrivate : public IdentifiableContentItemInterfacePri
 public:
     FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent);
     ~FacebookPhotoInterfacePrivate();
+    void finishedHandler();
 
     FacebookObjectReferenceInterface *from;
 
@@ -65,8 +66,6 @@ public:
     static void tags_clear(QDeclarativeListProperty<FacebookTagInterface> *list);
     static int tags_count(QDeclarativeListProperty<FacebookTagInterface> *list);
 
-    // Slots
-    void finishedHandler();
 private:
     Q_DECLARE_PUBLIC(FacebookPhotoInterface)
 };

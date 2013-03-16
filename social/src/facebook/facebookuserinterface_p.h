@@ -49,6 +49,7 @@ class FacebookUserInterfacePrivate : public IdentifiableContentItemInterfacePriv
 public:
     FacebookUserInterfacePrivate(FacebookUserInterface *q);
     ~FacebookUserInterfacePrivate();
+    void finishedHandler();
 
     FacebookObjectReferenceInterface *hometown;
     FacebookObjectReferenceInterface *location;
@@ -56,9 +57,6 @@ public:
     FacebookPictureInterface *picture;
 
     FacebookInterfacePrivate::FacebookAction action;
-
-    // Slots
-    void finishedHandler();
 private:
     Q_DECLARE_PUBLIC(FacebookUserInterface)
 };

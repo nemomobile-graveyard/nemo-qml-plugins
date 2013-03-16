@@ -187,10 +187,8 @@ Q_SIGNALS:
     void religionChanged();
     void significantOtherChanged();
     void websiteChanged();
-
 private:
     Q_DECLARE_PRIVATE(FacebookUserInterface)
-    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKUSERINTERFACE_H

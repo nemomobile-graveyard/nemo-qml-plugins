@@ -52,7 +52,6 @@ FacebookCommentInterfacePrivate::~FacebookCommentInterfacePrivate()
     deleteReply();
 }
 
-/*! \internal */
 void FacebookCommentInterfacePrivate::finishedHandler()
 {
     Q_Q(FacebookCommentInterface);
@@ -292,9 +291,7 @@ bool FacebookCommentInterface::like()
         return false;
 
     d->action = FacebookInterfacePrivate::LikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 /*!
@@ -316,9 +313,7 @@ bool FacebookCommentInterface::unlike()
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -376,5 +371,4 @@ bool FacebookCommentInterface::liked() const
     Q_D(const FacebookCommentInterface);
     return d->liked; // XXX TODO: instead of using a variable, update the data().
 }
-
 

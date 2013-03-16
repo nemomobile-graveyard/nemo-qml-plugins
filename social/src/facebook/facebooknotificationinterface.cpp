@@ -53,7 +53,6 @@ FacebookNotificationInterfacePrivate::~FacebookNotificationInterfacePrivate()
     deleteReply();
 }
 
-/*! \internal */
 void FacebookNotificationInterfacePrivate::finishedHandler()
 {
     Q_Q(FacebookNotificationInterface);
@@ -359,5 +358,3 @@ int FacebookNotificationInterface::unread() const
         return retn;
     return 0;
 }
-
-#include "moc_facebooknotificationinterface.cpp"

@@ -65,7 +65,25 @@ void IdentifiableContentItemInterfacePrivate::deleteReply()
     }
 }
 
-void IdentifiableContentItemInterfacePrivate::defaultRemoveHandler()
+void IdentifiableContentItemInterfacePrivate::connectFinishedAndErrors()
+{
+    Q_Q(IdentifiableContentItemInterface);
+    QObject::connect(reply(), SIGNAL(finished()), q, SLOT(finishedHandler()));
+    connectErrors();
+}
+
+void IdentifiableContentItemInterfacePrivate::connectErrors()
+{
+    Q_Q(IdentifiableContentItemInterface);
+    QObject::connect(reply(), SIGNAL(error(QNetworkReply::NetworkError)), q, SLOT(errorHandler(QNetworkReply::NetworkError)));
+    QObject::connect(reply(), SIGNAL(sslErrors(QList<QSslError>)), q, SLOT(sslErrorsHandler(QList<QSslError>)));
+}
+
+void IdentifiableContentItemInterfacePrivate::finishedHandler()
+{
+}
+
+void IdentifiableContentItemInterfacePrivate::removeHandler()
 {
     Q_Q(IdentifiableContentItemInterface);
     if (!reply()) {
@@ -99,7 +117,7 @@ void IdentifiableContentItemInterfacePrivate::defaultRemoveHandler()
     }
 }
 
-void IdentifiableContentItemInterfacePrivate::defaultReloadHandler()
+void IdentifiableContentItemInterfacePrivate::reloadHandler()
 {
     Q_Q(IdentifiableContentItemInterface);
     if (!reply()) {
@@ -110,7 +128,7 @@ void IdentifiableContentItemInterfacePrivate::defaultReloadHandler()
 
     // Default just checks to see if the response is a valid FB Object
     // If it is, this handler deletes the reply(), sets the status to Idle,
-    // and sets the internal d->data() to the object data.
+    // and sets the internal data() to the object data.
     // If it isn't, this handler deletes the reply(), sets the status to error,
     // and emits responseReceived() with the given data.
     QByteArray replyData = reply()->readAll();
@@ -136,7 +154,7 @@ void IdentifiableContentItemInterfacePrivate::defaultReloadHandler()
     }
 }
 
-void IdentifiableContentItemInterfacePrivate::defaultErrorHandler(QNetworkReply::NetworkError err)
+void IdentifiableContentItemInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 {
     Q_Q(IdentifiableContentItemInterface);
     deleteReply();
@@ -177,7 +195,7 @@ void IdentifiableContentItemInterfacePrivate::defaultErrorHandler(QNetworkReply:
     emit q->errorMessageChanged();
 }
 
-void IdentifiableContentItemInterfacePrivate::defaultSslErrorsHandler(const QList<QSslError> &sslErrors)
+void IdentifiableContentItemInterfacePrivate::sslErrorsHandler(const QList<QSslError> &sslErrors)
 {
     Q_Q(IdentifiableContentItemInterface);
     deleteReply();
@@ -414,9 +432,8 @@ bool IdentifiableContentItemInterface::remove()
     if (!request(IdentifiableContentItemInterface::Delete, d->identifier))
         return false;
 
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(defaultRemoveHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(removeHandler()));
+    d->connectErrors();
     return true;
 }
 
@@ -435,9 +452,8 @@ bool IdentifiableContentItemInterface::reload(const QStringList &whichFields)
     if (!request(IdentifiableContentItemInterface::Get, d->identifier, QString(), whichFields))
         return false;
 
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(defaultReloadHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    connect(d->reply(), SIGNAL(finished()), this, SLOT(reloadHandler()));
+    d->connectErrors();
     return true;
 }
 

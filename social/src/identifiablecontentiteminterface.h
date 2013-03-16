@@ -119,13 +119,13 @@ protected:
                  const QStringList &whichFields = QStringList(), // only valid for GET  requests
                  const QVariantMap &postData = QVariantMap(),    // only valid for POST requests
                  const QVariantMap &extraData = QVariantMap());  // social-network-specific.
-
 private:
     Q_DECLARE_PRIVATE(IdentifiableContentItemInterface)
-    Q_PRIVATE_SLOT(d_func(), void defaultRemoveHandler())
-    Q_PRIVATE_SLOT(d_func(), void defaultReloadHandler())
-    Q_PRIVATE_SLOT(d_func(), void defaultErrorHandler(QNetworkReply::NetworkError))
-    Q_PRIVATE_SLOT(d_func(), void defaultSslErrorsHandler(const QList<QSslError>))
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
+    Q_PRIVATE_SLOT(d_func(), void removeHandler())
+    Q_PRIVATE_SLOT(d_func(), void reloadHandler())
+    Q_PRIVATE_SLOT(d_func(), void errorHandler(QNetworkReply::NetworkError))
+    Q_PRIVATE_SLOT(d_func(), void sslErrorsHandler(const QList<QSslError>&))
 };
 
 Q_DECLARE_METATYPE(IdentifiableContentItemInterface*)

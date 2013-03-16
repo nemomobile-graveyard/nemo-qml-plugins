@@ -124,10 +124,8 @@ Q_SIGNALS:
     void updatedTimeChanged();
     void canUploadChanged();
     void likedChanged();
-
 private:
     Q_DECLARE_PRIVATE(FacebookAlbumInterface)
-    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 };
 
 #endif // FACEBOOKALBUMINTERFACE_H

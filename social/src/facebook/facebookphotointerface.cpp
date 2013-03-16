@@ -53,46 +53,6 @@ FacebookPhotoInterfacePrivate::~FacebookPhotoInterfacePrivate()
     deleteReply();
 }
 
-/*! \internal */
-void FacebookPhotoInterfacePrivate::tags_append(QDeclarativeListProperty<FacebookTagInterface> *list, FacebookTagInterface *tag)
-{
-    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
-    if (fci) {
-        tag->setParent(fci);
-        fci->d_func()->tags.append(tag);
-    }
-}
-
-/*! \internal */
-FacebookTagInterface *FacebookPhotoInterfacePrivate::tags_at(QDeclarativeListProperty<FacebookTagInterface> *list, int index)
-{
-    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
-    if (fci && index < fci->d_func()->tags.count() && index >= 0)
-        return fci->d_func()->tags.at(index);
-    return 0;
-}
-
-/*! \internal */
-void FacebookPhotoInterfacePrivate::tags_clear(QDeclarativeListProperty<FacebookTagInterface> *list)
-{
-    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
-    if (fci) {
-        foreach (FacebookTagInterface *tag, fci->d_func()->tags)
-            tag->deleteLater();
-        fci->d_func()->tags.clear();
-    }
-}
-
-/*! \internal */
-int FacebookPhotoInterfacePrivate::tags_count(QDeclarativeListProperty<FacebookTagInterface> *list)
-{
-    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
-    if (fci)
-        return fci->d_func()->tags.count();
-    return 0;
-}
-
-/*! \internal */
 void FacebookPhotoInterfacePrivate::finishedHandler()
 {
     Q_Q(FacebookPhotoInterface);
@@ -177,6 +137,46 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
         }
         break;
     }
+}
+
+
+/*! \internal */
+void FacebookPhotoInterfacePrivate::tags_append(QDeclarativeListProperty<FacebookTagInterface> *list, FacebookTagInterface *tag)
+{
+    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
+    if (fci) {
+        tag->setParent(fci);
+        fci->d_func()->tags.append(tag);
+    }
+}
+
+/*! \internal */
+FacebookTagInterface *FacebookPhotoInterfacePrivate::tags_at(QDeclarativeListProperty<FacebookTagInterface> *list, int index)
+{
+    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
+    if (fci && index < fci->d_func()->tags.count() && index >= 0)
+        return fci->d_func()->tags.at(index);
+    return 0;
+}
+
+/*! \internal */
+void FacebookPhotoInterfacePrivate::tags_clear(QDeclarativeListProperty<FacebookTagInterface> *list)
+{
+    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
+    if (fci) {
+        foreach (FacebookTagInterface *tag, fci->d_func()->tags)
+            tag->deleteLater();
+        fci->d_func()->tags.clear();
+    }
+}
+
+/*! \internal */
+int FacebookPhotoInterfacePrivate::tags_count(QDeclarativeListProperty<FacebookTagInterface> *list)
+{
+    FacebookPhotoInterface *fci = qobject_cast<FacebookPhotoInterface *>(list->object);
+    if (fci)
+        return fci->d_func()->tags.count();
+    return 0;
 }
 
 //---------------------------------------
@@ -430,9 +430,7 @@ bool FacebookPhotoInterface::like()
         return false;
 
     d->action = FacebookInterfacePrivate::LikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -455,9 +453,7 @@ bool FacebookPhotoInterface::unlike()
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -493,9 +489,7 @@ bool FacebookPhotoInterface::tagUser(const QString &userId, qreal xOffset, qreal
         return false;
 
     d->action = FacebookInterfacePrivate::TagAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -538,9 +532,7 @@ bool FacebookPhotoInterface::untagUser(const QString &userId)
 
     d->action = FacebookInterfacePrivate::DeleteTagAction;
     d->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -576,9 +568,7 @@ bool FacebookPhotoInterface::tagText(const QString &text, qreal xOffset, qreal y
         return false;
 
     d->action = FacebookInterfacePrivate::TagAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -621,9 +611,7 @@ bool FacebookPhotoInterface::untagText(const QString &text)
 
     d->action = FacebookInterfacePrivate::DeleteTagAction;
     d->pendingTagToRemoveIndex = tempPendingTagToRemoveIndex;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -655,9 +643,7 @@ bool FacebookPhotoInterface::uploadComment(const QString &message)
         return false;
 
     d->action = FacebookInterfacePrivate::UploadCommentAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -680,9 +666,7 @@ bool FacebookPhotoInterface::removeComment(const QString &commentIdentifier)
         return false;
 
     d->action = FacebookInterfacePrivate::DeleteCommentAction;
-    connect(d->reply(), SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->reply(), SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(d->reply(), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -881,5 +865,3 @@ bool FacebookPhotoInterface::liked() const
     Q_D(const FacebookPhotoInterface);
     return d->liked; // XXX TODO: instead of using a variable, update the data().
 }
-
-#include "moc_facebookphotointerface.cpp"

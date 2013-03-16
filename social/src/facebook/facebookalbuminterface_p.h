@@ -48,12 +48,10 @@ class FacebookAlbumInterfacePrivate : public IdentifiableContentItemInterfacePri
 public:
     FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent);
     ~FacebookAlbumInterfacePrivate();
+    void finishedHandler();
     FacebookObjectReferenceInterface *from;
     FacebookInterfacePrivate::FacebookAction action;
     bool liked;
-
-    // Slots
-    void finishedHandler();
 private:
     Q_DECLARE_PUBLIC(FacebookAlbumInterface)
 };

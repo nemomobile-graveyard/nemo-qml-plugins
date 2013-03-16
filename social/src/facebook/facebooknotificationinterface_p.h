@@ -48,15 +48,13 @@ class FacebookNotificationInterfacePrivate : public IdentifiableContentItemInter
 public:
     FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q);
     ~FacebookNotificationInterfacePrivate();
+    void finishedHandler();
 
     FacebookObjectReferenceInterface *from;
     FacebookObjectReferenceInterface *to;
     FacebookObjectReferenceInterface *application;
 
     FacebookInterfacePrivate::FacebookAction action;
-
-    // Slots
-    void finishedHandler();
 private:
     Q_DECLARE_PUBLIC(FacebookNotificationInterface)
 };

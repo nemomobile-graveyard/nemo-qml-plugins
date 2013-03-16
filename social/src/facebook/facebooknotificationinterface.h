@@ -89,10 +89,8 @@ Q_SIGNALS:
     void titleChanged();
     void linkChanged();
     void unreadChanged();
-
 private:
     Q_DECLARE_PRIVATE(FacebookNotificationInterface)
-    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
 
 };
 
