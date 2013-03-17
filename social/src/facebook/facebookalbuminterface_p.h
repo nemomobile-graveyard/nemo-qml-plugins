@@ -46,8 +46,7 @@ class FacebookAlbumInterface;
 class FacebookAlbumInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
 public:
-    FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent);
-    ~FacebookAlbumInterfacePrivate();
+    explicit FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent);
     void finishedHandler();
     FacebookObjectReferenceInterface *from;
     FacebookInterfacePrivate::FacebookAction action;

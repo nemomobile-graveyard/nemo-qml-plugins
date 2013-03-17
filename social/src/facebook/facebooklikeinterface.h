@@ -57,8 +57,7 @@ class FacebookLikeInterface : public ContentItemInterface
     Q_PROPERTY(QString userName READ userName NOTIFY userNameChanged)
 
 public:
-    FacebookLikeInterface(QObject *parent = 0);
-    ~FacebookLikeInterface();
+    explicit FacebookLikeInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;

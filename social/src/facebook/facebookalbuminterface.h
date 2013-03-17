@@ -79,8 +79,7 @@ public:
     };
 
 public:
-    FacebookAlbumInterface(QObject *parent = 0);
-    ~FacebookAlbumInterface();
+    explicit FacebookAlbumInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;

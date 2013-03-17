@@ -40,10 +40,6 @@ FacebookLikeInterface::FacebookLikeInterface(QObject *parent)
 {
 }
 
-FacebookLikeInterface::~FacebookLikeInterface()
-{
-}
-
 /*! \reimp */
 int FacebookLikeInterface::type() const
 {

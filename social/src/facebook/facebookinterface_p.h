@@ -49,8 +49,7 @@ class ContentItemInterface;
 class FacebookInterfacePrivate : public SocialNetworkInterfacePrivate
 {
 public:
-    FacebookInterfacePrivate(FacebookInterface *q);
-    ~FacebookInterfacePrivate();
+    explicit FacebookInterfacePrivate(FacebookInterface *q);
 
     QString accessToken;
     QString currentUserIdentifier;
@@ -74,6 +73,8 @@ public:
     QNetworkReply *uploadImage(const QString &objectId, const QString &extraPath, const QVariantMap &data, const QVariantMap &extraData);
 
     int detectTypeFromData(const QVariantMap &data) const;
+
+    void connectFinishedAndErrors();
 
     // Slots
     void finishedHandler();

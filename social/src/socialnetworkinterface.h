@@ -117,7 +117,7 @@ public:
     };
 
 public:
-    SocialNetworkInterface(QObject *parent = 0);
+    explicit SocialNetworkInterface(QObject *parent = 0);
     virtual ~SocialNetworkInterface();
 
     // QDeclarativeParserStatus
@@ -190,9 +190,7 @@ protected:
 
 private:
     QList<CacheEntry*> internalData() const;       // this is the model data, which is set via updateInternalData().
-//    friend class SocialNetworkInterfacePrivate;
     friend class ArbitraryRequestHandler;
-//    Q_DISABLE_COPY(SocialNetworkInterface)
     Q_DECLARE_PRIVATE(SocialNetworkInterface)
 };
 

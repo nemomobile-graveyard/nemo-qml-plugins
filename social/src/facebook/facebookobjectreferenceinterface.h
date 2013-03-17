@@ -67,8 +67,7 @@ class FacebookObjectReferenceInterface : public ContentItemInterface
     Q_ENUMS(FacebookInterface::ContentItemType)
 
 public:
-    FacebookObjectReferenceInterface(QObject *parent = 0);
-    ~FacebookObjectReferenceInterface();
+    explicit FacebookObjectReferenceInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;

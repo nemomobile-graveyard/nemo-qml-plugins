@@ -83,10 +83,6 @@ FacebookInterfacePrivate::FacebookInterfacePrivate(FacebookInterface *q)
 {
 }
 
-FacebookInterfacePrivate::~FacebookInterfacePrivate()
-{
-}
-
 /*!
     \internal
 
@@ -229,6 +225,14 @@ QNetworkReply *FacebookInterfacePrivate::uploadImage(const QString &objectId, co
     return qnam->post(request, postData);
 }
 
+void FacebookInterfacePrivate::connectFinishedAndErrors()
+{
+    Q_Q(FacebookInterface);
+    QObject::connect(currentReply, SIGNAL(finished()), q, SLOT(finishedHandler()));
+    QObject::connect(currentReply, SIGNAL(error(QNetworkReply::NetworkError)), q, SLOT(errorHandler(QNetworkReply::NetworkError)));
+    QObject::connect(currentReply, SIGNAL(sslErrors(QList<QSslError>)), q, SLOT(sslErrorsHandler(QList<QSslError>)));
+}
+
 /*! \internal */
 void FacebookInterfacePrivate::finishedHandler()
 {
@@ -353,7 +357,6 @@ void FacebookInterfacePrivate::sslErrorsHandler(const QList<QSslError> &errs)
 void FacebookInterfacePrivate::deleteReply()
 {
     if (currentReply) {
-//        disconnect(currentReply); // Is this needed ?
         currentReply->deleteLater();
         currentReply = 0;
     }
@@ -445,10 +448,6 @@ void FacebookInterfacePrivate::deleteReply()
 
 FacebookInterface::FacebookInterface(QObject *parent)
     : SocialNetworkInterface(*(new FacebookInterfacePrivate(this)), parent)
-{
-}
-
-FacebookInterface::~FacebookInterface()
 {
 }
 
@@ -725,9 +724,7 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
         QVariantMap extraData;
         extraData.insert(QLatin1String("limit"), QLatin1String("25"));
         d->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_PHOTOS, QStringList(), extraData);
-        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
-        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->connectFinishedAndErrors();
     } else if (connectionTypes.size() == 1 && connectionTypes.at(0) == FacebookInterface::Notification
             && whichNode->type() == FacebookInterface::User) {
         // special case code for FacebookUser "populate notifications" request
@@ -742,9 +739,7 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
         extraData.insert(QLatin1String("include_read"), QLatin1String("true"));
         d->currentReply = getRequest(whichNode->identifier(), FACEBOOK_ONTOLOGY_CONNECTIONS_NOTIFICATIONS, QStringList(), extraData);
         d->currentReply->setProperty("specialLimit", specialLimit); // we have to handle limit specially for notifications :-/
-        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
-        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->connectFinishedAndErrors();
     } else {
         // generic query
         QString totalFieldsQuery;
@@ -795,9 +790,7 @@ void FacebookInterface::retrieveRelatedContent(IdentifiableContentItemInterface 
 
         // now start the request.
         d->currentReply = getRequest(whichNode->identifier(), QString(), QStringList(), extraData);
-        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
-        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->connectFinishedAndErrors();
     }
 }
 
@@ -956,9 +949,7 @@ qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DAT
         if (d->outOfBandConnectionsLimit != -1) {
             d->currentReply->setProperty("specialLimit", d->outOfBandConnectionsLimit);
         }
-        connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
-        connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
-        connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+        d->connectFinishedAndErrors();
     }
 }
 
@@ -1000,9 +991,7 @@ void FacebookInterface::populateDataForNode(const QString &unseenNodeIdentifier)
 
     // get the unseen node data.
     d->currentReply = getRequest(unseenNodeIdentifier, QString(), QStringList(), QVariantMap());
-    connect(d->currentReply, SIGNAL(finished()), this, SLOT(finishedHandler()));
-    connect(d->currentReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorHandler(QNetworkReply::NetworkError)));
-    connect(d->currentReply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrorsHandler(QList<QSslError>)));
+    d->connectFinishedAndErrors();
 
     // continued in continuePopulateDataForUnseenNode().
 }

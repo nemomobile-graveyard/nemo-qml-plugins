@@ -41,8 +41,9 @@ class SocialNetworkInterface;
 class ContentItemInterfacePrivate
 {
 public:
-    ContentItemInterfacePrivate(ContentItemInterface *q)
+    explicit ContentItemInterfacePrivate(ContentItemInterface *q)
         : s(0), isInitialized(false), q_ptr(q) {}
+    virtual ~ContentItemInterfacePrivate() {}
 
     SocialNetworkInterface *s;
     bool isInitialized;

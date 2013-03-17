@@ -56,8 +56,7 @@ class FacebookCommentInterface : public IdentifiableContentItemInterface
     Q_PROPERTY(bool liked READ liked NOTIFY likedChanged)
 
 public:
-    FacebookCommentInterface(QObject *parent = 0);
-    ~FacebookCommentInterface();
+    explicit FacebookCommentInterface(QObject *parent = 0);
 
     // overrides
     int type() const;

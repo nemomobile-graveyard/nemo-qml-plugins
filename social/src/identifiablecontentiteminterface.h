@@ -81,8 +81,7 @@ class IdentifiableContentItemInterface : public ContentItemInterface
     Q_ENUMS(SocialNetworkInterface::ErrorType)
 
 public:
-    IdentifiableContentItemInterface(QObject *parent = 0);
-    virtual ~IdentifiableContentItemInterface();
+    explicit IdentifiableContentItemInterface(QObject *parent = 0);
 
     // overrides.
     bool isIdentifiable() const;

@@ -41,16 +41,11 @@
 
 FacebookPhotoInterfacePrivate::FacebookPhotoInterfacePrivate(FacebookPhotoInterface *q)
     : IdentifiableContentItemInterfacePrivate(q)
-    // , from(new FacebookObjectReferenceInterface(this)) // Unsafe
+    , from(0)
     , pendingTagToRemoveIndex(-1)
     , action(FacebookInterfacePrivate::NoAction)
     , liked(false)
 {
-}
-
-FacebookPhotoInterfacePrivate::~FacebookPhotoInterfacePrivate()
-{
-    deleteReply();
 }
 
 void FacebookPhotoInterfacePrivate::finishedHandler()
@@ -278,10 +273,6 @@ FacebookPhotoInterface::FacebookPhotoInterface(QObject *parent)
 {
     Q_D(FacebookPhotoInterface);
     d->from = new FacebookObjectReferenceInterface(this);
-}
-
-FacebookPhotoInterface::~FacebookPhotoInterface()
-{
 }
 
 /*! \reimp */

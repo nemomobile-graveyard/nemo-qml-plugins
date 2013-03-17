@@ -48,8 +48,7 @@ class FacebookPhotoInterface;
 class FacebookPhotoInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
 public:
-    FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent);
-    ~FacebookPhotoInterfacePrivate();
+    explicit FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent);
     void finishedHandler();
 
     FacebookObjectReferenceInterface *from;

@@ -43,17 +43,12 @@
 
 FacebookUserInterfacePrivate::FacebookUserInterfacePrivate(FacebookUserInterface *q)
     : IdentifiableContentItemInterfacePrivate(q)
-//    , hometown(new FacebookObjectReferenceInterface(this)) // Unsafe
-//    , location(new FacebookObjectReferenceInterface(this))
-//    , significantOther(new FacebookObjectReferenceInterface(this))
-//    , picture(new FacebookPictureInterface(this))
+    , hometown(0)
+    , location(0)
+    , significantOther(0)
+    , picture(0)
     , action(FacebookInterfacePrivate::NoAction)
 {
-}
-
-FacebookUserInterfacePrivate::~FacebookUserInterfacePrivate()
-{
-    deleteReply();
 }
 
 void FacebookUserInterfacePrivate::finishedHandler()
@@ -220,10 +215,6 @@ FacebookUserInterface::FacebookUserInterface(QObject *parent)
     d->location = new FacebookObjectReferenceInterface(this);
     d->significantOther = new FacebookObjectReferenceInterface(this);
     d->picture = new FacebookPictureInterface(this);
-}
-
-FacebookUserInterface::~FacebookUserInterface()
-{
 }
 
 /*! \reimp */

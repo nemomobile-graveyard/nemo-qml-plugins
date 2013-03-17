@@ -45,7 +45,7 @@ class ContentItemInterfacePrivate;
 class IdentifiableContentItemInterfacePrivate : public ContentItemInterfacePrivate
 {
 public:
-    IdentifiableContentItemInterfacePrivate(IdentifiableContentItemInterface *q);
+    explicit IdentifiableContentItemInterfacePrivate(IdentifiableContentItemInterface *q);
     ~IdentifiableContentItemInterfacePrivate();
 
     QNetworkReply *reply(); // returns currentReply

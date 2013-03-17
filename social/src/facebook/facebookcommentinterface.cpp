@@ -41,15 +41,10 @@
 
 FacebookCommentInterfacePrivate::FacebookCommentInterfacePrivate(FacebookCommentInterface *q)
     : IdentifiableContentItemInterfacePrivate(q)
-    // , from(new FacebookObjectReferenceInterface(this)) // unsafe
+    , from(0)
     , action(FacebookInterfacePrivate::NoAction)
     , liked(false)
 {
-}
-
-FacebookCommentInterfacePrivate::~FacebookCommentInterfacePrivate()
-{
-    deleteReply();
 }
 
 void FacebookCommentInterfacePrivate::finishedHandler()
@@ -195,10 +190,6 @@ FacebookCommentInterface::FacebookCommentInterface(QObject *parent)
 {
     Q_D(FacebookCommentInterface);
     d->from = new FacebookObjectReferenceInterface(this);
-}
-
-FacebookCommentInterface::~FacebookCommentInterface()
-{
 }
 
 /*! \reimp */

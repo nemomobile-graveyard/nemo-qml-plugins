@@ -42,10 +42,6 @@ FacebookPictureInterface::FacebookPictureInterface(QObject *parent)
 {
 }
 
-FacebookPictureInterface::~FacebookPictureInterface()
-{
-}
-
 /*! \reimp */
 int FacebookPictureInterface::type() const
 {

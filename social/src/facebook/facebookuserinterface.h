@@ -116,8 +116,7 @@ public:
 
 
 public:
-    FacebookUserInterface(QObject *parent = 0);
-    ~FacebookUserInterface();
+    explicit FacebookUserInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;

@@ -61,8 +61,7 @@ class FacebookNotificationInterface : public IdentifiableContentItemInterface
     /* XXX TODO: "object" property -- probably another object reference? Undocumented. */
 
 public:
-    FacebookNotificationInterface(QObject *parent = 0);
-    ~FacebookNotificationInterface();
+    explicit FacebookNotificationInterface(QObject *parent = 0);
 
     // overrides
     int type() const;

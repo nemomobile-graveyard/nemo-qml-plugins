@@ -69,7 +69,7 @@ class ContentItemInterface : public QObject, public QDeclarativeParserStatus
     Q_PROPERTY(bool isIdentifiable READ isIdentifiable CONSTANT)
 
 public:
-    ContentItemInterface(QObject *parent = 0);
+    explicit ContentItemInterface(QObject *parent = 0);
     virtual ~ContentItemInterface();
 
     // QDeclarativeParserStatus

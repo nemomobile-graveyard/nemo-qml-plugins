@@ -46,8 +46,7 @@ class FacebookCommentInterface;
 class FacebookCommentInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
 public:
-    FacebookCommentInterfacePrivate(FacebookCommentInterface *q);
-    ~FacebookCommentInterfacePrivate();
+    explicit FacebookCommentInterfacePrivate(FacebookCommentInterface *q);
     void finishedHandler();
 
     FacebookObjectReferenceInterface *from;

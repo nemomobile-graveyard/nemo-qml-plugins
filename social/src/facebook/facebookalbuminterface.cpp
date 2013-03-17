@@ -41,13 +41,9 @@
 
 FacebookAlbumInterfacePrivate::FacebookAlbumInterfacePrivate(FacebookAlbumInterface *q)
     : IdentifiableContentItemInterfacePrivate(q)
-//    , from(new FacebookObjectReferenceInterface(q)) // Not safe
+    , from(0)
     , action(FacebookInterfacePrivate::NoAction)
     , liked(false)
-{
-}
-
-FacebookAlbumInterfacePrivate::~FacebookAlbumInterfacePrivate()
 {
 }
 
@@ -226,10 +222,6 @@ FacebookAlbumInterface::FacebookAlbumInterface(QObject *parent)
 {
     Q_D(FacebookAlbumInterface);
     d->from = new FacebookObjectReferenceInterface(this);
-}
-
-FacebookAlbumInterface::~FacebookAlbumInterface()
-{
 }
 
 /*! \reimp */

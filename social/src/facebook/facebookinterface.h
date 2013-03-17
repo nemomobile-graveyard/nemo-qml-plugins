@@ -83,8 +83,7 @@ public:
     };
 
 public:
-    FacebookInterface(QObject *parent = 0);
-    ~FacebookInterface();
+    explicit FacebookInterface(QObject *parent = 0);
 
     // properties
     QString accessToken() const;

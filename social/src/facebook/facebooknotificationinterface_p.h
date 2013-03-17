@@ -46,8 +46,7 @@ class FacebookNotificationInterface;
 class FacebookNotificationInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
 public:
-    FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q);
-    ~FacebookNotificationInterfacePrivate();
+    explicit FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q);
     void finishedHandler();
 
     FacebookObjectReferenceInterface *from;

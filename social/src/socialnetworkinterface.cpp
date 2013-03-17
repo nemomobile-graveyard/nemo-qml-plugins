@@ -198,8 +198,8 @@ void ArbitraryRequestHandler::sslErrorsHandler(const QList<QSslError> &sslErrors
 
 SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterface *q)
     : q_ptr(q)
-//    , qnam(new QNetworkAccessManager(parent)) // Unsafe
-//    , placeHolderNode(new IdentifiableContentItemInterface(parent)) // Unsafe
+    , qnam(0)
+    , placeHolderNode(0)
     , initialized(false)
     , repopulatingCurrentNode(false)
     , error(SocialNetworkInterface::NoError)
@@ -208,11 +208,6 @@ SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterf
     , nodeStackSize(5)
     , arbitraryRequestHandler(0)
 {
-    // Construct the placeholder node.  This node is used as a placeholder
-    // when the client sets a specific nodeIdentifier until the node can
-    // be retrieved from the social network.
-//    placeHolderNode->classBegin();
-//    placeHolderNode->componentComplete();
 }
 
 SocialNetworkInterfacePrivate::~SocialNetworkInterfacePrivate()
@@ -221,6 +216,26 @@ SocialNetworkInterfacePrivate::~SocialNetworkInterfacePrivate()
     QList<IdentifiableContentItemInterface*> cacheEntries = nodeContent.keys();
     foreach (IdentifiableContentItemInterface *nodePtr, cacheEntries)
         purgeDoomedNode(nodePtr);
+}
+
+void SocialNetworkInterfacePrivate::init()
+{
+    Q_Q(SocialNetworkInterface);
+    qnam = new QNetworkAccessManager(q);
+
+    headerData.insert(SocialNetworkInterface::ContentItemRole, "contentItem");
+    headerData.insert(SocialNetworkInterface::ContentItemTypeRole, "contentItemType");
+    headerData.insert(SocialNetworkInterface::ContentItemDataRole, "contentItemData" );
+    headerData.insert(SocialNetworkInterface::ContentItemIdentifierRole, "contentItemIdentifier");
+    q->setRoleNames(headerData);
+
+    // Construct the placeholder node.  This node is used as a placeholder
+    // when the client sets a specific nodeIdentifier until the node can
+    // be retrieved from the social network.
+    placeHolderNode = new IdentifiableContentItemInterface(q);
+    placeHolderNode->classBegin();
+    placeHolderNode->componentComplete();
+
 }
 
 /*! \internal */
@@ -721,33 +736,14 @@ SocialNetworkInterface::SocialNetworkInterface(QObject *parent)
     : QAbstractListModel(parent), d_ptr(new SocialNetworkInterfacePrivate(this))
 {
     Q_D(SocialNetworkInterface);
-    d->qnam = new QNetworkAccessManager(this);
-    d->placeHolderNode = new IdentifiableContentItemInterface(this);
-    d->placeHolderNode->classBegin();
-    d->placeHolderNode->componentComplete();
-
-    d->headerData.insert(ContentItemRole, "contentItem");
-    d->headerData.insert(ContentItemTypeRole, "contentItemType");
-    d->headerData.insert(ContentItemDataRole, "contentItemData" );
-    d->headerData.insert(ContentItemIdentifierRole, "contentItemIdentifier");
-    setRoleNames(d->headerData);
+    d->init();
 }
 
 SocialNetworkInterface::SocialNetworkInterface(SocialNetworkInterfacePrivate &dd, QObject *parent)
     : QAbstractListModel(parent), d_ptr(&dd)
 {
     Q_D(SocialNetworkInterface);
-    // TODO avoid that code duplication
-    d->qnam = new QNetworkAccessManager(this);
-    d->placeHolderNode = new IdentifiableContentItemInterface(this);
-    d->placeHolderNode->classBegin();
-    d->placeHolderNode->componentComplete();
-
-    d->headerData.insert(ContentItemRole, "contentItem");
-    d->headerData.insert(ContentItemTypeRole, "contentItemType");
-    d->headerData.insert(ContentItemDataRole, "contentItemData" );
-    d->headerData.insert(ContentItemIdentifierRole, "contentItemIdentifier");
-    setRoleNames(d->headerData);
+    d->init();
 }
 
 SocialNetworkInterface::~SocialNetworkInterface()

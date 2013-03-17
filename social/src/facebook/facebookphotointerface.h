@@ -78,7 +78,6 @@ class FacebookPhotoInterface : public IdentifiableContentItemInterface
 
 public:
     FacebookPhotoInterface(QObject *parent = 0);
-    ~FacebookPhotoInterface();
 
     // overrides.
     int type() const;

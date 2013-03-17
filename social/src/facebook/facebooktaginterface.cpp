@@ -42,10 +42,6 @@ FacebookTagInterface::FacebookTagInterface(QObject *parent)
 {
 }
 
-FacebookTagInterface::~FacebookTagInterface()
-{
-}
-
 /*! \reimp */
 int FacebookTagInterface::type() const
 {

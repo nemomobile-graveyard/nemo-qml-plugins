@@ -59,7 +59,6 @@ QNetworkReply *IdentifiableContentItemInterfacePrivate::reply()
 void IdentifiableContentItemInterfacePrivate::deleteReply()
 {
     if (currentReply) {
-//        disconnect(currentReply); // Isn't a deleted reply automatically disconnected ?
         currentReply->deleteLater();
         currentReply = 0;
     }
@@ -275,10 +274,6 @@ IdentifiableContentItemInterface::IdentifiableContentItemInterface(QObject *pare
 IdentifiableContentItemInterface
     ::IdentifiableContentItemInterface(IdentifiableContentItemInterfacePrivate &dd, QObject *parent)
     : ContentItemInterface(dd, parent)
-{
-}
-
-IdentifiableContentItemInterface::~IdentifiableContentItemInterface()
 {
 }
 

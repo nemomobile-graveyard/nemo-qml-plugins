@@ -47,8 +47,7 @@ class FacebookUserInterface;
 class FacebookUserInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
 public:
-    FacebookUserInterfacePrivate(FacebookUserInterface *q);
-    ~FacebookUserInterfacePrivate();
+    explicit FacebookUserInterfacePrivate(FacebookUserInterface *q);
     void finishedHandler();
 
     FacebookObjectReferenceInterface *hometown;

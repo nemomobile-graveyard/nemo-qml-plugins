@@ -69,8 +69,8 @@ class ArbitraryRequestHandler : public QObject
     Q_OBJECT
 
 public:
-    ArbitraryRequestHandler(SocialNetworkInterface *parent);
-    ~ArbitraryRequestHandler();
+    explicit ArbitraryRequestHandler(SocialNetworkInterface *parent);
+    virtual ~ArbitraryRequestHandler();
 
     SocialNetworkInterface *q;
     QNetworkReply *reply;
@@ -88,8 +88,11 @@ public Q_SLOTS:
 class SocialNetworkInterfacePrivate
 {
 public:
-    SocialNetworkInterfacePrivate(SocialNetworkInterface *q);
-    ~SocialNetworkInterfacePrivate();
+    explicit SocialNetworkInterfacePrivate(SocialNetworkInterface *q);
+    virtual ~SocialNetworkInterfacePrivate();
+private:
+    void init();
+public:
 
     SocialNetworkInterface * const q_ptr;
     QNetworkAccessManager *qnam;

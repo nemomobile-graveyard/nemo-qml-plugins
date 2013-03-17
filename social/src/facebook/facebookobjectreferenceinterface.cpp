@@ -40,10 +40,6 @@ FacebookObjectReferenceInterface::FacebookObjectReferenceInterface(QObject *pare
 {
 }
 
-FacebookObjectReferenceInterface::~FacebookObjectReferenceInterface()
-{
-}
-
 /*! \reimp */
 int FacebookObjectReferenceInterface::type() const
 {

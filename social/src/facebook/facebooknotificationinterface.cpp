@@ -41,16 +41,11 @@
 
 FacebookNotificationInterfacePrivate::FacebookNotificationInterfacePrivate(FacebookNotificationInterface *q)
     : IdentifiableContentItemInterfacePrivate(q)
-//    , from(new FacebookObjectReferenceInterface(this)) // Unsafe
-//    , to(new FacebookObjectReferenceInterface(this))
-//    , application(new FacebookObjectReferenceInterface(this))
+    , from(0)
+    , to(0)
+    , application(0)
     , action(FacebookInterfacePrivate::NoAction)
 {
-}
-
-FacebookNotificationInterfacePrivate::~FacebookNotificationInterfacePrivate()
-{
-    deleteReply();
 }
 
 void FacebookNotificationInterfacePrivate::finishedHandler()
@@ -163,10 +158,6 @@ FacebookNotificationInterface::FacebookNotificationInterface(QObject *parent)
     d->from = new FacebookObjectReferenceInterface(this);
     d->to = new FacebookObjectReferenceInterface(this);
     d->application = new FacebookObjectReferenceInterface(this);
-}
-
-FacebookNotificationInterface::~FacebookNotificationInterface()
-{
 }
 
 /*! \reimp */
