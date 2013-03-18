@@ -43,6 +43,10 @@
 
 Q_GLOBAL_STATIC(IOWorkerThread, ioWorkerThread);
 
+namespace {
+    QHash<QByteArray, int> roleMapping;
+}
+
 class DirListWorker : public IORequest
 {
     Q_OBJECT
@@ -99,15 +103,6 @@ DirModel::DirModel(QObject *parent)
     // There's no setRoleNames in Qt5.
     setRoleNames(buildRoleNames());
 #endif
-
-    // populate reverse mapping
-    const QHash<int, QByteArray> &roles = roleNames();
-    QHash<int, QByteArray>::ConstIterator it = roles.constBegin();
-    for (;it != roles.constEnd(); ++it)
-        mRoleMapping.insert(it.value(), it.key());
-
-    // make sure we cover all roles
-//    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
@@ -139,14 +134,24 @@ QHash<int, QByteArray> DirModel::buildRoleNames() const
     roles.insert(IsWritableRole, QByteArray("isWritable"));
     roles.insert(IsExecutableRole, QByteArray("isExecutable"));
 
+    // populate reverse mapping
+    if (roleMapping.isEmpty()) {
+        QHash<int, QByteArray>::ConstIterator it = roles.constBegin();
+        for (;it != roles.constEnd(); ++it)
+            roleMapping.insert(it.value(), it.key());
+
+        // make sure we cover all roles
+    //    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
+    }
+
     return roles;
 }
 
 QVariant DirModel::data(int row, const QByteArray &stringRole) const
 {
-    QHash<QByteArray, int>::ConstIterator it = mRoleMapping.constFind(stringRole);
+    QHash<QByteArray, int>::ConstIterator it = roleMapping.constFind(stringRole);
 
-    if (it == mRoleMapping.constEnd())
+    if (it == roleMapping.constEnd())
         return QVariant();
 
     return data(index(row, 0), *it);

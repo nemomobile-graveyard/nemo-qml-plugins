@@ -124,7 +124,6 @@ private:
     bool mAwaitingResults;
     QString mCurrentDir;
     QVector<QFileInfo> mDirectoryContents;
-    QHash<QByteArray, int> mRoleMapping;
 };
 
 
