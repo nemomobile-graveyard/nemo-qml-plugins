@@ -11,4 +11,5 @@ SUBDIRS += thumbnailer \
            social \
            alarms \
            time \
-           utilities
+           utilities \
+           notifications
