@@ -56,6 +56,15 @@ public:
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
 
+    Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox)
+    Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread)
+
+    // property accessors.
+    bool combinedInbox() const;
+    void setCombinedInbox(bool c);
+    bool filterUnread() const;
+    void setFilterUnread(bool u);
+
 signals:
     void messageDownloadCompleted();
 
@@ -67,7 +76,6 @@ public slots:
     Q_INVOKABLE void sortByDate (int key);
     Q_INVOKABLE void sortByAttachment (int key);
     Q_INVOKABLE void setSearch(const QString search);
-    Q_INVOKABLE void setCombinedInbox(bool unread = false);
 
     Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);
     Q_INVOKABLE QVariant indexFromMessageId(QString msgId);
@@ -86,7 +94,6 @@ public slots:
     Q_INVOKABLE QVariant bccList (int index);
     Q_INVOKABLE QVariant toList (int index);
     Q_INVOKABLE QVariant messageRead (int index);
-    Q_INVOKABLE QVariant isCombinedInbox();
     Q_INVOKABLE int messagesCount ();
     Q_INVOKABLE void deSelectAllMessages();
     Q_INVOKABLE void selectMessage( int index );
@@ -101,6 +108,8 @@ private slots:
 
 private:
 
+    bool m_combinedInbox;
+    bool m_filterUnread;
     QProcess m_msgAccount;
     QMailFolderId m_currentFolderId;
     QProcess m_messageServerProcess;
@@ -109,7 +118,6 @@ private:
     QString m_search;
     QMailMessageKey m_key;                  // key set externally other than search
     QList<QMailMessageId> m_selectedMsgIds;
-    bool combinedInbox;
 };
 
 #endif
