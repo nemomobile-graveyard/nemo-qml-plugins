@@ -78,8 +78,7 @@ NotificationManagerProxy *notificationManager()
             previewBody: "Notification preview body"
             itemCount: 5
             timestamp: "2013-02-20 18:21:00"
-            actions: [ "default", "Default action" ]
-            onActionInvoked: console.log("Action invoked: " + actionKey)
+            onClicked: console.log("Clicked")
             onClosed: console.log("Closed, reason: " + reason)
         }
         text: "Application notification, ID " + notification.replacesId
@@ -171,24 +170,6 @@ void Notification::setBody(const QString &body)
 }
 
 /*!
-    \qmlproperty QStringList actions
-
-    Actions are sent over as a list of pairs. Each even element in the list (starting at index 0) represents the identifier for the action. Each odd element in the list is the localized string that will be displayed to the user. Defaults to an empty list.
- */
-QStringList Notification::actions() const
-{
-    return actions_;
-}
-
-void Notification::setActions(const QStringList &actions)
-{
-    if (actions_ != actions) {
-        actions_ = actions;
-        emit actionsChanged();
-    }
-}
-
-/*!
     \qmlproperty QDateTime timestamp
 
     The timestamp for the notification. Should be set to the time when the event the notification is related to has occurred. Defaults to current time.
@@ -269,7 +250,7 @@ void Notification::setItemCount(int itemCount)
 */
 void Notification::publish()
 {
-    setReplacesId(notificationManager()->Notify(QFileInfo(QCoreApplication::arguments()[0]).fileName(), replacesId_, QString(), summary_, body_, actions_, hints_, -1));
+    setReplacesId(notificationManager()->Notify(QFileInfo(QCoreApplication::arguments()[0]).fileName(), replacesId_, QString(), summary_, body_, (QStringList() << "default" << ""), hints_, -1));
 }
 
 /*!
@@ -286,15 +267,14 @@ void Notification::close()
 }
 
 /*!
-    \qmlsignal Notification::actionInvoked(QString actionKey)
+    \qmlsignal Notification::clicked()
 
-    Sent when one of the actions defined in the actions list has been
-    invoked. \a actionKey is the key for the invoked action.
+    Sent when the notification is clicked (its default action is invoked).
 */
 void Notification::checkActionInvoked(uint id, QString actionKey)
 {
-    if (id == replacesId_) {
-        emit actionInvoked(actionKey);
+    if (id == replacesId_ && actionKey == "default") {
+        emit clicked();
     }
 }
 

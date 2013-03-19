@@ -60,10 +60,6 @@ public:
     QString body() const;
     void setBody(const QString &body);
 
-    Q_PROPERTY(QStringList actions READ actions WRITE setActions NOTIFY actionsChanged)
-    QStringList actions() const;
-    void setActions(const QStringList &actions);
-
     Q_PROPERTY(QDateTime timestamp READ timestamp WRITE setTimestamp NOTIFY timestampChanged)
     QDateTime timestamp() const;
     void setTimestamp(const QDateTime &timestamp);
@@ -84,13 +80,12 @@ public:
     Q_INVOKABLE void close();
 
 signals:
-    void actionInvoked(QString actionKey);
+    void clicked();
     void closed(uint reason);
     void categoryChanged();
     void replacesIdChanged();
     void summaryChanged();
     void bodyChanged();
-    void actionsChanged();
     void timestampChanged();
     void previewSummaryChanged();
     void previewBodyChanged();
@@ -104,7 +99,6 @@ private:
     uint replacesId_;
     QString summary_;
     QString body_;
-    QStringList actions_;
     QVariantHash hints_;
 };
 
