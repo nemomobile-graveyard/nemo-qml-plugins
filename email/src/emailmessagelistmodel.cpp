@@ -86,6 +86,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessagePreviewRole] = "preview";
     roles[MessageTimeSectionRole] = "timeSection";
     roles[MessagePriorityRole] = "priority";
+    roles[MessageAccountIdRole] = "accountId";
     setRoleNames(roles);
 
     EmailAgent::instance()->initMailServer();
@@ -238,6 +239,9 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         else {
             return NormalPriority;
         }
+    }
+    else if (role == MessageAccountIdRole) {
+        return messageMetaData.parentAccountId();
     }
     return QMailMessageListModel::data(index, role);
 }

@@ -44,7 +44,8 @@ public:
         MessageSelectModeRole,                                 // returns the select mode
         MessagePreviewRole,                                    // returns message preview if available
         MessageTimeSectionRole,                                // returns time section relative to the current time
-        MessagePriorityRole                                    // returns message priority
+        MessagePriorityRole,                                   // returns message priority
+        MessageAccountIdRole                                   // returns parent account id for the message
     };
 
     EmailMessageListModel (QObject *parent = 0);
