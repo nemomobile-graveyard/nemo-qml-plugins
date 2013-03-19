@@ -26,3 +26,5 @@ time in sync with system time changes.
 
 - alarms: provides QML APIs for creating, editing, and fetching information
   about alarms
+
+- notifications: provides QML/C++ APIs for publishing notifications
