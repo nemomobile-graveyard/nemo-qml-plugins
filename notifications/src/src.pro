@@ -12,4 +12,6 @@ HEADERS += \
     notification.h \
     notificationmanagerproxy.h
 
+OTHER_FILES += qmldir notifications.qdoc notifications.qdocconf
+
 include(../../plugin.pri)
