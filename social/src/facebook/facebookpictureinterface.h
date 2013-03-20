@@ -57,8 +57,7 @@ class FacebookPictureInterface : public ContentItemInterface
     Q_PROPERTY(bool isSilhouette READ isSilhouette NOTIFY isSilhouetteChanged)
 
 public:
-    FacebookPictureInterface(QObject *parent = 0);
-    ~FacebookPictureInterface();
+    explicit FacebookPictureInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;
@@ -73,7 +72,7 @@ Q_SIGNALS:
     void isSilhouetteChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookPictureInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKPICTUREINTERFACE_H

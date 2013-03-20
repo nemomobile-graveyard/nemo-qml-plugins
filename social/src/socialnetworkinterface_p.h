@@ -69,8 +69,8 @@ class ArbitraryRequestHandler : public QObject
     Q_OBJECT
 
 public:
-    ArbitraryRequestHandler(SocialNetworkInterface *parent);
-    ~ArbitraryRequestHandler();
+    explicit ArbitraryRequestHandler(SocialNetworkInterface *parent);
+    virtual ~ArbitraryRequestHandler();
 
     SocialNetworkInterface *q;
     QNetworkReply *reply;
@@ -88,10 +88,13 @@ public Q_SLOTS:
 class SocialNetworkInterfacePrivate
 {
 public:
-    SocialNetworkInterfacePrivate(SocialNetworkInterface *parent);
-    ~SocialNetworkInterfacePrivate();
+    explicit SocialNetworkInterfacePrivate(SocialNetworkInterface *q);
+    virtual ~SocialNetworkInterfacePrivate();
+private:
+    void init();
+public:
 
-    SocialNetworkInterface *q;
+    SocialNetworkInterface * const q_ptr;
     QNetworkAccessManager *qnam;
     IdentifiableContentItemInterface *placeHolderNode;
 
@@ -153,7 +156,7 @@ public:
 private:
     void addEntryToNodeContent(IdentifiableContentItemInterface *item, CacheEntry *entry);
     void removeEntryFromNodeContent(IdentifiableContentItemInterface *item, CacheEntry *entry); // if after deref, count == 0, removes from cache list and deletes.
-    void updateCacheEntry(CacheEntry *entry, ContentItemInterface *item, const QVariantMap &data = QVariantMap());
+    void updateCacheEntry(CacheEntry *entry, ContentItemInterface *item, const QVariantMap &data = QVariantMap()) const;
     void derefCacheEntry(CacheEntry *entry); // if after deref, count == 0, removes from cache list and deletes.
 
     QList<CacheEntry*> cache; // the actual cache
@@ -162,7 +165,7 @@ private:
 
     ArbitraryRequestHandler *arbitraryRequestHandler;
 
-    friend class SocialNetworkInterface;
+    Q_DECLARE_PUBLIC(SocialNetworkInterface)
 };
 
 #endif // SOCIALNETWORKINTERFACE_P_H

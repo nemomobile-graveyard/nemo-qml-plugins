@@ -37,28 +37,22 @@
 #include <QtNetwork/QNetworkReply>
 
 #include "facebookinterface_p.h"
+#include "identifiablecontentiteminterface_p.h"
 
 class IdentifiableContentItemInterfacePrivate;
 class FacebookObjectReferenceInterface;
 class FacebookAlbumInterface;
 
-class FacebookAlbumInterfacePrivate : public QObject
+class FacebookAlbumInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent, IdentifiableContentItemInterfacePrivate *parentData);
-    ~FacebookAlbumInterfacePrivate();
-
-    FacebookAlbumInterface *q;
-    IdentifiableContentItemInterfacePrivate *dd;
+    explicit FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent);
+    void finishedHandler();
     FacebookObjectReferenceInterface *from;
-
     FacebookInterfacePrivate::FacebookAction action;
     bool liked;
-
-public Q_SLOTS:
-    void finishedHandler();
+private:
+    Q_DECLARE_PUBLIC(FacebookAlbumInterface)
 };
 
 #endif // FACEBOOKALBUMINTERFACE_P_H

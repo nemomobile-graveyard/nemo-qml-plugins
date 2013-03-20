@@ -32,7 +32,9 @@
 #ifndef FACEBOOKINTERFACE_P_H
 #define FACEBOOKINTERFACE_P_H
 
+#include "socialnetworkinterface.h"
 #include "socialnetworkinterface_p.h"
+#include "facebookinterface.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QVariantMap>
@@ -42,20 +44,12 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QSslError>
 
-class SocialNetworkInterfacePrivate;
 class ContentItemInterface;
-class FacebookInterface;
 
-class FacebookInterfacePrivate : public QObject
+class FacebookInterfacePrivate : public SocialNetworkInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookInterfacePrivate(FacebookInterface *parent, SocialNetworkInterfacePrivate *parentData);
-    ~FacebookInterfacePrivate();
-
-    FacebookInterface *q;
-    SocialNetworkInterfacePrivate *d;
+    explicit FacebookInterfacePrivate(FacebookInterface *q);
 
     QString accessToken;
     QString currentUserIdentifier;
@@ -80,7 +74,9 @@ public:
 
     int detectTypeFromData(const QVariantMap &data) const;
 
-public Q_SLOTS:
+    void connectFinishedAndErrors();
+
+    // Slots
     void finishedHandler();
     void errorHandler(QNetworkReply::NetworkError err);
     void sslErrorsHandler(const QList<QSslError> &errs);
@@ -103,6 +99,8 @@ public:
         UploadAlbumAction,
         DeleteAlbumAction
     };
+private:
+    Q_DECLARE_PUBLIC(FacebookInterface)
 };
 
 #endif // FACEBOOKINTERFACE_P_H

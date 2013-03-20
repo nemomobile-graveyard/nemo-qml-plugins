@@ -44,8 +44,7 @@ class ContentItemTypeFilterInterface : public FilterInterface
     Q_PROPERTY(int limit READ limit WRITE setLimit NOTIFY limitChanged)
 
 public:
-    ContentItemTypeFilterInterface(QObject *parent = 0);
-    ~ContentItemTypeFilterInterface();
+    explicit ContentItemTypeFilterInterface(QObject *parent = 0);
 
     // FilterInterface
     Q_INVOKABLE bool matches(ContentItemInterface *content) const;

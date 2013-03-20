@@ -59,8 +59,7 @@ class FacebookTagInterface : public ContentItemInterface
     Q_PROPERTY(qreal yOffset READ yOffset NOTIFY yOffsetChanged)
 
 public:
-    FacebookTagInterface(QObject *parent = 0);
-    ~FacebookTagInterface();
+    explicit FacebookTagInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;
@@ -81,7 +80,7 @@ Q_SIGNALS:
     void yOffsetChanged();
 
 private:
-    Q_DISABLE_COPY(FacebookTagInterface)
+    Q_DECLARE_PRIVATE(ContentItemInterface)
 };
 
 #endif // FACEBOOKTAGINTERFACE_H

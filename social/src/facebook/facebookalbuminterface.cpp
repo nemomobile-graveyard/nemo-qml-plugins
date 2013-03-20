@@ -39,32 +39,25 @@
 
 #include <QtDebug>
 
-FacebookAlbumInterfacePrivate::FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent, IdentifiableContentItemInterfacePrivate *parentData)
-    : QObject(parent)
-    , q(parent)
-    , dd(parentData)
-    , from(new FacebookObjectReferenceInterface(this))
+FacebookAlbumInterfacePrivate::FacebookAlbumInterfacePrivate(FacebookAlbumInterface *q)
+    : IdentifiableContentItemInterfacePrivate(q)
+    , from(0)
     , action(FacebookInterfacePrivate::NoAction)
     , liked(false)
 {
 }
 
-FacebookAlbumInterfacePrivate::~FacebookAlbumInterfacePrivate()
-{
-    dd->deleteReply();
-}
-
-/*! \internal */
 void FacebookAlbumInterfacePrivate::finishedHandler()
 {
-    if (!dd->reply()) {
+    Q_Q(FacebookAlbumInterface);
+    if (!reply()) {
         // if an error occurred, it might have been deleted by the error handler.
         qWarning() << Q_FUNC_INFO << "network request finished but no reply";
         return;
     }
 
-    QByteArray replyData = dd->reply()->readAll();
-    dd->deleteReply();
+    QByteArray replyData = reply()->readAll();
+    deleteReply();
     bool ok = false;
     QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
     if (!ok)
@@ -76,7 +69,7 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::DeletePhotoAction: // flow down.
         case FacebookInterfacePrivate::DeleteCommentAction: {
             if (replyData == QString(QLatin1String("true"))) {
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 if (action == FacebookInterfacePrivate::LikeAction) {
                     liked = true;
                     emit q->likedChanged();
@@ -87,9 +80,9 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
                 emit q->statusChanged();
                 emit q->responseReceived(responseData);
             } else {
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = QLatin1String("Album: request failed");
-                dd->status = SocialNetworkInterface::Error;
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = QLatin1String("Album: request failed");
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
@@ -102,18 +95,18 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
         case FacebookInterfacePrivate::UploadCommentAction: {
             if (!ok || responseData.value("id").toString().isEmpty()) {
                 // failed.
-                dd->error = SocialNetworkInterface::RequestError;
-                dd->errorMessage = action == FacebookInterfacePrivate::UploadCommentAction
+                error = SocialNetworkInterface::RequestError;
+                errorMessage = action == FacebookInterfacePrivate::UploadCommentAction
                     ? QLatin1String("Album: add comment request failed")
                     : QLatin1String("Album: add photo request failed");
-                dd->status = SocialNetworkInterface::Error;
+                status = SocialNetworkInterface::Error;
                 emit q->statusChanged();
                 emit q->errorChanged();
                 emit q->errorMessageChanged();
                 emit q->responseReceived(responseData);
             } else {
                 // succeeded.
-                dd->status = SocialNetworkInterface::Idle;
+                status = SocialNetworkInterface::Idle;
                 emit q->statusChanged();
                 emit q->responseReceived(responseData);
             }
@@ -121,9 +114,9 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
         break;
 
         default: {
-            dd->error = SocialNetworkInterface::OtherError;
-            dd->errorMessage = QLatin1String("Request finished but no action currently in progress");
-            dd->status = SocialNetworkInterface::Error;
+            error = SocialNetworkInterface::OtherError;
+            errorMessage = QLatin1String("Request finished but no action currently in progress");
+            status = SocialNetworkInterface::Error;
             emit q->statusChanged();
             emit q->errorChanged();
             emit q->errorMessageChanged();
@@ -225,12 +218,10 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
 */
 
 FacebookAlbumInterface::FacebookAlbumInterface(QObject *parent)
-    : IdentifiableContentItemInterface(parent), f(new FacebookAlbumInterfacePrivate(this, dd))
+    : IdentifiableContentItemInterface(*(new FacebookAlbumInterfacePrivate(this)), parent)
 {
-}
-
-FacebookAlbumInterface::~FacebookAlbumInterface()
-{
+    Q_D(FacebookAlbumInterface);
+    d->from = new FacebookObjectReferenceInterface(this);
 }
 
 /*! \reimp */
@@ -254,6 +245,7 @@ bool FacebookAlbumInterface::reload(const QStringList &whichFields)
 /*! \reimp */
 void FacebookAlbumInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
+    Q_D(FacebookAlbumInterface);
     QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_ALBUM_FROM).toMap();
     QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
     QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
@@ -309,7 +301,7 @@ void FacebookAlbumInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
         newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(f->from, newFromData);
+        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
         emit fromChanged();
     }
 
@@ -330,16 +322,15 @@ void FacebookAlbumInterface::emitPropertyChangeSignals(const QVariantMap &oldDat
 */
 bool FacebookAlbumInterface::like()
 {
+    Q_D(FacebookAlbumInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Post,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::LikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::LikeAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -354,16 +345,15 @@ bool FacebookAlbumInterface::like()
 */
 bool FacebookAlbumInterface::unlike()
 {
+    Q_D(FacebookAlbumInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete,
                                identifier(), QLatin1String("likes"));
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteLikeAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteLikeAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -383,6 +373,7 @@ bool FacebookAlbumInterface::unlike()
 */
 bool FacebookAlbumInterface::uploadComment(const QString &message)
 {
+    Q_D(FacebookAlbumInterface);
     QVariantMap postData;
     postData.insert("message", message);
 
@@ -393,10 +384,8 @@ bool FacebookAlbumInterface::uploadComment(const QString &message)
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::UploadCommentAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::UploadCommentAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -412,15 +401,14 @@ bool FacebookAlbumInterface::uploadComment(const QString &message)
 */
 bool FacebookAlbumInterface::removeComment(const QString &commentIdentifier)
 {
+    Q_D(FacebookAlbumInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete, commentIdentifier);
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeleteCommentAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeleteCommentAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -441,6 +429,7 @@ bool FacebookAlbumInterface::removeComment(const QString &commentIdentifier)
 */
 bool FacebookAlbumInterface::uploadPhoto(const QUrl &source, const QString &message)
 {
+    Q_D(FacebookAlbumInterface);
     // XXX TODO: privacy parameter?
 
     QVariantMap extraData; // image upload is handled specially by the facebook adapter.
@@ -458,10 +447,8 @@ bool FacebookAlbumInterface::uploadPhoto(const QUrl &source, const QString &mess
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::UploadPhotoAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::UploadPhotoAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -477,15 +464,14 @@ bool FacebookAlbumInterface::uploadPhoto(const QUrl &source, const QString &mess
 */
 bool FacebookAlbumInterface::removePhoto(const QString &photoIdentifier)
 {
+    Q_D(FacebookAlbumInterface);
     bool requestMade = request(IdentifiableContentItemInterface::Delete, photoIdentifier);
 
     if (!requestMade)
         return false;
 
-    f->action = FacebookInterfacePrivate::DeletePhotoAction;
-    connect(f->dd->reply(), SIGNAL(finished()), f, SLOT(finishedHandler()));
-    connect(f->dd->reply(), SIGNAL(error(QNetworkReply::NetworkError)), f->dd, SLOT(defaultErrorHandler(QNetworkReply::NetworkError)));
-    connect(f->dd->reply(), SIGNAL(sslErrors(QList<QSslError>)), f->dd, SLOT(defaultSslErrorsHandler(QList<QSslError>)));
+    d->action = FacebookInterfacePrivate::DeletePhotoAction;
+    d->connectFinishedAndErrors();
     return true;
 }
 
@@ -495,7 +481,8 @@ bool FacebookAlbumInterface::removePhoto(const QString &photoIdentifier)
 */
 FacebookObjectReferenceInterface *FacebookAlbumInterface::from() const
 {
-    return f->from;
+    Q_D(const FacebookAlbumInterface);
+    return d->from;
 }
 
 /*!
@@ -504,6 +491,7 @@ FacebookObjectReferenceInterface *FacebookAlbumInterface::from() const
 */
 QString FacebookAlbumInterface::name() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_NAME).toString();
 }
 
@@ -513,6 +501,7 @@ QString FacebookAlbumInterface::name() const
 */
 QString FacebookAlbumInterface::description() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_DESCRIPTION).toString();
 }
 
@@ -522,6 +511,7 @@ QString FacebookAlbumInterface::description() const
 */
 QUrl FacebookAlbumInterface::link() const
 {
+    Q_D(const FacebookAlbumInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_ALBUM_LINK).toString());
 }
 
@@ -531,6 +521,7 @@ QUrl FacebookAlbumInterface::link() const
 */
 QString FacebookAlbumInterface::coverPhoto() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_COVERPHOTO).toString();
 }
 
@@ -540,6 +531,7 @@ QString FacebookAlbumInterface::coverPhoto() const
 */
 QString FacebookAlbumInterface::privacy() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).toString();
 }
 
@@ -549,6 +541,7 @@ QString FacebookAlbumInterface::privacy() const
 */
 int FacebookAlbumInterface::count() const
 {
+    Q_D(const FacebookAlbumInterface);
     QString countStr = d->data().value(FACEBOOK_ONTOLOGY_ALBUM_COUNT).toString();
     bool ok = false;
     int retn = countStr.toInt(&ok);
@@ -570,6 +563,7 @@ int FacebookAlbumInterface::count() const
 */
 FacebookAlbumInterface::AlbumType FacebookAlbumInterface::albumType() const
 {
+    Q_D(const FacebookAlbumInterface);
     QString atStr = d->data().value(FACEBOOK_ONTOLOGY_ALBUM_TYPE).toString().toLower();
     if (atStr == QLatin1String("normal"))
         return FacebookAlbumInterface::Normal;
@@ -588,6 +582,7 @@ FacebookAlbumInterface::AlbumType FacebookAlbumInterface::albumType() const
 */
 QString FacebookAlbumInterface::createdTime() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_CREATEDTIME).toString();
 }
 
@@ -597,6 +592,7 @@ QString FacebookAlbumInterface::createdTime() const
 */
 QString FacebookAlbumInterface::updatedTime() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_UPDATEDTIME).toString();
 }
 
@@ -606,6 +602,7 @@ QString FacebookAlbumInterface::updatedTime() const
 */
 bool FacebookAlbumInterface::canUpload() const
 {
+    Q_D(const FacebookAlbumInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).toString() == QLatin1String("true");
 }
 
@@ -615,6 +612,6 @@ bool FacebookAlbumInterface::canUpload() const
 */
 bool FacebookAlbumInterface::liked() const
 {
-    return f->liked;
+    Q_D(const FacebookAlbumInterface);
+    return d->liked;
 }
-

@@ -39,22 +39,18 @@
 #include <QtDeclarative/QDeclarativeListProperty>
 
 #include "facebookinterface_p.h"
+#include "identifiablecontentiteminterface_p.h"
 
-class IdentifiableContentItemInterfacePrivate;
 class FacebookObjectReferenceInterface;
 class FacebookTagInterface;
 class FacebookPhotoInterface;
 
-class FacebookPhotoInterfacePrivate : public QObject
+class FacebookPhotoInterfacePrivate : public IdentifiableContentItemInterfacePrivate
 {
-    Q_OBJECT
-
 public:
-    FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent, IdentifiableContentItemInterfacePrivate *parentData);
-    ~FacebookPhotoInterfacePrivate();
+    explicit FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent);
+    void finishedHandler();
 
-    FacebookPhotoInterface *q;
-    IdentifiableContentItemInterfacePrivate *dd;
     FacebookObjectReferenceInterface *from;
 
     int pendingTagToRemoveIndex;
@@ -69,8 +65,8 @@ public:
     static void tags_clear(QDeclarativeListProperty<FacebookTagInterface> *list);
     static int tags_count(QDeclarativeListProperty<FacebookTagInterface> *list);
 
-public Q_SLOTS:
-    void finishedHandler();
+private:
+    Q_DECLARE_PUBLIC(FacebookPhotoInterface)
 };
 
 #endif // FACEBOOKPHOTOINTERFACE_P_H
