@@ -36,6 +36,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QVariantHash>
+#include <QDBusArgument>
 
 class Notification : public QObject
 {
@@ -98,6 +99,11 @@ public:
 
     Q_INVOKABLE void publish();
     Q_INVOKABLE void close();
+    Q_INVOKABLE static QList<QObject*> notifications();
+
+    explicit Notification(const Notification &notification);
+    friend QDBusArgument &operator<<(QDBusArgument &, const Notification &);
+    friend const QDBusArgument &operator>>(const QDBusArgument &, Notification &);
 
 signals:
     void clicked();
@@ -118,6 +124,8 @@ private slots:
     void setRemoteActionHint();
 
 private:
+    static QString appName();
+
     uint replacesId_;
     QString summary_;
     QString body_;
@@ -128,5 +136,9 @@ private:
     QString remoteDBusCallMethodName_;
     QVariantList remoteDBusCallArguments_;
 };
+
+Q_DECLARE_METATYPE(Notification)
+Q_DECLARE_METATYPE(QList<Notification>)
+Q_DECLARE_METATYPE(QList<Notification*>)
 
 #endif // NOTIFICATION_H

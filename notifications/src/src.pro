@@ -1,4 +1,4 @@
-system(qdbusxml2cpp org.freedesktop.Notifications.xml -p notificationmanagerproxy -c NotificationManagerProxy)
+system(qdbusxml2cpp org.freedesktop.Notifications.xml -p notificationmanagerproxy -c NotificationManagerProxy -i notification.h)
 
 TARGET = nemonotifications
 PLUGIN_IMPORT_PATH = org/nemomobile/notifications

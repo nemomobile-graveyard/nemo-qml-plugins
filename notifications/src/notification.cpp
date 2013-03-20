@@ -45,6 +45,8 @@ static QScopedPointer<NotificationManagerProxy> notificationManagerProxy;
 NotificationManagerProxy *notificationManager()
 {
     if (notificationManagerProxy.isNull()) {
+        qDBusRegisterMetaType<Notification>();
+        qDBusRegisterMetaType<QList<Notification> >();
         notificationManagerProxy.reset(new NotificationManagerProxy("org.freedesktop.Notifications", "/org/freedesktop/Notifications", QDBusConnection::sessionBus()));
     }
     return notificationManagerProxy.data();
@@ -108,6 +110,9 @@ NotificationManagerProxy *notificationManager()
 
     After publishing the ID of the notification can be found from the
     replacesId property.
+
+    Notification::notifications() can be used to fetch notifications
+    created by the calling application.
  */
 Notification::Notification(QObject *parent) :
     QObject(parent),
@@ -271,7 +276,7 @@ void Notification::setItemCount(int itemCount)
 */
 void Notification::publish()
 {
-    setReplacesId(notificationManager()->Notify(QFileInfo(QCoreApplication::arguments()[0]).fileName(), replacesId_, QString(), summary_, body_, (QStringList() << "default" << ""), hints_, -1));
+    setReplacesId(notificationManager()->Notify(appName(), replacesId_, QString(), summary_, body_, (QStringList() << "default" << ""), hints_, -1));
 }
 
 /*!
@@ -405,4 +410,72 @@ void Notification::setRemoteActionHint()
     }
 
     hints_.insert(HINT_REMOTE_ACTION, s);
+}
+
+/*!
+    \qmlmethod void Notification::notifications()
+
+    Returns a list of notifications created by the calling application.
+*/
+QList<QObject*> Notification::notifications()
+{
+    QList<Notification> notifications = notificationManager()->GetNotifications(appName());
+    QList<QObject*> objects;
+    foreach (const Notification &notification, notifications) {
+        objects.append(new Notification(notification));
+    }
+    return objects;
+}
+
+QString Notification::appName()
+{
+    return QFileInfo(QCoreApplication::arguments()[0]).fileName();
+}
+
+Notification::Notification(const Notification &notification) :
+    QObject(notification.parent()),
+    replacesId_(notification.replacesId_),
+    summary_(notification.summary_),
+    body_(notification.body_),
+    hints_(notification.hints_),
+    remoteDBusCallServiceName_(notification.remoteDBusCallServiceName_),
+    remoteDBusCallObjectPath_(notification.remoteDBusCallObjectPath_),
+    remoteDBusCallInterface_(notification.remoteDBusCallInterface_),
+    remoteDBusCallMethodName_(notification.remoteDBusCallMethodName_),
+    remoteDBusCallArguments_(notification.remoteDBusCallArguments_)
+{
+}
+
+QDBusArgument &operator<<(QDBusArgument &argument, const Notification &notification)
+{
+    argument.beginStructure();
+    argument << Notification::appName();
+    argument << notification.replacesId_;
+    argument << QString();
+    argument << notification.summary_;
+    argument << notification.body_;
+    argument << (QStringList() << "default" << "");
+    argument << notification.hints_;
+    argument << -1;
+    argument.endStructure();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, Notification &notification)
+{
+    QString tempString;
+    QStringList tempStringList;
+    int tempInt;
+
+    argument.beginStructure();
+    argument >> tempString;
+    argument >> notification.replacesId_;
+    argument >> tempString;
+    argument >> notification.summary_;
+    argument >> notification.body_;
+    argument >> tempStringList;
+    argument >> notification.hints_;
+    argument >> tempInt;
+    argument.endStructure();
+    return argument;
 }
