@@ -57,14 +57,18 @@ public:
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
 
-    Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox)
-    Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread)
+    Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox NOTIFY combinedInboxChanged)
+    Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread NOTIFY filterUnreadChanged)
 
     // property accessors.
     bool combinedInbox() const;
     void setCombinedInbox(bool c);
     bool filterUnread() const;
     void setFilterUnread(bool u);
+
+Q_SIGNALS:
+    void combinedInboxChanged();
+    void filterUnreadChanged();
 
 signals:
     void messageDownloadCompleted();
@@ -101,6 +105,7 @@ public slots:
     Q_INVOKABLE void deSelectMessage (int index );
     Q_INVOKABLE void moveSelectedMessageIds(QVariant vFolderId);
     Q_INVOKABLE void deleteSelectedMessageIds();
+    Q_INVOKABLE void markAllMessagesAsRead();
 
     void foldersAdded(const QMailFolderIdList &folderIds);
 
