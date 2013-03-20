@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
-SUBDIRS += thumbnailer \
+SUBDIRS += calendar \
+           thumbnailer \
            contacts \
            qrencoder \
            folderlistmodel \
