@@ -76,6 +76,26 @@ public:
     int itemCount() const;
     void setItemCount(int itemCount);
 
+    Q_PROPERTY(QString remoteDBusCallServiceName READ remoteDBusCallServiceName WRITE setRemoteDBusCallServiceName NOTIFY remoteDBusCallChanged)
+    QString remoteDBusCallServiceName() const;
+    void setRemoteDBusCallServiceName(const QString &serviceName);
+
+    Q_PROPERTY(QString remoteDBusCallObjectPath READ remoteDBusCallObjectPath WRITE setRemoteDBusCallObjectPath NOTIFY remoteDBusCallChanged)
+    QString remoteDBusCallObjectPath() const;
+    void setRemoteDBusCallObjectPath(const QString &objectPath);
+
+    Q_PROPERTY(QString remoteDBusCallInterface READ remoteDBusCallInterface WRITE setRemoteDBusCallInterface NOTIFY remoteDBusCallChanged)
+    QString remoteDBusCallInterface() const;
+    void setRemoteDBusCallInterface(const QString &interface);
+
+    Q_PROPERTY(QString remoteDBusCallMethodName READ remoteDBusCallMethodName WRITE setRemoteDBusCallMethodName NOTIFY remoteDBusCallChanged)
+    QString remoteDBusCallMethodName() const;
+    void setRemoteDBusCallMethodName(const QString &methodName);
+
+    Q_PROPERTY(QVariantList remoteDBusCallArguments READ remoteDBusCallArguments WRITE setRemoteDBusCallArguments NOTIFY remoteDBusCallChanged)
+    QVariantList remoteDBusCallArguments() const;
+    void setRemoteDBusCallArguments(const QVariantList &arguments);
+
     Q_INVOKABLE void publish();
     Q_INVOKABLE void close();
 
@@ -90,16 +110,23 @@ signals:
     void previewSummaryChanged();
     void previewBodyChanged();
     void itemCountChanged();
+    void remoteDBusCallChanged();
 
 private slots:
     void checkActionInvoked(uint id, QString actionKey);
     void checkNotificationClosed(uint id, uint reason);
+    void setRemoteActionHint();
 
 private:
     uint replacesId_;
     QString summary_;
     QString body_;
     QVariantHash hints_;
+    QString remoteDBusCallServiceName_;
+    QString remoteDBusCallObjectPath_;
+    QString remoteDBusCallInterface_;
+    QString remoteDBusCallMethodName_;
+    QVariantList remoteDBusCallArguments_;
 };
 
 #endif // NOTIFICATION_H

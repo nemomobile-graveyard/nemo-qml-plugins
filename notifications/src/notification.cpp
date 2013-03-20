@@ -37,6 +37,7 @@ const char *HINT_ITEM_COUNT = "x-nemo-item-count";
 const char *HINT_TIMESTAMP = "x-nemo-timestamp";
 const char *HINT_PREVIEW_BODY = "x-nemo-preview-body";
 const char *HINT_PREVIEW_SUMMARY = "x-nemo-preview-summary";
+const char *HINT_REMOTE_ACTION = "x-nemo-remote-action-default";
 
 //! A proxy for accessing the notification manager
 static QScopedPointer<NotificationManagerProxy> notificationManagerProxy;
@@ -59,11 +60,13 @@ NotificationManagerProxy *notificationManager()
     Notifications Specification</a> as implemented in Nemo.
 
     Since the Nemo implementation allows static notification parameters,
-    such as icon, urgency and priority definitions, to be defined as part of
-    notification category definitions, this convenience class is kept as
-    simple as possible by allowing only the dynamic parameters, such as
-    summary and body text, item count and timestamp to be defined. Other
-    parameters should be defined in the notification category definition.
+    such as icon, urgency, priority and user closability definitions, to
+    be defined as part of notification category definitions, this
+    convenience class is kept as simple as possible by allowing only the
+    dynamic parameters, such as summary and body text, item count and
+    timestamp to be defined. Other parameters should be defined in the
+    notification category definition. Please refer to Lipstick documentation
+    for a complete description of the category definition files.
 
     An example of the usage of this class from a Qml application:
 
@@ -78,6 +81,11 @@ NotificationManagerProxy *notificationManager()
             previewBody: "Notification preview body"
             itemCount: 5
             timestamp: "2013-02-20 18:21:00"
+            remoteDBusCallServiceName: "org.nemomobile.example"
+            remoteDBusCallObjectPath: "/example"
+            remoteDBusCallInterface: "org.nemomobile.example"
+            remoteDBusCallMethodName: "doSomething"
+            remoteDBusCallArguments: [ "argument", 1 ]
             onClicked: console.log("Clicked")
             onClosed: console.log("Closed, reason: " + reason)
         }
@@ -85,6 +93,18 @@ NotificationManagerProxy *notificationManager()
         onClicked: notification.publish()
     }
     \endqml
+
+    An example category definition file
+    /usr/share/lipstick/notificationcategories/x-nemo.example.conf:
+
+    \code
+    x-nemo-icon=icon-lock-sms
+    x-nemo-preview-icon=icon-s-status-sms
+    x-nemo-feedback=sms
+    x-nemo-priority=70
+    x-nemo-user-removable=true
+    x-nemo-user-closeable=false
+    \endcode
 
     After publishing the ID of the notification can be found from the
     replacesId property.
@@ -95,6 +115,7 @@ Notification::Notification(QObject *parent) :
 {
     connect(notificationManager(), SIGNAL(ActionInvoked(uint,QString)), this, SLOT(checkActionInvoked(uint,QString)));
     connect(notificationManager(), SIGNAL(NotificationClosed(uint,uint)), this, SLOT(checkNotificationClosed(uint,uint)));
+    connect(this, SIGNAL(remoteDBusCallChanged()), this, SLOT(setRemoteActionHint()));
 }
 
 /*!
@@ -292,4 +313,96 @@ void Notification::checkNotificationClosed(uint id, uint reason)
         emit closed(reason);
         setReplacesId(0);
     }
+}
+
+QString Notification::remoteDBusCallServiceName() const
+{
+    return remoteDBusCallServiceName_;
+}
+
+void Notification::setRemoteDBusCallServiceName(const QString &serviceName)
+{
+    if (remoteDBusCallServiceName_ != serviceName) {
+        remoteDBusCallServiceName_ = serviceName;
+        emit remoteDBusCallChanged();
+    }
+}
+
+QString Notification::remoteDBusCallObjectPath() const
+{
+    return remoteDBusCallObjectPath_;
+}
+
+void Notification::setRemoteDBusCallObjectPath(const QString &objectPath)
+{
+    if (remoteDBusCallObjectPath_ != objectPath) {
+        remoteDBusCallObjectPath_ = objectPath;
+        emit remoteDBusCallChanged();
+    }
+}
+
+QString Notification::remoteDBusCallInterface() const
+{
+    return remoteDBusCallInterface_;
+}
+
+void Notification::setRemoteDBusCallInterface(const QString &interface)
+{
+    if (remoteDBusCallInterface_ != interface) {
+        remoteDBusCallInterface_ = interface;
+        emit remoteDBusCallChanged();
+    }
+}
+
+QString Notification::remoteDBusCallMethodName() const
+{
+    return remoteDBusCallMethodName_;
+}
+
+void Notification::setRemoteDBusCallMethodName(const QString &methodName)
+{
+    if (remoteDBusCallMethodName_ != methodName) {
+        remoteDBusCallMethodName_ = methodName;
+        emit remoteDBusCallChanged();
+    }
+}
+
+QVariantList Notification::remoteDBusCallArguments() const
+{
+    return remoteDBusCallArguments_;
+}
+
+void Notification::setRemoteDBusCallArguments(const QVariantList &arguments)
+{
+    if (remoteDBusCallArguments_ != arguments) {
+        remoteDBusCallArguments_ = arguments;
+        emit remoteDBusCallChanged();
+    }
+}
+
+void Notification::setRemoteActionHint()
+{
+    QString s;
+
+    if (!remoteDBusCallServiceName_.isEmpty() && !remoteDBusCallObjectPath_.isEmpty() && !remoteDBusCallInterface_.isEmpty() && !remoteDBusCallMethodName_.isEmpty()) {
+        s.append(remoteDBusCallServiceName_).append(' ');
+        s.append(remoteDBusCallObjectPath_).append(' ');
+        s.append(remoteDBusCallInterface_).append(' ');
+        s.append(remoteDBusCallMethodName_);
+
+        foreach(const QVariant &arg, remoteDBusCallArguments_) {
+            // Serialize the QVariant into a QBuffer
+            QBuffer buffer;
+            buffer.open(QIODevice::ReadWrite);
+            QDataStream stream(&buffer);
+            stream << arg;
+            buffer.close();
+
+            // Encode the contents of the QBuffer in Base64
+            s.append(' ');
+            s.append(buffer.buffer().toBase64().data());
+        }
+    }
+
+    hints_.insert(HINT_REMOTE_ACTION, s);
 }
