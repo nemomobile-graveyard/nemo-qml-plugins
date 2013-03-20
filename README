@@ -28,3 +28,5 @@ time in sync with system time changes.
   about alarms
 
 - notifications: provides QML/C++ APIs for publishing notifications
+
+- calendar: offers a QML interface for calendars, backed by mkcal
