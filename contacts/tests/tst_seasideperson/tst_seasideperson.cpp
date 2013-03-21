@@ -74,6 +74,7 @@ private slots:
     void anniversary();
     void address();
     void globalPresenceState();
+    void complete();
     void marshalling();
     void setContact();
     void vcard();
@@ -417,6 +418,17 @@ void tst_SeasidePerson::globalPresenceState()
     // We can't test any changes, as the change is effected by a DBUS request...
 }
 
+void tst_SeasidePerson::complete()
+{
+    QScopedPointer<SeasidePerson> person(new SeasidePerson);
+    // An empty person is always complete
+    QCOMPARE(person->isComplete(), true);
+
+    QSignalSpy spy(person.data(), SIGNAL(completeChanged()));
+    person->setComplete(false);
+    person->setComplete(true);
+    QCOMPARE(spy.count(), 2);
+}
 
 void tst_SeasidePerson::marshalling()
 {
