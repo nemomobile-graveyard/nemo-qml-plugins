@@ -256,11 +256,10 @@ SeasidePerson *SeasideCache::person(SeasideCacheItem *cacheItem)
 
         if (!cacheItem->hasCompleteContact) {
             // the name is a little incomplete, it's has complete or has requested complete contact.
+            cacheItem->person->setComplete(false);
             cacheItem->hasCompleteContact = true;
             instance->m_changedContacts.append(cacheItem->contact.localId());
             instance->requestUpdate();
-        } else {
-            cacheItem->person->setComplete(true);
         }
     }
     return cacheItem->person;

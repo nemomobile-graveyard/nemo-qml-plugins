@@ -68,7 +68,7 @@ SeasidePerson *SeasidePersonAttached::selfPerson() const
 
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
-    , mComplete(false)
+    , mComplete(true)
 {
 
 }
@@ -76,7 +76,7 @@ SeasidePerson::SeasidePerson(QObject *parent)
 SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(contact)
-    , mComplete(false)
+    , mComplete(true)
 {
 }
 
