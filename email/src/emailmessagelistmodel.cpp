@@ -52,6 +52,8 @@ QString EmailMessageListModel::bodyPlainText(const QMailMessage &mailMsg) const
 //![0]
 EmailMessageListModel::EmailMessageListModel(QObject *parent)
     : QMailMessageListModel(parent),
+      m_combinedInbox(false),
+      m_filterUnread(true),
       m_retrievalAction(new QMailRetrievalAction(this))
 {
     QHash<int, QByteArray> roles;
@@ -84,6 +86,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessagePreviewRole] = "preview";
     roles[MessageTimeSectionRole] = "timeSection";
     roles[MessagePriorityRole] = "priority";
+    roles[MessageAccountIdRole] = "accountId";
     setRoleNames(roles);
 
     EmailAgent::instance()->initMailServer();
@@ -97,7 +100,6 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(sortKey);
     m_selectedMsgIds.clear();
-    combinedInbox = false;
 }
 
 EmailMessageListModel::~EmailMessageListModel()
@@ -110,8 +112,10 @@ int EmailMessageListModel::rowCount(const QModelIndex & parent) const {
 }
 
 QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const {
-    if (!index.isValid() || index.row() > rowCount(parent(index)))
+    if (!index.isValid() || index.row() > rowCount(parent(index))) {
+        qWarning() << Q_FUNC_INFO << "Invalid Index";
         return QVariant();
+    }
 
     QMailMessageId msgId = idFromIndex(index);
     QMailMessageMetaData messageMetaData(msgId);
@@ -236,6 +240,9 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
             return NormalPriority;
         }
     }
+    else if (role == MessageAccountIdRole) {
+        return messageMetaData.parentAccountId();
+    }
     return QMailMessageListModel::data(index, role);
 }
 
@@ -266,8 +273,8 @@ void EmailMessageListModel::setFolderKey (QVariant id)
     QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(sortKey);
 
-    if (combinedInbox)
-        combinedInbox = false;
+    if (combinedInbox())
+        setCombinedInbox(false);
 }
 
 void EmailMessageListModel::setAccountKey (QVariant id)
@@ -303,8 +310,8 @@ void EmailMessageListModel::setAccountKey (QVariant id)
 
     m_key= key();
 
-    if (combinedInbox)
-        combinedInbox = false;
+    if (combinedInbox())
+        setCombinedInbox(false);
 }
 
 void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
@@ -532,6 +539,36 @@ void EmailMessageListModel::deleteSelectedMessageIds()
     EmailAgent::instance()->exportUpdates(msg.parentAccountId());
 }
 
+void EmailMessageListModel::markAllMessagesAsRead()
+{
+    if(rowCount()) {
+        QMailAccountIdList accountIdList;
+        QMailMessageIdList msgIds;
+        quint64 status(QMailMessage::Read);
+
+        for (int row = 0; row < rowCount(); row++) {
+            if(!data(index(row), MessageReadStatusRole).toBool()) {
+                QMailMessageId  id = (data(index(row), QMailMessageModelBase::MessageIdRole)).value<QMailMessageId>();
+                msgIds.append(id);
+
+                QMailAccountId accountId = (data(index(row), MessageAccountIdRole)).value<QMailAccountId>();
+                if(!accountIdList.contains(accountId)) {
+                    accountIdList.append(accountId);
+                }
+            }
+        }
+        if (msgIds.size()) {
+            QMailStore::instance()->updateMessagesMetaData(QMailMessageKey::id(msgIds), status, true);
+        }
+        foreach (const QMailAccountId &accId,  accountIdList) {
+            EmailAgent::instance()->exportUpdates(accId);
+        }
+    }
+    else {
+        return;
+    }
+}
+
 void EmailMessageListModel::downloadActivityChanged(QMailServiceAction::Activity activity)
 {
     if (QMailServiceAction *action = static_cast<QMailServiceAction*>(sender())) {
@@ -547,38 +584,76 @@ void EmailMessageListModel::downloadActivityChanged(QMailServiceAction::Activity
     }
 }
 
-void EmailMessageListModel::setCombinedInbox(bool unread)
+bool EmailMessageListModel::combinedInbox() const
 {
+    return m_combinedInbox;
+}
+
+void EmailMessageListModel::setCombinedInbox(bool c)
+{
+    if(c == m_combinedInbox) {
+        return;
+    }
+
     m_mailAccountIds.clear();
     m_mailAccountIds = QMailStore::instance()->queryAccounts(
             QMailAccountKey::status(QMailAccount::Enabled, QMailDataComparator::Includes),
             QMailAccountSortKey::name());
 
-    QMailFolderIdList folderIds;
-    foreach (const QMailAccountId &accountId, m_mailAccountIds) {
-        QMailAccount account(accountId);
-        QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
-        if(foldId.isValid())
-            folderIds << account.standardFolder(QMailFolder::InboxFolder);
-    }
+    if (c) {
+        QMailFolderIdList folderIds;
+        foreach (const QMailAccountId &accountId, m_mailAccountIds) {
+            QMailAccount account(accountId);
+            QMailFolderId foldId = account.standardFolder(QMailFolder::InboxFolder);
+            if(foldId.isValid())
+                folderIds << account.standardFolder(QMailFolder::InboxFolder);
+        }
 
-    QMailFolderKey inboxKey = QMailFolderKey::id(folderIds, QMailDataComparator::Includes);
-    QMailMessageKey messageKey =  QMailMessageKey::parentFolderId(inboxKey);
+        QMailFolderKey inboxKey = QMailFolderKey::id(folderIds, QMailDataComparator::Includes);
+        QMailMessageKey messageKey =  QMailMessageKey::parentFolderId(inboxKey);
 
-    if (unread) {
-        QMailMessageKey unreadKey = QMailMessageKey::parentFolderId(inboxKey)
-                & QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes);
-        QMailMessageListModel::setKey(unreadKey);
+        if (m_filterUnread) {
+            QMailMessageKey unreadKey = QMailMessageKey::parentFolderId(inboxKey)
+                    & QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes);
+            QMailMessageListModel::setKey(unreadKey);
+        }
+        else {
+            QMailMessageListModel::setKey(messageKey);
+        }
+
+        m_combinedInbox = true;
+        m_key = key();
     }
     else {
-        QMailMessageListModel::setKey(messageKey);
-    }
+        QMailMessageKey accountKey;
 
-    combinedInbox = true;
-    m_key = key();
+        if (m_filterUnread) {
+            accountKey = QMailMessageKey::parentAccountId(m_mailAccountIds)
+                    &  QMailMessageKey::status(QMailMessage::Read, QMailDataComparator::Excludes);
+        }
+        else {
+            accountKey = QMailMessageKey::parentAccountId(m_mailAccountIds);
+        }
+        QMailMessageListModel::setKey(accountKey);
+        m_key = key();
+        QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
+        QMailMessageListModel::setSortKey(sortKey);
+        m_combinedInbox = false;
+    }
+    emit combinedInboxChanged();
 }
 
-QVariant EmailMessageListModel::isCombinedInbox()
+bool EmailMessageListModel::filterUnread() const
 {
-    return combinedInbox;
+    return m_filterUnread;
+}
+
+void EmailMessageListModel::setFilterUnread(bool u)
+{
+    if(u == m_filterUnread) {
+        return;
+    }
+
+    m_filterUnread = u;
+    emit filterUnreadChanged();
 }
