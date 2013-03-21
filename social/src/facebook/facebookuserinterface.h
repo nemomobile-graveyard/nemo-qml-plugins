@@ -116,8 +116,7 @@ public:
 
 
 public:
-    FacebookUserInterface(QObject *parent = 0);
-    ~FacebookUserInterface();
+    explicit FacebookUserInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;
@@ -187,11 +186,8 @@ Q_SIGNALS:
     void religionChanged();
     void significantOtherChanged();
     void websiteChanged();
-
 private:
-    FacebookUserInterfacePrivate *f;
-    friend class FacebookUserInterfacePrivate;
-    Q_DISABLE_COPY(FacebookUserInterface)
+    Q_DECLARE_PRIVATE(FacebookUserInterface)
 };
 
 #endif // FACEBOOKUSERINTERFACE_H

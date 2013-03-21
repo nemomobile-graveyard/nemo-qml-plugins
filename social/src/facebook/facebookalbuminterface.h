@@ -79,8 +79,7 @@ public:
     };
 
 public:
-    FacebookAlbumInterface(QObject *parent = 0);
-    ~FacebookAlbumInterface();
+    explicit FacebookAlbumInterface(QObject *parent = 0);
 
     // overrides.
     int type() const;
@@ -124,11 +123,8 @@ Q_SIGNALS:
     void updatedTimeChanged();
     void canUploadChanged();
     void likedChanged();
-
 private:
-    FacebookAlbumInterfacePrivate *f;
-    friend class FacebookAlbumInterfacePrivate;
-    Q_DISABLE_COPY(FacebookAlbumInterface)
+    Q_DECLARE_PRIVATE(FacebookAlbumInterface)
 };
 
 #endif // FACEBOOKALBUMINTERFACE_H

@@ -39,8 +39,8 @@
 #include <QtCore/QVariantMap>
 #include <QtCore/QStringList>
 #include <QtCore/QString>
-
-class QNetworkReply;
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QSslError>
 
 #define NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID QLatin1String("org.nemomobile.social.contentitem.id")
 
@@ -73,16 +73,15 @@ class IdentifiableContentItemInterface : public ContentItemInterface
 
     Q_PROPERTY(QString identifier READ identifier WRITE setIdentifier NOTIFY identifierChanged)
 
-    Q_PROPERTY(SocialNetworkInterface::Status status NOTIFY statusChanged)
-    Q_PROPERTY(SocialNetworkInterface::ErrorType error NOTIFY errorChanged)
-    Q_PROPERTY(QString errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(SocialNetworkInterface::Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(SocialNetworkInterface::ErrorType error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
 
     Q_ENUMS(SocialNetworkInterface::Status)
     Q_ENUMS(SocialNetworkInterface::ErrorType)
 
 public:
-    IdentifiableContentItemInterface(QObject *parent = 0);
-    virtual ~IdentifiableContentItemInterface();
+    explicit IdentifiableContentItemInterface(QObject *parent = 0);
 
     // overrides.
     bool isIdentifiable() const;
@@ -96,8 +95,8 @@ public:
     QString errorMessage() const;
 
     // invokable api.
-    virtual Q_INVOKABLE bool remove();
-    virtual Q_INVOKABLE bool reload(const QStringList &whichFields = QStringList());
+    Q_INVOKABLE virtual bool remove();
+    Q_INVOKABLE virtual bool reload(const QStringList &whichFields = QStringList());
 
 Q_SIGNALS:
     void responseReceived(const QVariantMap &data);
@@ -107,6 +106,8 @@ Q_SIGNALS:
     void errorMessageChanged();
 
 protected:
+    explicit IdentifiableContentItemInterface(IdentifiableContentItemInterfacePrivate &dd,
+                                              QObject *parent = 0);
     virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
     virtual void initializationComplete();
     enum RequestType { Get = 0, Post, Delete };
@@ -117,14 +118,15 @@ protected:
                  const QStringList &whichFields = QStringList(), // only valid for GET  requests
                  const QVariantMap &postData = QVariantMap(),    // only valid for POST requests
                  const QVariantMap &extraData = QVariantMap());  // social-network-specific.
-    IdentifiableContentItemInterfacePrivate *dd;
-
 private:
-    ContentItemInterfacePrivate *baseClassPrivateData();
-    friend class IdentifiableContentItemInterfacePrivate;
-    Q_DISABLE_COPY(IdentifiableContentItemInterface)
+    Q_DECLARE_PRIVATE(IdentifiableContentItemInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
+    Q_PRIVATE_SLOT(d_func(), void removeHandler())
+    Q_PRIVATE_SLOT(d_func(), void reloadHandler())
+    Q_PRIVATE_SLOT(d_func(), void errorHandler(QNetworkReply::NetworkError))
+    Q_PRIVATE_SLOT(d_func(), void sslErrorsHandler(const QList<QSslError>&))
 };
 
-Q_DECLARE_METATYPE(IdentifiableContentItemInterface*);
+Q_DECLARE_METATYPE(IdentifiableContentItemInterface*)
 
 #endif // IDENTIFIABLECONTENTITEMINTERFACE_H

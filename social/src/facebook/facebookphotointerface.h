@@ -78,7 +78,6 @@ class FacebookPhotoInterface : public IdentifiableContentItemInterface
 
 public:
     FacebookPhotoInterface(QObject *parent = 0);
-    ~FacebookPhotoInterface();
 
     // overrides.
     int type() const;
@@ -134,11 +133,8 @@ Q_SIGNALS:
     void updatedTimeChanged();
     void positionChanged();
     void likedChanged();
-
 private:
-    FacebookPhotoInterfacePrivate *f;
-    friend class FacebookPhotoInterfacePrivate;
-    Q_DISABLE_COPY(FacebookPhotoInterface)
+    Q_DECLARE_PRIVATE(FacebookPhotoInterface)
 };
 
 #endif // FACEBOOKPHOTOINTERFACE_H

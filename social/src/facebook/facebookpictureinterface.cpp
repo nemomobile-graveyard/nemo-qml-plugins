@@ -42,10 +42,6 @@ FacebookPictureInterface::FacebookPictureInterface(QObject *parent)
 {
 }
 
-FacebookPictureInterface::~FacebookPictureInterface()
-{
-}
-
 /*! \reimp */
 int FacebookPictureInterface::type() const
 {
@@ -77,6 +73,7 @@ void FacebookPictureInterface::emitPropertyChangeSignals(const QVariantMap &oldD
 */
 QUrl FacebookPictureInterface::source() const
 {
+    Q_D(const ContentItemInterface);
     return QUrl(d->data().value(FACEBOOK_ONTOLOGY_PICTURE_SOURCE).toString());
 }
 
@@ -86,6 +83,7 @@ QUrl FacebookPictureInterface::source() const
 */
 bool FacebookPictureInterface::isSilhouette() const
 {
+    Q_D(const ContentItemInterface);
     return d->data().value(FACEBOOK_ONTOLOGY_PICTURE_ISSILHOUETTE).toString() == QLatin1String("true");
 }
 

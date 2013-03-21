@@ -61,8 +61,7 @@ class FacebookNotificationInterface : public IdentifiableContentItemInterface
     /* XXX TODO: "object" property -- probably another object reference? Undocumented. */
 
 public:
-    FacebookNotificationInterface(QObject *parent = 0);
-    ~FacebookNotificationInterface();
+    explicit FacebookNotificationInterface(QObject *parent = 0);
 
     // overrides
     int type() const;
@@ -89,11 +88,9 @@ Q_SIGNALS:
     void titleChanged();
     void linkChanged();
     void unreadChanged();
+private:
+    Q_DECLARE_PRIVATE(FacebookNotificationInterface)
 
-protected:
-    FacebookNotificationInterfacePrivate *f;
-    friend class FacebookNotificationInterfacePrivate;
-    Q_DISABLE_COPY(FacebookNotificationInterface)
 };
 
 #endif // FACEBOOKNOTIFICATIONINTERFACE_H

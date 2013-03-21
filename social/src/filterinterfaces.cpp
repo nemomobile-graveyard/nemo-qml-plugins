@@ -63,10 +63,6 @@ ContentItemTypeFilterInterface::ContentItemTypeFilterInterface(QObject *parent)
 {
 }
 
-ContentItemTypeFilterInterface::~ContentItemTypeFilterInterface()
-{
-}
-
 bool ContentItemTypeFilterInterface::matches(ContentItemInterface *content) const
 {
     if (content && content->type() > 0)

@@ -101,9 +101,9 @@ bool ArbitraryRequestHandler::request(int requestType, const QString &requestUri
 
     QNetworkReply *sniReply = 0;
     switch (requestType) {
-        case SocialNetworkInterface::Get: sniReply = q->d->qnam->get(QNetworkRequest(url)); break;
-        case SocialNetworkInterface::Post: sniReply = q->d->qnam->post(QNetworkRequest(url), QByteArray::fromBase64(postData.toLatin1())); break;
-        default: sniReply = q->d->qnam->deleteResource(QNetworkRequest(url)); break;
+        case SocialNetworkInterface::Get: sniReply = q->d_func()->qnam->get(QNetworkRequest(url)); break;
+        case SocialNetworkInterface::Post: sniReply = q->d_func()->qnam->post(QNetworkRequest(url), QByteArray::fromBase64(postData.toLatin1())); break;
+        default: sniReply = q->d_func()->qnam->deleteResource(QNetworkRequest(url)); break;
     }
 
     if (sniReply) {
@@ -196,10 +196,10 @@ void ArbitraryRequestHandler::sslErrorsHandler(const QList<QSslError> &sslErrors
     isError = true;
 }
 
-SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterface *parent)
-    : q(parent)
-    , qnam(new QNetworkAccessManager(parent))
-    , placeHolderNode(new IdentifiableContentItemInterface(parent))
+SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterface *q)
+    : q_ptr(q)
+    , qnam(0)
+    , placeHolderNode(0)
     , initialized(false)
     , repopulatingCurrentNode(false)
     , error(SocialNetworkInterface::NoError)
@@ -208,11 +208,6 @@ SocialNetworkInterfacePrivate::SocialNetworkInterfacePrivate(SocialNetworkInterf
     , nodeStackSize(5)
     , arbitraryRequestHandler(0)
 {
-    // Construct the placeholder node.  This node is used as a placeholder
-    // when the client sets a specific nodeIdentifier until the node can
-    // be retrieved from the social network.
-    placeHolderNode->classBegin();
-    placeHolderNode->componentComplete();
 }
 
 SocialNetworkInterfacePrivate::~SocialNetworkInterfacePrivate()
@@ -221,6 +216,26 @@ SocialNetworkInterfacePrivate::~SocialNetworkInterfacePrivate()
     QList<IdentifiableContentItemInterface*> cacheEntries = nodeContent.keys();
     foreach (IdentifiableContentItemInterface *nodePtr, cacheEntries)
         purgeDoomedNode(nodePtr);
+}
+
+void SocialNetworkInterfacePrivate::init()
+{
+    Q_Q(SocialNetworkInterface);
+    qnam = new QNetworkAccessManager(q);
+
+    headerData.insert(SocialNetworkInterface::ContentItemRole, "contentItem");
+    headerData.insert(SocialNetworkInterface::ContentItemTypeRole, "contentItemType");
+    headerData.insert(SocialNetworkInterface::ContentItemDataRole, "contentItemData" );
+    headerData.insert(SocialNetworkInterface::ContentItemIdentifierRole, "contentItemIdentifier");
+    q->setRoleNames(headerData);
+
+    // Construct the placeholder node.  This node is used as a placeholder
+    // when the client sets a specific nodeIdentifier until the node can
+    // be retrieved from the social network.
+    placeHolderNode = new IdentifiableContentItemInterface(q);
+    placeHolderNode->classBegin();
+    placeHolderNode->componentComplete();
+
 }
 
 /*! \internal */
@@ -232,7 +247,7 @@ void SocialNetworkInterfacePrivate::filters_append(QDeclarativeListProperty<Filt
             filter->setParent(sni);
             filter->m_ownedBySni = true;
         }
-        sni->d->filters.append(filter);
+        sni->d_func()->filters.append(filter);
     }
 }
 
@@ -240,8 +255,8 @@ void SocialNetworkInterfacePrivate::filters_append(QDeclarativeListProperty<Filt
 FilterInterface *SocialNetworkInterfacePrivate::filters_at(QDeclarativeListProperty<FilterInterface> *list, int index)
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
-    if (sni && sni->d->filters.count() > index && index >= 0)
-        return sni->d->filters.at(index);
+    if (sni && sni->d_func()->filters.count() > index && index >= 0)
+        return sni->d_func()->filters.at(index);
     return 0;
 }
 
@@ -250,12 +265,12 @@ void SocialNetworkInterfacePrivate::filters_clear(QDeclarativeListProperty<Filte
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
-        foreach (FilterInterface *cf, sni->d->filters) {
+        foreach (FilterInterface *cf, sni->d_func()->filters) {
             if (cf->m_ownedBySni) {
                 cf->deleteLater();
             }
         }
-        sni->d->filters.clear();
+        sni->d_func()->filters.clear();
     }
 }
 
@@ -264,7 +279,7 @@ int SocialNetworkInterfacePrivate::filters_count(QDeclarativeListProperty<Filter
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni)
-        return sni->d->filters.count();
+        return sni->d_func()->filters.count();
     return 0;
 }
 
@@ -277,7 +292,7 @@ void SocialNetworkInterfacePrivate::sorters_append(QDeclarativeListProperty<Sort
             sorter->setParent(sni);
             sorter->m_ownedBySni = true;
         }
-        sni->d->sorters.append(sorter);
+        sni->d_func()->sorters.append(sorter);
     }
 }
 
@@ -285,8 +300,8 @@ void SocialNetworkInterfacePrivate::sorters_append(QDeclarativeListProperty<Sort
 SorterInterface *SocialNetworkInterfacePrivate::sorters_at(QDeclarativeListProperty<SorterInterface> *list, int index)
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
-    if (sni && sni->d->sorters.count() > index && index >= 0)
-        return sni->d->sorters.at(index);
+    if (sni && sni->d_func()->sorters.count() > index && index >= 0)
+        return sni->d_func()->sorters.at(index);
     return 0;
 }
 
@@ -295,12 +310,12 @@ void SocialNetworkInterfacePrivate::sorters_clear(QDeclarativeListProperty<Sorte
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
-        foreach (SorterInterface *cs, sni->d->sorters) {
+        foreach (SorterInterface *cs, sni->d_func()->sorters) {
             if (cs->m_ownedBySni) {
                 cs->deleteLater();
             }
         }
-        sni->d->sorters.clear();
+        sni->d_func()->sorters.clear();
     }
 }
 
@@ -309,7 +324,7 @@ int SocialNetworkInterfacePrivate::sorters_count(QDeclarativeListProperty<Sorter
 {
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni)
-        return sni->d->sorters.count();
+        return sni->d_func()->sorters.count();
     return 0;
 }
 
@@ -584,7 +599,7 @@ void SocialNetworkInterfacePrivate::removeEntryFromNodeContent(IdentifiableConte
 }
 
 /*! \internal */
-void SocialNetworkInterfacePrivate::updateCacheEntry(CacheEntry *entry, ContentItemInterface *item, const QVariantMap &data)
+void SocialNetworkInterfacePrivate::updateCacheEntry(CacheEntry *entry, ContentItemInterface *item, const QVariantMap &data) const
 {
     if (item)
         entry->item = item;
@@ -718,28 +733,33 @@ void SocialNetworkInterfacePrivate::populateCache(IdentifiableContentItemInterfa
 */  
 
 SocialNetworkInterface::SocialNetworkInterface(QObject *parent)
-    : QAbstractListModel(parent), d(new SocialNetworkInterfacePrivate(this))
+    : QAbstractListModel(parent), d_ptr(new SocialNetworkInterfacePrivate(this))
 {
-    d->headerData.insert(ContentItemRole, "contentItem");
-    d->headerData.insert(ContentItemTypeRole, "contentItemType");
-    d->headerData.insert(ContentItemDataRole, "contentItemData" );
-    d->headerData.insert(ContentItemIdentifierRole, "contentItemIdentifier");
-    setRoleNames(d->headerData);
+    Q_D(SocialNetworkInterface);
+    d->init();
+}
+
+SocialNetworkInterface::SocialNetworkInterface(SocialNetworkInterfacePrivate &dd, QObject *parent)
+    : QAbstractListModel(parent), d_ptr(&dd)
+{
+    Q_D(SocialNetworkInterface);
+    d->init();
 }
 
 SocialNetworkInterface::~SocialNetworkInterface()
 {
-    delete d;
 }
 
 
 void SocialNetworkInterface::classBegin()
 {
+    Q_D(SocialNetworkInterface);
     d->initialized = false;
 }
 
 void SocialNetworkInterface::componentComplete()
 {
+    Q_D(SocialNetworkInterface);
     // If you override this implementation, you MUST set d->initialized=true.
     d->initialized = true;
 }
@@ -756,6 +776,7 @@ void SocialNetworkInterface::componentComplete()
 */
 void SocialNetworkInterface::nextNode()
 {
+    Q_D(SocialNetworkInterface);
     IdentifiableContentItemInterface *oldNode = d->currentNode();
     d->nextNode();
     IdentifiableContentItemInterface *newNode = d->currentNode();
@@ -788,6 +809,7 @@ void SocialNetworkInterface::nextNode()
 */
 void SocialNetworkInterface::previousNode()
 {
+    Q_D(SocialNetworkInterface);
     IdentifiableContentItemInterface *oldNode = d->currentNode();
     d->prevNode();
     IdentifiableContentItemInterface *newNode = d->currentNode();
@@ -835,6 +857,7 @@ QObject *SocialNetworkInterface::relatedItem(int index) const
 */
 SocialNetworkInterface::Status SocialNetworkInterface::status() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->status;
 }
 
@@ -846,6 +869,7 @@ SocialNetworkInterface::Status SocialNetworkInterface::status() const
 */
 SocialNetworkInterface::ErrorType SocialNetworkInterface::error() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->error;
 }
 
@@ -857,6 +881,7 @@ SocialNetworkInterface::ErrorType SocialNetworkInterface::error() const
 */
 QString SocialNetworkInterface::errorMessage() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->errorMessage;
 }
 
@@ -891,6 +916,7 @@ QString SocialNetworkInterface::errorMessage() const
 */
 QString SocialNetworkInterface::nodeIdentifier() const
 {
+    Q_D(const SocialNetworkInterface);
     if (d->pendingCurrentNodeIdentifier.isEmpty())
         return d->currentNodeIdentifier();  // normal case.
     return d->pendingCurrentNodeIdentifier; // status == Fetching, not sure if it's real yet.
@@ -898,6 +924,7 @@ QString SocialNetworkInterface::nodeIdentifier() const
 
 void SocialNetworkInterface::setNodeIdentifier(const QString &contentItemIdentifier)
 {
+    Q_D(SocialNetworkInterface);
     IdentifiableContentItemInterface *cachedNode = d->findCachedNode(contentItemIdentifier);
     if (d->currentNode() && contentItemIdentifier == d->currentNode()->identifier()) {
         // resetting the current node.  This tells us to reload the node, clear its cache and repopulate.
@@ -943,6 +970,7 @@ void SocialNetworkInterface::setNodeIdentifier(const QString &contentItemIdentif
 */
 IdentifiableContentItemInterface *SocialNetworkInterface::node() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->currentNode();
 }
 
@@ -954,11 +982,13 @@ IdentifiableContentItemInterface *SocialNetworkInterface::node() const
 */
 QVariantMap SocialNetworkInterface::relevanceCriteria() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->relevanceCriteria;
 }
 
 void SocialNetworkInterface::setRelevanceCriteria(const QVariantMap &rc)
 {
+    Q_D(SocialNetworkInterface);
     d->relevanceCriteria = rc;
 }
 
@@ -1008,11 +1038,13 @@ QDeclarativeListProperty<SorterInterface> SocialNetworkInterface::sorters()
 */
 int SocialNetworkInterface::count() const
 {
+    Q_D(const SocialNetworkInterface);
     return d->internalData.count();
 }
 
 int SocialNetworkInterface::rowCount(const QModelIndex &index) const
 {
+    Q_D(const SocialNetworkInterface);
     // only allow non-valid (default) parent index.
     if (index.isValid())
         return 0;
@@ -1029,6 +1061,7 @@ int SocialNetworkInterface::columnCount(const QModelIndex &index) const
 
 QVariant SocialNetworkInterface::data(const QModelIndex &index, int role) const
 {
+    Q_D(const SocialNetworkInterface);
     if (!index.isValid() || index.row() >= d->internalData.count() || index.row() < 0)
         return QVariant();
 
@@ -1053,6 +1086,7 @@ QVariant SocialNetworkInterface::data(const QModelIndex &index, int role) const
 
 QVariant SocialNetworkInterface::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    Q_D(const SocialNetworkInterface);
     // Not a table model, so perhaps this is wrong.
 
     if (orientation != Qt::Horizontal)
@@ -1083,6 +1117,7 @@ QVariant SocialNetworkInterface::headerData(int section, Qt::Orientation orienta
 */
 bool SocialNetworkInterface::arbitraryRequest(int requestType, const QString &requestUri, const QVariantMap &queryItems, const QString &postData)
 {
+    Q_D(SocialNetworkInterface);
     if (!d->arbitraryRequestHandler)
         d->arbitraryRequestHandler = new ArbitraryRequestHandler(this);
     return d->arbitraryRequestHandler->request(requestType, requestUri, queryItems, postData);
@@ -1102,6 +1137,7 @@ void SocialNetworkInterface::setContentItemData(ContentItemInterface *contentIte
 
 bool SocialNetworkInterface::isInitialized() const
 {
+    Q_D(const SocialNetworkInterface);
     // Helper function for ContentItemInterface
     return d->initialized;
 }
@@ -1213,4 +1249,6 @@ void SocialNetworkInterface::populateDataForNode(const QString &)
 {
     qWarning() << Q_FUNC_INFO << "Error: this function MUST be implemented by derived types!";
 }
+
+#include "moc_socialnetworkinterface.cpp"
 

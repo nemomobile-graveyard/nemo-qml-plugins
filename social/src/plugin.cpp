@@ -93,5 +93,5 @@ public:
     }
 };
 
-Q_EXPORT_PLUGIN2(nemosocial, NemoSocialPlugin);
+Q_EXPORT_PLUGIN2(nemosocial, NemoSocialPlugin)
 

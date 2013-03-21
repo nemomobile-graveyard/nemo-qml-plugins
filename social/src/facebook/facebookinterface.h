@@ -83,8 +83,7 @@ public:
     };
 
 public:
-    FacebookInterface(QObject *parent = 0);
-    ~FacebookInterface();
+    explicit FacebookInterface(QObject *parent = 0);
 
     // properties
     QString accessToken() const;
@@ -130,9 +129,10 @@ private:
 
     // private data.
 private:
-    FacebookInterfacePrivate *f;
-    friend class FacebookInterfacePrivate;
-    Q_DISABLE_COPY(FacebookInterface)
+    Q_DECLARE_PRIVATE(FacebookInterface)
+    Q_PRIVATE_SLOT(d_func(), void finishedHandler())
+    Q_PRIVATE_SLOT(d_func(), void errorHandler(QNetworkReply::NetworkError))
+    Q_PRIVATE_SLOT(d_func(), void sslErrorsHandler(const QList<QSslError>&))
 };
 
 #endif // FACEBOOKINTERFACE_H
