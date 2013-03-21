@@ -52,6 +52,8 @@ public:
     void initializeEngine(QDeclarativeEngine *engine, const char *uri)
     {
         Q_ASSERT(uri == QLatin1String("org.nemomobile.email"));
+        Q_UNUSED(engine)
+        Q_UNUSED(uri)
     }
 
     void registerTypes(const char *uri)

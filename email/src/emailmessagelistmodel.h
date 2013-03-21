@@ -44,7 +44,8 @@ public:
         MessageSelectModeRole,                                 // returns the select mode
         MessagePreviewRole,                                    // returns message preview if available
         MessageTimeSectionRole,                                // returns time section relative to the current time
-        MessagePriorityRole                                    // returns message priority
+        MessagePriorityRole,                                   // returns message priority
+        MessageAccountIdRole                                   // returns parent account id for the message
     };
 
     EmailMessageListModel (QObject *parent = 0);
@@ -55,6 +56,19 @@ public:
     QString bodyPlainText(const QMailMessage &) const;
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
+
+    Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox NOTIFY combinedInboxChanged)
+    Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread NOTIFY filterUnreadChanged)
+
+    // property accessors.
+    bool combinedInbox() const;
+    void setCombinedInbox(bool c);
+    bool filterUnread() const;
+    void setFilterUnread(bool u);
+
+Q_SIGNALS:
+    void combinedInboxChanged();
+    void filterUnreadChanged();
 
 signals:
     void messageDownloadCompleted();
@@ -67,7 +81,6 @@ public slots:
     Q_INVOKABLE void sortByDate (int key);
     Q_INVOKABLE void sortByAttachment (int key);
     Q_INVOKABLE void setSearch(const QString search);
-    Q_INVOKABLE void setCombinedInbox(bool unread = false);
 
     Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);
     Q_INVOKABLE QVariant indexFromMessageId(QString msgId);
@@ -86,13 +99,13 @@ public slots:
     Q_INVOKABLE QVariant bccList (int index);
     Q_INVOKABLE QVariant toList (int index);
     Q_INVOKABLE QVariant messageRead (int index);
-    Q_INVOKABLE QVariant isCombinedInbox();
     Q_INVOKABLE int messagesCount ();
     Q_INVOKABLE void deSelectAllMessages();
     Q_INVOKABLE void selectMessage( int index );
     Q_INVOKABLE void deSelectMessage (int index );
     Q_INVOKABLE void moveSelectedMessageIds(QVariant vFolderId);
     Q_INVOKABLE void deleteSelectedMessageIds();
+    Q_INVOKABLE void markAllMessagesAsRead();
 
     void foldersAdded(const QMailFolderIdList &folderIds);
 
@@ -101,6 +114,8 @@ private slots:
 
 private:
 
+    bool m_combinedInbox;
+    bool m_filterUnread;
     QProcess m_msgAccount;
     QMailFolderId m_currentFolderId;
     QProcess m_messageServerProcess;
@@ -109,7 +124,6 @@ private:
     QString m_search;
     QMailMessageKey m_key;                  // key set externally other than search
     QList<QMailMessageId> m_selectedMsgIds;
-    bool combinedInbox;
 };
 
 #endif
