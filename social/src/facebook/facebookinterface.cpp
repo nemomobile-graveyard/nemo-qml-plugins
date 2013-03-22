@@ -123,7 +123,7 @@ int FacebookInterfacePrivate::detectTypeFromData(const QVariantMap &data) const
         return FacebookInterface::Comment;
     else if (data.value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).isValid() && data.value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).isValid())
         return FacebookInterface::Album;
-    else if (data.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).isValid() && data.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).isValid())
+    else if (data.value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).isValid() && data.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).isValid())
         return FacebookInterface::Photo;
     else if (data.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).isValid() || data.value(FACEBOOK_ONTOLOGY_USER_GENDER).isValid())
         return FacebookInterface::User;
@@ -150,7 +150,10 @@ QUrl FacebookInterfacePrivate::requestUrl(const QString &objectId, const QString
     QUrl retn;
     retn.setScheme("https");
     retn.setHost("graph.facebook.com");
-    retn.setPath(objectId + QLatin1String("/") + extraPath);
+    if (extraPath.isEmpty())
+        retn.setPath(objectId);
+    else
+        retn.setPath(objectId + QLatin1String("/") + extraPath);
     retn.setQueryItems(queryItems);
     return retn;
 }
@@ -254,6 +257,27 @@ void FacebookInterfacePrivate::finishedHandler()
         error = SocialNetworkInterface::RequestError;
         errorMessage = QLatin1String("Error populating node: response is invalid.  Perhaps the requested object id was incorrect?  Response: ") + QString::fromLatin1(replyData.constData());
         status = SocialNetworkInterface::Error;
+        emit q->statusChanged();
+        emit q->errorChanged();
+        emit q->errorMessageChanged();
+        return;
+    }
+
+    if (responseData.contains(QLatin1String("error"))) {
+        QString errorResponse = QLatin1String("\n    error:");
+        QVariantMap errMap = responseData.value(QLatin1String("error")).toMap();
+        QStringList keys = errMap.keys();
+        foreach (const QString &key, keys) {
+            errorResponse += QLatin1String("\n        ") + key + QLatin1String("=") + errMap.value(key).toString();
+        }
+        qWarning() << Q_FUNC_INFO << "error response:" << errorResponse << "while getting:" << requestUrl.toString();
+
+        error = SocialNetworkInterface::RequestError;
+        errorMessage = QLatin1String("Error populating node: response is error.  Response: ") + QString::fromLatin1(replyData.constData());
+        status = SocialNetworkInterface::Error;
+        emit q->statusChanged();
+        emit q->errorChanged();
+        emit q->errorMessageChanged();
         return;
     }
 
@@ -281,7 +305,10 @@ void FacebookInterfacePrivate::finishedHandler()
 void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
 {
     Q_Q(FacebookInterface);
-    qWarning() << Q_FUNC_INFO << "Error: network error occurred:" << err;
+    if (err == QNetworkReply::UnknownContentError) {
+        // ignore this.  It's not actually an error, Facebook just formats some responses strangely.
+        return;
+    }
 
     switch (err) {
         case QNetworkReply::NoError: errorMessage = QLatin1String("QNetworkReply::NoError"); break;
@@ -310,6 +337,8 @@ void FacebookInterfacePrivate::errorHandler(QNetworkReply::NetworkError err)
         case QNetworkReply::ProtocolFailure: errorMessage = QLatin1String("QNetworkReply::ProtocolFailure"); break;
         default: errorMessage = QLatin1String("Unknown QNetworkReply::NetworkError"); break;
     }
+
+    qWarning() << Q_FUNC_INFO << "Error: network error occurred:" << err << ":" << errorMessage;
 
     error = SocialNetworkInterface::RequestError;
     status = SocialNetworkInterface::Error;
@@ -521,7 +550,8 @@ QNetworkReply *FacebookInterface::getRequest(const QString &objectIdentifier, co
     QVariantMap modifiedExtraData = extraData;
     if (!extraData.contains(QLatin1String("metadata")))
         modifiedExtraData.insert(QLatin1String("metadata"), QLatin1String("1")); // request "type" field.
-    return d->qnam->get(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, whichFields, extraData)));
+    QUrl geturl = d->requestUrl(objectIdentifier, extraPath, whichFields, modifiedExtraData);
+    return d->qnam->get(QNetworkRequest(geturl));
 }
 
 /*! \reimp */
