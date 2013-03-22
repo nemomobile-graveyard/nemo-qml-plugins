@@ -34,6 +34,8 @@
 
 #include "contentiteminterface.h"
 #include "identifiablecontentiteminterface.h"
+#include "filterinterface_p.h"
+#include "sorterinterface_p.h"
 
 #include <QtCore/QByteArray>
 #include <QtCore/QUrl>
@@ -79,7 +81,6 @@ ArbitraryRequestHandler::ArbitraryRequestHandler(SocialNetworkInterface *parent)
 ArbitraryRequestHandler::~ArbitraryRequestHandler()
 {
     if (reply) {
-        disconnect(reply);
         reply->deleteLater();
     }
 }
@@ -123,7 +124,6 @@ void ArbitraryRequestHandler::finishedHandler()
     QByteArray replyData;
     if (reply) {
         replyData = reply->readAll();
-        disconnect(reply);
         reply->deleteLater();
         reply = 0;
     }
@@ -245,7 +245,7 @@ void SocialNetworkInterfacePrivate::filters_append(QDeclarativeListProperty<Filt
     if (sni && filter) {
         if (!filter->parent()) {
             filter->setParent(sni);
-            filter->m_ownedBySni = true;
+            filter->d_func()->ownedBySocialNetworkInterface = true;
         }
         sni->d_func()->filters.append(filter);
     }
@@ -263,10 +263,13 @@ FilterInterface *SocialNetworkInterfacePrivate::filters_at(QDeclarativeListPrope
 /*! \internal */
 void SocialNetworkInterfacePrivate::filters_clear(QDeclarativeListProperty<FilterInterface> *list)
 {
+    // TODO: This might be achieved without using the private attribute
+    // but with the parenting system
+    // filter->setParent(this) and if (filter->parent() == this)
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
         foreach (FilterInterface *cf, sni->d_func()->filters) {
-            if (cf->m_ownedBySni) {
+            if (cf->d_func()->ownedBySocialNetworkInterface) {
                 cf->deleteLater();
             }
         }
@@ -290,7 +293,7 @@ void SocialNetworkInterfacePrivate::sorters_append(QDeclarativeListProperty<Sort
     if (sni && sorter) {
         if (!sorter->parent()) {
             sorter->setParent(sni);
-            sorter->m_ownedBySni = true;
+            sorter->d_func()->ownedBySocialNetworkInterface = true;
         }
         sni->d_func()->sorters.append(sorter);
     }
@@ -311,7 +314,7 @@ void SocialNetworkInterfacePrivate::sorters_clear(QDeclarativeListProperty<Sorte
     SocialNetworkInterface *sni = qobject_cast<SocialNetworkInterface *>(list->object);
     if (sni) {
         foreach (SorterInterface *cs, sni->d_func()->sorters) {
-            if (cs->m_ownedBySni) {
+            if (cs->d_func()->ownedBySocialNetworkInterface) {
                 cs->deleteLater();
             }
         }

@@ -13,21 +13,24 @@ include(facebook/facebook.pri)
 SOURCES += \
     $$PWD/plugin.cpp \
     $$PWD/contentiteminterface.cpp \
-    $$PWD/filterinterfaces.cpp \
+    $$PWD/filterinterface.cpp \
+    $$PWD/contentitemtypefilterinterface.cpp \
     $$PWD/identifiablecontentiteminterface.cpp \
     $$PWD/socialnetworkinterface.cpp \
-    $$PWD/sorterinterfaces.cpp
+    $$PWD/sorterinterface.cpp
 
 HEADERS += \
     $$PWD/contentiteminterface.h \
     $$PWD/contentiteminterface_p.h \
     $$PWD/contentitemtypefilterinterface.h \
     $$PWD/filterinterface.h \
+    $$PWD/filterinterface_p.h \
     $$PWD/identifiablecontentiteminterface.h \
     $$PWD/identifiablecontentiteminterface_p.h \
     $$PWD/socialnetworkinterface.h \
     $$PWD/socialnetworkinterface_p.h \
-    $$PWD/sorterinterface.h
+    $$PWD/sorterinterface.h \
+    $$PWD/sorterinterface_p.h
 
 OTHER_FILES += qmldir social.qdoc social.qdocconf
 

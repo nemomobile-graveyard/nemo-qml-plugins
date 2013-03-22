@@ -29,27 +29,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef SORTERINTERFACE_H
-#define SORTERINTERFACE_H
+#include "filterinterface.h"
+#include "filterinterface_p.h"
+#include "contentitemtypefilterinterface.h"
 
-#include <QtCore/QObject>
+#include "contentiteminterface.h"
 
-class SocialNetworkInterfacePrivate;
-class ContentItemInterface;
-class SorterInterfacePrivate;
-class SorterInterface : public QObject
+#include <QtDebug>
+
+FilterInterfacePrivate::FilterInterfacePrivate()
+    : ownedBySocialNetworkInterface(false)
 {
-    Q_OBJECT
+}
 
-public:
-    explicit SorterInterface(QObject *parent = 0);
-    virtual ~SorterInterface();
-    Q_INVOKABLE virtual bool firstLessThanSecond(ContentItemInterface *first, ContentItemInterface *second) const;
-protected:
-    QScopedPointer<SorterInterfacePrivate> d_ptr;
-private:
-    Q_DECLARE_PRIVATE(SorterInterface)
-    friend class SocialNetworkInterfacePrivate;
-};
+// ------------------------------ FilterInterface
 
-#endif // SORTERINTERFACE_H
+FilterInterface::FilterInterface(QObject *parent)
+    : QObject(parent), d_ptr(new FilterInterfacePrivate)
+{
+}
+
+FilterInterface::FilterInterface(FilterInterfacePrivate &dd, QObject *parent)
+    : QObject(parent), d_ptr(&dd)
+{
+}
+
+FilterInterface::~FilterInterface()
+{
+}
+
+bool FilterInterface::matches(ContentItemInterface *) const
+{
+    return false;
+}
+
+bool FilterInterface::matches(const QVariantMap &) const
+{
+    return false;
+}

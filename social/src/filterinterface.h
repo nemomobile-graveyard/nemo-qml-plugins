@@ -38,6 +38,7 @@
 class SocialNetworkInterfacePrivate;
 class ContentItemInterface;
 
+class FilterInterfacePrivate;
 class FilterInterface : public QObject
 {
     Q_OBJECT
@@ -47,9 +48,11 @@ public:
     virtual ~FilterInterface();
     Q_INVOKABLE virtual bool matches(ContentItemInterface *content) const;
     Q_INVOKABLE virtual bool matches(const QVariantMap &contentData) const;
-
+protected:
+    explicit FilterInterface(FilterInterfacePrivate &dd, QObject *parent = 0);
+    QScopedPointer<FilterInterfacePrivate> d_ptr;
 private:
-    bool m_ownedBySni;
+    Q_DECLARE_PRIVATE(FilterInterface)
     friend class SocialNetworkInterfacePrivate;
 };
 

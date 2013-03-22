@@ -29,87 +29,86 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "filterinterface.h"
 #include "contentitemtypefilterinterface.h"
-
+#include "filterinterface_p.h"
 #include "contentiteminterface.h"
 
-#include <QtDebug>
-
-// ------------------------------ FilterInterface
-
-FilterInterface::FilterInterface(QObject *parent) : QObject(parent), m_ownedBySni(false)
+class ContentItemTypeFilterInterfacePrivate: public FilterInterfacePrivate
 {
-}
+public:
+    ContentItemTypeFilterInterfacePrivate();
+    int type;
+    int limit;
+    QStringList whichFields;
+};
 
-FilterInterface::~FilterInterface()
+ContentItemTypeFilterInterfacePrivate::ContentItemTypeFilterInterfacePrivate()
+    : FilterInterfacePrivate(), type(0), limit(0)
 {
-}
-
-bool FilterInterface::matches(ContentItemInterface *) const
-{
-    return false;
-}
-
-bool FilterInterface::matches(const QVariantMap &) const
-{
-    return false;
 }
 
 // ------------------------------ ContentItemTypeFilterInterface
 
 ContentItemTypeFilterInterface::ContentItemTypeFilterInterface(QObject *parent)
-    : FilterInterface(parent), m_type(0), m_limit(-1)
+    : FilterInterface(*(new ContentItemTypeFilterInterfacePrivate), parent)
 {
 }
 
 bool ContentItemTypeFilterInterface::matches(ContentItemInterface *content) const
 {
+    Q_D(const ContentItemTypeFilterInterface);
     if (content && content->type() > 0)
-        return m_type == content->type();
+        return d->type == content->type();
     return false;
 }
 
 bool ContentItemTypeFilterInterface::matches(const QVariantMap &contentData) const
 {
-    return m_type == contentData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE).toInt();
+    Q_D(const ContentItemTypeFilterInterface);
+    return d->type == contentData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMTYPE).toInt();
 }
 
 int ContentItemTypeFilterInterface::type() const
 {
-    return m_type;
+    Q_D(const ContentItemTypeFilterInterface);
+    return d->type;
 }
 
 void ContentItemTypeFilterInterface::setType(int t)
 {
-    if (m_type != t) {
-        m_type = t;
+    Q_D(ContentItemTypeFilterInterface);
+    if (d->type != t) {
+        d->type = t;
         emit typeChanged();
     }
 }
 
 int ContentItemTypeFilterInterface::limit() const
 {
-    return m_limit;
+    Q_D(const ContentItemTypeFilterInterface);
+    return d->limit;
 }
 
 void ContentItemTypeFilterInterface::setLimit(int l)
 {
-    if (m_limit != l) {
-        m_limit = l;
+    Q_D(ContentItemTypeFilterInterface);
+    if (d->limit != l) {
+        d->limit = l;
         emit limitChanged();
     }
 }
 
 QStringList ContentItemTypeFilterInterface::whichFields() const
 {
-    return m_whichFields;
+    Q_D(const ContentItemTypeFilterInterface);
+    return d->whichFields;
 }
 
 void ContentItemTypeFilterInterface::setWhichFields(const QStringList &wf)
 {
-    if (m_whichFields != wf) {
-        m_whichFields = wf;
+    Q_D(ContentItemTypeFilterInterface);
+    if (d->whichFields != wf) {
+        d->whichFields = wf;
         emit whichFieldsChanged();
     }
 }
