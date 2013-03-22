@@ -32,20 +32,16 @@
 #ifndef SOCIALNETWORKINTERFACE_H
 #define SOCIALNETWORKINTERFACE_H
 
-#include "filterinterface.h"
-#include "sorterinterface.h"
-
 #include <QtCore/QAbstractListModel>
-#include <QtCore/QModelIndex>
 #include <QtCore/QObject>
-#include <QtCore/QVariantMap>
-#include <QtCore/QStringList>
-#include <QtCore/QString>
 #include <QtDeclarative/QDeclarativeParserStatus>
 #include <QtDeclarative/QDeclarativeListProperty>
 
-class QNetworkReply;
+#include "filterinterface.h"
+#include "sorterinterface.h"
 
+
+class QNetworkReply;
 class ContentItemInterface;
 class IdentifiableContentItemInterface;
 
@@ -62,13 +58,14 @@ class SocialNetworkInterface : public QAbstractListModel, public QDeclarativePar
     Q_OBJECT
     Q_INTERFACES(QDeclarativeParserStatus)
 
-    Q_PROPERTY(QString nodeIdentifier READ nodeIdentifier WRITE setNodeIdentifier NOTIFY nodeIdentifierChanged)
+    Q_PROPERTY(QString nodeIdentifier READ nodeIdentifier WRITE setNodeIdentifier
+               NOTIFY nodeIdentifierChanged)
     Q_PROPERTY(IdentifiableContentItemInterface *node READ node NOTIFY nodeChanged)
-    Q_PROPERTY(QVariantMap relevanceCriteria READ relevanceCriteria WRITE setRelevanceCriteria NOTIFY relevanceCriteriaChanged)
+    Q_PROPERTY(QVariantMap relevanceCriteria READ relevanceCriteria WRITE setRelevanceCriteria
+               NOTIFY relevanceCriteriaChanged)
     Q_PROPERTY(QDeclarativeListProperty<FilterInterface> filters READ filters)
     Q_PROPERTY(QDeclarativeListProperty<SorterInterface> sorters READ sorters)
     Q_PROPERTY(int count READ count NOTIFY countChanged)
-
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(ErrorType error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
@@ -86,7 +83,6 @@ public:
         Error,
         Invalid
     };
-
     enum ErrorType {
         NoError = 0,
         AccountError = 1,
@@ -97,25 +93,21 @@ public:
         OtherError = 6,
         LastError = 255
     };
-
     enum Roles {
         ContentItemRole = Qt::UserRole + 1,
         ContentItemTypeRole,
         ContentItemDataRole,
         ContentItemIdentifierRole // 0 for unidentifiable content items
     };
-
     enum ContentType {
         NotInitialized = 0,
         Unknown = 1
     };
-
     enum RequestType {
         Get = 0,
         Post,
         Delete
     };
-
 public:
     explicit SocialNetworkInterface(QObject *parent = 0);
     virtual ~SocialNetworkInterface();
@@ -130,13 +122,13 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
-    // invokable api.
+    // Invokable api.
     Q_INVOKABLE virtual void populate(); // count/startIndex?
     Q_INVOKABLE void nextNode();
     Q_INVOKABLE void previousNode();
     Q_INVOKABLE QObject *relatedItem(int index) const;
 
-    // property accessors.
+    // Property accessors.
     Status status() const;
     ErrorType error() const;
     QString errorMessage() const;
@@ -148,9 +140,9 @@ public:
     QDeclarativeListProperty<SorterInterface> sorters();
     int count() const;
 
-    // property mutators.
+    // Property mutators.
     void setNodeIdentifier(const QString &contentItemIdentifier);
-    void setRelevanceCriteria(const QVariantMap &rc);
+    void setRelevanceCriteria(const QVariantMap &relevanceCriteria);
 
 Q_SIGNALS:
     void statusChanged();
@@ -163,34 +155,40 @@ Q_SIGNALS:
     void countChanged();
 
 public:
-    Q_INVOKABLE bool arbitraryRequest(int requestType, const QString &requestUri, const QVariantMap &queryItems = QVariantMap(), const QString &postData = QString());
+    Q_INVOKABLE bool arbitraryRequest(int requestType, const QString &requestUri,
+                                      const QVariantMap &queryItems = QVariantMap(),
+                                      const QString &postData = QString());
 Q_SIGNALS:
     void arbitraryRequestResponseReceived(bool isError, const QVariantMap &data);
 
 protected:
-    virtual QNetworkReply *getRequest(const QString &objectIdentifier, const QString &extraPath, const QStringList &whichFields, const QVariantMap &extraData);
-    virtual QNetworkReply *postRequest(const QString &objectIdentifier, const QString &extraPath, const QVariantMap &data, const QVariantMap &extraData);
-    virtual QNetworkReply *deleteRequest(const QString &objectIdentifier, const QString &extraPath, const QVariantMap &extraData);
-    friend class IdentifiableContentItemInterface;
-
-private:
-    bool isInitialized() const; // This might be exported as a public method
-    friend class ContentItemInterface;
-    friend class ContentItemInterfacePrivate;
-
-protected:
     SocialNetworkInterface(SocialNetworkInterfacePrivate &dd, QObject *parent = 0);
+
+    // Utilities
+    virtual QNetworkReply *getRequest(const QString &objectIdentifier, const QString &extraPath,
+                                      const QStringList &whichFields, const QVariantMap &extraData);
+    virtual QNetworkReply *postRequest(const QString &objectIdentifier, const QString &extraPath,
+                                       const QVariantMap &data, const QVariantMap &extraData);
+    virtual QNetworkReply *deleteRequest(const QString &objectIdentifier, const QString &extraPath,
+                                         const QVariantMap &extraData);
+
     QVariantMap contentItemData(ContentItemInterface *contentItem) const;
     void setContentItemData(ContentItemInterface *contentItem, const QVariantMap &data) const;
+
+    // Virtual methods
     virtual ContentItemInterface *contentItemFromData(QObject *parent, const QVariantMap &data) const;
     virtual void updateInternalData(QList<CacheEntry*> data);                         // model data, requires filter/sort/dataChanged()
     virtual void populateDataForNode(IdentifiableContentItemInterface *currentNode);  // requires d->populateCache() + updateInternalData()
     virtual void populateDataForNode(const QString &unseenNodeIdentifier);            // requires d->pushNode(), d->populateCache(),
                                                                                       //     and then updateInternalData()
     QScopedPointer<SocialNetworkInterfacePrivate> d_ptr;
+    friend class IdentifiableContentItemInterface;
 
 private:
+    bool isInitialized() const; // TODO: This might be exported as a public method
     QList<CacheEntry*> internalData() const;       // this is the model data, which is set via updateInternalData().
+    friend class ContentItemInterface;
+    friend class ContentItemInterfacePrivate;
     friend class ArbitraryRequestHandler;
     Q_DECLARE_PRIVATE(SocialNetworkInterface)
 };

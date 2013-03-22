@@ -223,7 +223,7 @@ QNetworkReply *FacebookInterfacePrivate::uploadImage(const QString &objectId, co
     request.setRawHeader("Content-Type",QString("multipart/form-data; boundary="+multipartBoundary).toAscii());
     request.setHeader(QNetworkRequest::ContentLengthHeader, postData.size());
 
-    return qnam->post(request, postData);
+    return networkAccessManager->post(request, postData);
 }
 
 void FacebookInterfacePrivate::connectFinishedAndErrors()
@@ -522,7 +522,7 @@ QNetworkReply *FacebookInterface::getRequest(const QString &objectIdentifier, co
     QVariantMap modifiedExtraData = extraData;
     if (!extraData.contains(QLatin1String("metadata")))
         modifiedExtraData.insert(QLatin1String("metadata"), QLatin1String("1")); // request "type" field.
-    return d->qnam->get(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, whichFields, extraData)));
+    return d->networkAccessManager->get(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, whichFields, extraData)));
 }
 
 /*! \reimp */
@@ -563,7 +563,7 @@ QNetworkReply *FacebookInterface::postRequest(const QString &objectIdentifier, c
     request.setHeader(QNetworkRequest::ContentLengthHeader, postData.size());
 
     // perform POST request
-    return d->qnam->post(request, postData);
+    return d->networkAccessManager->post(request, postData);
 }
 
 /*! \reimp */
@@ -575,7 +575,7 @@ QNetworkReply *FacebookInterface::deleteRequest(const QString &objectIdentifier,
         return 0;
     }
 
-    return d->qnam->deleteResource(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, QStringList(), extraData)));
+    return d->networkAccessManager->deleteResource(QNetworkRequest(d->requestUrl(objectIdentifier, extraPath, QStringList(), extraData)));
 }
 
 /*! \reimp */
@@ -946,7 +946,7 @@ qWarning() << "        " << key << " = " << FACEBOOK_DEBUG_VALUE_STRING_FROM_DAT
         QUrl continuationUrl(continuationRequestUri);
         if (continuationUrl.queryItemValue(QLatin1String("access_token")).isEmpty())
             continuationUrl.addQueryItem(QLatin1String("access_token"), d->accessToken);
-        d->currentReply = d->qnam->get(QNetworkRequest(continuationUrl));
+        d->currentReply = d->networkAccessManager->get(QNetworkRequest(continuationUrl));
         if (d->outOfBandConnectionsLimit != -1) {
             d->currentReply->setProperty("specialLimit", d->outOfBandConnectionsLimit);
         }

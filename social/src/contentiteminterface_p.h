@@ -32,12 +32,10 @@
 #ifndef CONTENTITEMINTERFACE_P_H
 #define CONTENTITEMINTERFACE_P_H
 
-#include "contentiteminterface.h"
-
 #include <QtCore/QVariantMap>
 
 class SocialNetworkInterface;
-
+class ContentItemInterface;
 class ContentItemInterfacePrivate
 {
 public:
@@ -47,12 +45,12 @@ public:
     void setData(const QVariantMap &data);
     virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
     virtual void initializationComplete();
+    // helper api - parse network reply data into QVariantMap
     // TODO: This method should be put in a header containing useful functions, and maybe inlined
     static QVariantMap parseReplyData(const QByteArray &replyData, bool *ok);
-    SocialNetworkInterface *s;
+    SocialNetworkInterface *socialNetworkInterface;
     bool isInitialized;
 protected:
-    // helper api - parse network reply data into QVariantMap
     ContentItemInterface * const q_ptr;
 private:
     // Slots

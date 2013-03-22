@@ -33,9 +33,9 @@
 #define CONTENTITEMINTERFACE_H
 
 #include <QtCore/QObject>
-#include <QtCore/QVariantMap>
-#include <QtCore/QStringList>
 #include <QtCore/QString>
+#include <QtCore/QStringList>
+#include <QtCore/QVariantMap>
 #include <QtDeclarative/QDeclarativeParserStatus>
 
 class IdentifiableContentItemInterface;
@@ -61,7 +61,9 @@ class ContentItemInterface : public QObject, public QDeclarativeParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QDeclarativeParserStatus)
-    Q_PROPERTY(SocialNetworkInterface *socialNetwork READ socialNetwork WRITE setSocialNetwork NOTIFY socialNetworkChanged)
+
+    Q_PROPERTY(SocialNetworkInterface *socialNetwork READ socialNetwork WRITE setSocialNetwork
+               NOTIFY socialNetworkChanged)
     Q_PROPERTY(int type READ type CONSTANT)
     Q_PROPERTY(QVariantMap data READ data NOTIFY dataChanged)
     Q_PROPERTY(bool isIdentifiable READ isIdentifiable CONSTANT)
@@ -74,16 +76,16 @@ public:
     void classBegin();
     void componentComplete();
 
-    // property accessors.
+    // Property accessors.
     SocialNetworkInterface *socialNetwork() const;
     virtual int type() const;
     QVariantMap data() const;
     virtual bool isIdentifiable() const;
 
-    // property mutators.
-    void setSocialNetwork(SocialNetworkInterface *sn);
+    // Property mutators.
+    void setSocialNetwork(SocialNetworkInterface *socialNetwork);
 
-    // invokable api
+    // Invokable api
     Q_INVOKABLE IdentifiableContentItemInterface *asIdentifiable();
 
 Q_SIGNALS:
@@ -98,7 +100,7 @@ protected:
 private:
     Q_DECLARE_PRIVATE(ContentItemInterface)
     Q_PRIVATE_SLOT(d_func(), void socialNetworkStatusChangedHandler())
-    void setDataPrivate(const QVariantMap &v);
+    void setDataPrivate(const QVariantMap &data);
     QVariantMap dataPrivate() const;
     friend class SocialNetworkInterface;
 };

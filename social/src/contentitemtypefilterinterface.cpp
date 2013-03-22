@@ -47,7 +47,7 @@ ContentItemTypeFilterInterfacePrivate::ContentItemTypeFilterInterfacePrivate()
 {
 }
 
-// ------------------------------ ContentItemTypeFilterInterface
+// ------------------------------
 
 ContentItemTypeFilterInterface::ContentItemTypeFilterInterface(QObject *parent)
     : FilterInterface(*(new ContentItemTypeFilterInterfacePrivate), parent)
@@ -74,11 +74,11 @@ int ContentItemTypeFilterInterface::type() const
     return d->type;
 }
 
-void ContentItemTypeFilterInterface::setType(int t)
+void ContentItemTypeFilterInterface::setType(int type)
 {
     Q_D(ContentItemTypeFilterInterface);
-    if (d->type != t) {
-        d->type = t;
+    if (d->type != type) {
+        d->type = type;
         emit typeChanged();
     }
 }
@@ -89,11 +89,11 @@ int ContentItemTypeFilterInterface::limit() const
     return d->limit;
 }
 
-void ContentItemTypeFilterInterface::setLimit(int l)
+void ContentItemTypeFilterInterface::setLimit(int limit)
 {
     Q_D(ContentItemTypeFilterInterface);
-    if (d->limit != l) {
-        d->limit = l;
+    if (d->limit != limit) {
+        d->limit = limit;
         emit limitChanged();
     }
 }
@@ -104,11 +104,11 @@ QStringList ContentItemTypeFilterInterface::whichFields() const
     return d->whichFields;
 }
 
-void ContentItemTypeFilterInterface::setWhichFields(const QStringList &wf)
+void ContentItemTypeFilterInterface::setWhichFields(const QStringList &whichFields)
 {
     Q_D(ContentItemTypeFilterInterface);
-    if (d->whichFields != wf) {
-        d->whichFields = wf;
+    if (d->whichFields != whichFields) {
+        d->whichFields = whichFields;
         emit whichFieldsChanged();
     }
 }

@@ -53,8 +53,8 @@ class SocialNetworkInterfacePrivate;
 class CacheEntry
 {
 public:
-    CacheEntry(const QVariantMap &d, ContentItemInterface *i = 0);
-    ~CacheEntry();
+    explicit CacheEntry(const QVariantMap &data, ContentItemInterface *item = 0);
+    virtual ~CacheEntry();
 
     QVariantMap data;
     ContentItemInterface *item;
@@ -67,21 +67,22 @@ private:
 class ArbitraryRequestHandler : public QObject
 {
     Q_OBJECT
-
 public:
     explicit ArbitraryRequestHandler(SocialNetworkInterface *parent);
     virtual ~ArbitraryRequestHandler();
+    bool request(int requestType, const QString &requestUri,
+                 const QVariantMap &queryItems = QVariantMap(),
+                 const QString &postData = QString());
 
     SocialNetworkInterface *q;
     QNetworkReply *reply;
     QString errorMessage;
     bool isError;
 
-    bool request(int requestType, const QString &requestUri, const QVariantMap &queryItems = QVariantMap(), const QString &postData = QString());
 
 public Q_SLOTS:
     void finishedHandler();
-    void errorHandler(QNetworkReply::NetworkError err);
+    void errorHandler(QNetworkReply::NetworkError networkError);
     void sslErrorsHandler(const QList<QSslError> &sslErrors);
 };
 
@@ -90,12 +91,9 @@ class SocialNetworkInterfacePrivate
 public:
     explicit SocialNetworkInterfacePrivate(SocialNetworkInterface *q);
     virtual ~SocialNetworkInterfacePrivate();
-private:
-    void init();
-public:
 
     SocialNetworkInterface * const q_ptr;
-    QNetworkAccessManager *qnam;
+    QNetworkAccessManager *networkAccessManager;
     IdentifiableContentItemInterface *placeHolderNode;
 
     bool initialized;
@@ -133,11 +131,12 @@ public:
     IdentifiableContentItemInterface *currentNode() const;
     QString currentNodeIdentifier() const;
     void pushPlaceHolderNode(); // empty node.
-    void pushNode(IdentifiableContentItemInterface *n);
+    void pushNode(IdentifiableContentItemInterface *node);
     void nextNode();
     void prevNode();
 
 private:
+    void init();
     void purgeDoomedNode(IdentifiableContentItemInterface *n);
     void maybePurgeDoomedNodes(int count, int direction);
     int currentNodePosition;                                 // the position of the current node in the nodeStack.
@@ -147,8 +146,8 @@ private:
 public:
     // --------------------- cache functions
     IdentifiableContentItemInterface *findCachedNode(const QString &nodeIdentifier);
-    QList<CacheEntry*> cachedContent(IdentifiableContentItemInterface *n, bool *ok) const;
-    void populateCache(IdentifiableContentItemInterface *n, const QList<CacheEntry*> c, bool *ok);
+    QList<CacheEntry*> cachedContent(IdentifiableContentItemInterface *node, bool *ok) const;
+    void populateCache(IdentifiableContentItemInterface *node, const QList<CacheEntry*> cacheEntries, bool *ok);
     CacheEntry *createUncachedEntry(const QVariantMap &data);
     CacheEntry *findCacheEntry(const QVariantMap &data, bool create = true);
     CacheEntry *findCacheEntry(ContentItemInterface *item, bool create = true);

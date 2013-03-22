@@ -31,7 +31,6 @@
 
 #include "filterinterface.h"
 #include "filterinterface_p.h"
-#include "contentitemtypefilterinterface.h"
 
 #include "contentiteminterface.h"
 
@@ -42,7 +41,7 @@ FilterInterfacePrivate::FilterInterfacePrivate()
 {
 }
 
-// ------------------------------ FilterInterface
+// ------------------------------
 
 FilterInterface::FilterInterface(QObject *parent)
     : QObject(parent), d_ptr(new FilterInterfacePrivate)

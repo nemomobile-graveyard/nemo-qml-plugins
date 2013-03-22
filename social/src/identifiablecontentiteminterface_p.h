@@ -61,7 +61,7 @@ public:
     virtual void finishedHandler();
     virtual void removeHandler();
     virtual void reloadHandler();
-    virtual void errorHandler(QNetworkReply::NetworkError err);
+    virtual void errorHandler(QNetworkReply::NetworkError networkError);
     virtual void sslErrorsHandler(const QList<QSslError> &sslErrors);
 
     SocialNetworkInterface::Status status;

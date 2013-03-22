@@ -36,7 +36,6 @@
 #include "socialnetworkinterface.h"
 
 #include <QtDebug>
-
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
 #include <qjson/parser.h>
 #else
@@ -44,7 +43,7 @@
 #endif
 
 ContentItemInterfacePrivate::ContentItemInterfacePrivate(ContentItemInterface *q)
-    : s(0), isInitialized(false), q_ptr(q)
+    : socialNetworkInterface(0), isInitialized(false), q_ptr(q)
 {
 }
 
@@ -122,8 +121,9 @@ QVariantMap ContentItemInterfacePrivate::parseReplyData(const QByteArray &replyD
 void ContentItemInterfacePrivate::socialNetworkStatusChangedHandler()
 {
     Q_Q(ContentItemInterface);
-    if (s && s->isInitialized()) {
-        QObject::disconnect(s, SIGNAL(statusChanged()), q, SLOT(socialNetworkStatusChangedHandler()));
+    if (socialNetworkInterface && socialNetworkInterface->isInitialized()) {
+        QObject::disconnect(socialNetworkInterface, SIGNAL(statusChanged()),
+                            q, SLOT(socialNetworkStatusChangedHandler()));
         isInitialized = true;
         initializationComplete();
     }
@@ -171,7 +171,7 @@ void ContentItemInterface::classBegin()
 void ContentItemInterface::componentComplete()
 {
     Q_D(ContentItemInterface);
-    if (d->s && d->s->isInitialized()) {
+    if (d->socialNetworkInterface && d->socialNetworkInterface->isInitialized()) {
         d->isInitialized = true;
         d->initializationComplete();
     }
@@ -186,23 +186,25 @@ void ContentItemInterface::componentComplete()
 SocialNetworkInterface *ContentItemInterface::socialNetwork() const
 {
     Q_D(const ContentItemInterface);
-    return d->s;
+    return d->socialNetworkInterface;
 }
 
-void ContentItemInterface::setSocialNetwork(SocialNetworkInterface *sn)
+void ContentItemInterface::setSocialNetwork(SocialNetworkInterface *socialNetwork)
 {
     Q_D(ContentItemInterface);
     if (d->isInitialized) {
-        qWarning() << Q_FUNC_INFO << "Can't change social network after content item has been initialized!";
+        qWarning() << Q_FUNC_INFO
+                   << "Can't change social network after content item has been initialized!";
         return;
     }
 
-    if (d->s != sn) {
-        if (d->s)
-            disconnect(d->s);
-        if (sn && !sn->isInitialized())
-            connect(sn, SIGNAL(statusChanged()), this, SLOT(socialNetworkStatusChangedHandler()));
-        d->s = sn;
+    if (d->socialNetworkInterface != socialNetwork) {
+        if (d->socialNetworkInterface)
+            disconnect(d->socialNetworkInterface);
+        if (socialNetwork && !socialNetwork->isInitialized())
+            connect(socialNetwork, SIGNAL(statusChanged()),
+                    this, SLOT(socialNetworkStatusChangedHandler()));
+        d->socialNetworkInterface = socialNetwork;
         emit socialNetworkChanged();
     }
 }
@@ -253,10 +255,10 @@ IdentifiableContentItemInterface *ContentItemInterface::asIdentifiable()
     return qobject_cast<IdentifiableContentItemInterface*>(this);
 }
 
-void ContentItemInterface::setDataPrivate(const QVariantMap &v)
+void ContentItemInterface::setDataPrivate(const QVariantMap &data)
 {
     Q_D(ContentItemInterface);
-    d->setData(v);
+    d->setData(data);
 }
 
 QVariantMap ContentItemInterface::dataPrivate() const

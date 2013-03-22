@@ -55,9 +55,9 @@ public:
     int type() const;
     QStringList whichFields() const;
     int limit() const;
-    void setType(int t);
-    void setWhichFields(const QStringList &wf);
-    void setLimit(int l);
+    void setType(int type);
+    void setWhichFields(const QStringList &whichFields);
+    void setLimit(int limit);
 
 Q_SIGNALS:
     void typeChanged();

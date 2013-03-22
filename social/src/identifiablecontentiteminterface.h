@@ -34,13 +34,13 @@
 
 #include "contentiteminterface.h"
 
-#include "socialnetworkinterface.h"
-
-#include <QtCore/QVariantMap>
-#include <QtCore/QStringList>
 #include <QtCore/QString>
+#include <QtCore/QStringList>
+#include <QtCore/QVariantMap>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QSslError>
+
+#include "socialnetworkinterface.h"
 
 #define NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID QLatin1String("org.nemomobile.social.contentitem.id")
 
@@ -72,11 +72,9 @@ class IdentifiableContentItemInterface : public ContentItemInterface
     Q_OBJECT
 
     Q_PROPERTY(QString identifier READ identifier WRITE setIdentifier NOTIFY identifierChanged)
-
     Q_PROPERTY(SocialNetworkInterface::Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(SocialNetworkInterface::ErrorType error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
-
     Q_ENUMS(SocialNetworkInterface::Status)
     Q_ENUMS(SocialNetworkInterface::ErrorType)
 
@@ -108,9 +106,10 @@ Q_SIGNALS:
 protected:
     explicit IdentifiableContentItemInterface(IdentifiableContentItemInterfacePrivate &dd,
                                               QObject *parent = 0);
+    // TODO: this method should be migrated to private class as well
     enum RequestType { Get = 0, Post, Delete };
     bool request(// sets dd->reply() - caller takes ownership and must call dd->deleteReply()
-                 RequestType t,
+                 RequestType requestType,
                  const QString &objectIdentifier,
                  const QString &extraPath = QString(),
                  const QStringList &whichFields = QStringList(), // only valid for GET  requests
