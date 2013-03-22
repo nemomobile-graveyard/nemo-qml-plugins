@@ -64,6 +64,70 @@ void IdentifiableContentItemInterfacePrivate::deleteReply()
     }
 }
 
+/*! \reimp */
+void IdentifiableContentItemInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(IdentifiableContentItemInterface);
+    // most derived types will do:
+    // {
+    //     foreach (key, propKeys) {
+    //         if (newData.value(key) != oldData.value(key)) {
+    //             emit thatPropertyChanged();
+    //         }
+    //     }
+    //     SuperClass::emitPropertyChangeSignals(oldData, newData);
+    // }
+    // But this one is a bit special, since if the id changed, it's a terrible error.
+
+    // check identifier - NOTE: derived types MUST fill out this field before calling this class' implementation of emitPropertyChangeSignals.
+    QString oldId = oldData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
+    QString newId = newData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
+    if (newId.isEmpty() && oldId.isEmpty()) {
+        // this will fall through to being reported as an error due to identifier change (to empty) below.
+        qWarning() << Q_FUNC_INFO << "ERROR: derived types MUST set the NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID field appropriately prior to calling the superclass emitPropertyChangeSignals() function!";
+    }
+
+    if (oldId.isEmpty())
+        oldId = identifier; // might have been set directly by client via icii.setIdentifier() which sets dd->identifier.
+
+    if (oldId.isEmpty() && !newId.isEmpty()) {
+        // this must be a new object created by the model.  We now have an identifier; set it and update.
+        identifier = newId;
+        emit q->identifierChanged();
+    } else if (newId.isEmpty() || oldId != newId) {
+        // the identifier changed.  This shouldn't happen in real life.  Must be an error.
+        status = SocialNetworkInterface::Invalid;
+        error = SocialNetworkInterface::DataUpdateError;
+        errorMessage = QString(QLatin1String("identifier changed during data update from %1 to %2")).arg(oldId).arg(newId);
+        s = 0;
+        emit q->statusChanged();
+        emit q->errorChanged();
+        emit q->errorMessageChanged();
+        emit q->socialNetworkChanged();
+    }
+
+    // finally, as all derived classes must do, call super class implementation.
+    ContentItemInterfacePrivate::emitPropertyChangeSignals(oldData, newData);
+}
+
+/*! \reimp */
+void IdentifiableContentItemInterfacePrivate::initializationComplete()
+{
+    Q_Q(IdentifiableContentItemInterface);
+    // reload content if required.
+    if (needsReload) {
+        needsReload = false;
+        status = SocialNetworkInterface::Idle; // but DON'T emit, otherwise reload() will fail.
+        q->reload(); // XXX TODO: allow specifying whichFields for first time initialization reload()?
+    } else {
+        status = SocialNetworkInterface::Idle;
+        emit q->statusChanged();
+    }
+
+    // finally, as all derived classes must do, call super class implementation.
+    ContentItemInterfacePrivate::initializationComplete();
+}
+
 void IdentifiableContentItemInterfacePrivate::connectFinishedAndErrors()
 {
     Q_Q(IdentifiableContentItemInterface);
@@ -98,7 +162,7 @@ void IdentifiableContentItemInterfacePrivate::removeHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
     if (replyData == QString(QLatin1String("true"))) {
@@ -133,7 +197,7 @@ void IdentifiableContentItemInterfacePrivate::reloadHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
     if (ok && !responseData.value("id").toString().isEmpty()) {
@@ -348,70 +412,6 @@ QString IdentifiableContentItemInterface::errorMessage() const
 {
     Q_D(const IdentifiableContentItemInterface);
     return d->errorMessage;
-}
-
-/*! \reimp */
-void IdentifiableContentItemInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    Q_D(IdentifiableContentItemInterface);
-    // most derived types will do:
-    // {
-    //     foreach (key, propKeys) {
-    //         if (newData.value(key) != oldData.value(key)) {
-    //             emit thatPropertyChanged();
-    //         }
-    //     }
-    //     SuperClass::emitPropertyChangeSignals(oldData, newData);
-    // }
-    // But this one is a bit special, since if the id changed, it's a terrible error.
-
-    // check identifier - NOTE: derived types MUST fill out this field before calling this class' implementation of emitPropertyChangeSignals.
-    QString oldId = oldData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
-    QString newId = newData.value(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID).toString();
-    if (newId.isEmpty() && oldId.isEmpty()) {
-        // this will fall through to being reported as an error due to identifier change (to empty) below.
-        qWarning() << Q_FUNC_INFO << "ERROR: derived types MUST set the NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID field appropriately prior to calling the superclass emitPropertyChangeSignals() function!";
-    }
-
-    if (oldId.isEmpty())
-        oldId = d->identifier; // might have been set directly by client via icii.setIdentifier() which sets dd->identifier.
-
-    if (oldId.isEmpty() && !newId.isEmpty()) {
-        // this must be a new object created by the model.  We now have an identifier; set it and update.
-        d->identifier = newId;
-        emit identifierChanged();
-    } else if (newId.isEmpty() || oldId != newId) {
-        // the identifier changed.  This shouldn't happen in real life.  Must be an error.
-        d->status = SocialNetworkInterface::Invalid;
-        d->error = SocialNetworkInterface::DataUpdateError;
-        d->errorMessage = QString(QLatin1String("identifier changed during data update from %1 to %2")).arg(oldId).arg(newId);
-        d->s = 0;
-        emit statusChanged();
-        emit errorChanged();
-        emit errorMessageChanged();
-        emit socialNetworkChanged();
-    }
-
-    // finally, as all derived classes must do, call super class implementation.
-    ContentItemInterface::emitPropertyChangeSignals(oldData, newData);
-}
-
-/*! \reimp */
-void IdentifiableContentItemInterface::initializationComplete()
-{
-    Q_D(IdentifiableContentItemInterface);
-    // reload content if required.
-    if (d->needsReload) {
-        d->needsReload = false;
-        d->status = SocialNetworkInterface::Idle; // but DON'T emit, otherwise reload() will fail.
-        reload(); // XXX TODO: allow specifying whichFields for first time initialization reload()?
-    } else {
-        d->status = SocialNetworkInterface::Idle;
-        emit statusChanged();
-    }
-
-    // finally, as all derived classes must do, call super class implementation.
-    ContentItemInterface::initializationComplete();
 }
 
 /*!

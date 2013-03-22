@@ -50,6 +50,7 @@ class FacebookPhotoInterfacePrivate : public IdentifiableContentItemInterfacePri
 public:
     explicit FacebookPhotoInterfacePrivate(FacebookPhotoInterface *parent);
     void finishedHandler();
+    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     FacebookObjectReferenceInterface *from;
 

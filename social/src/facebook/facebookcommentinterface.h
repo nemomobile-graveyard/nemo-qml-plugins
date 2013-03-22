@@ -62,7 +62,6 @@ public:
     int type() const;
     Q_INVOKABLE bool remove();
     Q_INVOKABLE bool reload(const QStringList &whichFields = QStringList());
-    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     // invokable api
     Q_INVOKABLE bool like();

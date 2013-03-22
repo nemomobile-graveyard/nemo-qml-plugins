@@ -59,7 +59,7 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
 
@@ -124,6 +124,75 @@ void FacebookAlbumInterfacePrivate::finishedHandler()
         }
         break;
     }
+}
+
+/*! \reimp */
+void FacebookAlbumInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(FacebookAlbumInterface);
+    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_ALBUM_FROM).toMap();
+    QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
+    QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
+    QString anStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_NAME).toString();
+    QString descStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_DESCRIPTION).toString();
+    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_LINK).toString();
+    QString cpStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_COVERPHOTO).toString();
+    QString prvStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).toString();
+    QString countStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_COUNT).toString();
+    QString typeStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_TYPE).toString();
+    QString ctStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_CREATEDTIME).toString();
+    QString utStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_UPDATEDTIME).toString();
+    QString cuStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).toString();
+
+    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_FROM).toMap();
+    QString oldFromIdStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
+    QString oldFromNameStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
+    QString oldAnStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_NAME).toString();
+    QString oldDescStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_DESCRIPTION).toString();
+    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_LINK).toString();
+    QString oldCpStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_COVERPHOTO).toString();
+    QString oldPrvStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).toString();
+    QString oldCountStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_COUNT).toString();
+    QString oldTypeStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_TYPE).toString();
+    QString oldCtStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_CREATEDTIME).toString();
+    QString oldUtStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_UPDATEDTIME).toString();
+    QString oldCuStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).toString();
+
+    if (anStr != oldAnStr)
+        emit q->nameChanged();
+    if (descStr != oldDescStr)
+        emit q->descriptionChanged();
+    if (linkStr != oldLinkStr)
+        emit q->linkChanged();
+    if (cpStr != oldCpStr)
+        emit q->coverPhotoChanged();
+    if (prvStr != oldPrvStr)
+        emit q->privacyChanged();
+    if (countStr != oldCountStr)
+        emit q->countChanged();
+    if (typeStr != oldTypeStr)
+        emit q->albumTypeChanged();
+    if (ctStr != oldCtStr)
+        emit q->createdTimeChanged();
+    if (utStr != oldUtStr)
+        emit q->updatedTimeChanged();
+    if (cuStr != oldCuStr)
+        emit q->canUploadChanged();
+
+    // update the from object if required
+    if (fromIdStr != oldFromIdStr || fromNameStr != oldFromNameStr) {
+        QVariantMap newFromData;
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(from, newFromData);
+        emit q->fromChanged();
+    }
+
+    // call the super class implementation
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
+    IdentifiableContentItemInterfacePrivate::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 //----------------------------------
@@ -240,75 +309,6 @@ bool FacebookAlbumInterface::remove()
 bool FacebookAlbumInterface::reload(const QStringList &whichFields)
 {
     return IdentifiableContentItemInterface::reload(whichFields);
-}
-
-/*! \reimp */
-void FacebookAlbumInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    Q_D(FacebookAlbumInterface);
-    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_ALBUM_FROM).toMap();
-    QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
-    QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
-    QString anStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_NAME).toString();
-    QString descStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_DESCRIPTION).toString();
-    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_LINK).toString();
-    QString cpStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_COVERPHOTO).toString();
-    QString prvStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).toString();
-    QString countStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_COUNT).toString();
-    QString typeStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_TYPE).toString();
-    QString ctStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_CREATEDTIME).toString();
-    QString utStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_UPDATEDTIME).toString();
-    QString cuStr = newData.value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).toString();
-
-    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_FROM).toMap();
-    QString oldFromIdStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
-    QString oldFromNameStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
-    QString oldAnStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_NAME).toString();
-    QString oldDescStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_DESCRIPTION).toString();
-    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_LINK).toString();
-    QString oldCpStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_COVERPHOTO).toString();
-    QString oldPrvStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_PRIVACY).toString();
-    QString oldCountStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_COUNT).toString();
-    QString oldTypeStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_TYPE).toString();
-    QString oldCtStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_CREATEDTIME).toString();
-    QString oldUtStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_UPDATEDTIME).toString();
-    QString oldCuStr = oldData.value(FACEBOOK_ONTOLOGY_ALBUM_CANUPLOAD).toString();
-
-    if (anStr != oldAnStr)
-        emit nameChanged();
-    if (descStr != oldDescStr)
-        emit descriptionChanged();
-    if (linkStr != oldLinkStr)
-        emit linkChanged();
-    if (cpStr != oldCpStr)
-        emit coverPhotoChanged();
-    if (prvStr != oldPrvStr)
-        emit privacyChanged();
-    if (countStr != oldCountStr)
-        emit countChanged();
-    if (typeStr != oldTypeStr)
-        emit albumTypeChanged();
-    if (ctStr != oldCtStr)
-        emit createdTimeChanged();
-    if (utStr != oldUtStr)
-        emit updatedTimeChanged();
-    if (cuStr != oldCuStr)
-        emit canUploadChanged();
-
-    // update the from object if required
-    if (fromIdStr != oldFromIdStr || fromNameStr != oldFromNameStr) {
-        QVariantMap newFromData;
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
-        emit fromChanged();
-    }
-
-    // call the super class implementation
-    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
-    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_ALBUM_ID));
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 /*!

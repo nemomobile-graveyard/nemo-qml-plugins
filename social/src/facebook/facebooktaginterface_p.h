@@ -29,36 +29,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef CONTENTITEMINTERFACE_P_H
-#define CONTENTITEMINTERFACE_P_H
 
-#include "contentiteminterface.h"
+#ifndef FACEBOOKTAGINTERFACE_P_H
+#define FACEBOOKTAGINTERFACE_P_H
 
-#include <QtCore/QVariantMap>
+#include "contentiteminterface_p.h"
 
-class SocialNetworkInterface;
-
-class ContentItemInterfacePrivate
+class FacebookTagInterface;
+class FacebookTagInterfacePrivate : public ContentItemInterfacePrivate
 {
 public:
-    explicit ContentItemInterfacePrivate(ContentItemInterface *q);
-    virtual ~ContentItemInterfacePrivate();
-    QVariantMap data() const;
-    void setData(const QVariantMap &data);
-    virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
-    virtual void initializationComplete();
-    // TODO: This method should be put in a header containing useful functions, and maybe inlined
-    static QVariantMap parseReplyData(const QByteArray &replyData, bool *ok);
-    SocialNetworkInterface *s;
-    bool isInitialized;
-protected:
-    // helper api - parse network reply data into QVariantMap
-    ContentItemInterface * const q_ptr;
+    explicit FacebookTagInterfacePrivate(FacebookTagInterface *q);
+    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 private:
-    // Slots
-    void socialNetworkStatusChangedHandler();
-    Q_DECLARE_PUBLIC(ContentItemInterface)
-    QVariantMap m_data;
+    Q_DECLARE_PUBLIC(FacebookTagInterface)
 };
 
-#endif // CONTENTITEMINTERFACE_P_H
+#endif // FACEBOOKTAGINTERFACE_P_H

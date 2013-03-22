@@ -30,6 +30,7 @@
  */
 
 #include "facebookpictureinterface.h"
+#include "facebookpictureinterface_p.h"
 #include "contentiteminterface_p.h"
 #include "facebookontology_p.h"
 
@@ -37,8 +38,34 @@
 
 #include <QtCore/QUrl>
 
+FacebookPictureInterfacePrivate::FacebookPictureInterfacePrivate(FacebookPictureInterface *q)
+    : ContentItemInterfacePrivate(q)
+{
+}
+
+/*! \reimp */
+void FacebookPictureInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(FacebookPictureInterface);
+    QString srcStr = newData.value(FACEBOOK_ONTOLOGY_PICTURE_SOURCE).toString();
+    QString silBool = newData.value(FACEBOOK_ONTOLOGY_PICTURE_ISSILHOUETTE).toString();
+
+    QString oldSrcStr = newData.value(FACEBOOK_ONTOLOGY_PICTURE_SOURCE).toString();
+    QString oldSilBool = newData.value(FACEBOOK_ONTOLOGY_PICTURE_ISSILHOUETTE).toString();
+
+    if (srcStr != oldSrcStr)
+        emit q->sourceChanged();
+    if (silBool != oldSilBool)
+        emit q->isSilhouetteChanged();
+
+    // call the super class implementation
+    ContentItemInterfacePrivate::emitPropertyChangeSignals(oldData, newData);
+}
+
+//---------------------------------------
+
 FacebookPictureInterface::FacebookPictureInterface(QObject *parent)
-    : ContentItemInterface(parent)
+    : ContentItemInterface(*(new FacebookPictureInterfacePrivate(this)), parent)
 {
 }
 
@@ -47,25 +74,6 @@ int FacebookPictureInterface::type() const
 {
     return FacebookInterface::Picture;
 }
-
-/*! \reimp */
-void FacebookPictureInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    QString srcStr = newData.value(FACEBOOK_ONTOLOGY_PICTURE_SOURCE).toString();
-    QString silBool = newData.value(FACEBOOK_ONTOLOGY_PICTURE_ISSILHOUETTE).toString();
-
-    QString oldSrcStr = newData.value(FACEBOOK_ONTOLOGY_PICTURE_SOURCE).toString();
-    QString oldSilBool = newData.value(FACEBOOK_ONTOLOGY_PICTURE_ISSILHOUETTE).toString();
-
-    if (srcStr != oldSrcStr)
-        emit sourceChanged();
-    if (silBool != oldSilBool)
-        emit isSilhouetteChanged();
-
-    // call the super class implementation
-    ContentItemInterface::emitPropertyChangeSignals(oldData, newData);
-}
-
 
 /*!
     \qmlproperty QUrl FacebookPicture::source

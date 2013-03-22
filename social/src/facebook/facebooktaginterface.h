@@ -49,6 +49,7 @@
  * FacebookInterface.
  */
 
+class FacebookTagInterfacePrivate;
 class FacebookTagInterface : public ContentItemInterface
 {
     Q_OBJECT
@@ -63,7 +64,6 @@ public:
 
     // overrides.
     int type() const;
-    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     // property accessors
     QString targetIdentifier() const;
@@ -80,7 +80,7 @@ Q_SIGNALS:
     void yOffsetChanged();
 
 private:
-    Q_DECLARE_PRIVATE(ContentItemInterface)
+    Q_DECLARE_PRIVATE(FacebookTagInterface)
 };
 
 #endif // FACEBOOKTAGINTERFACE_H

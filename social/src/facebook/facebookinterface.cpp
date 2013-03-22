@@ -35,6 +35,7 @@
 #include "socialnetworkinterface_p.h"
 
 #include "contentiteminterface.h"
+#include "contentiteminterface_p.h"
 #include "identifiablecontentiteminterface.h"
 #include "contentitemtypefilterinterface.h"
 
@@ -248,7 +249,7 @@ void FacebookInterfacePrivate::finishedHandler()
     QVariant specialLimitVar = currentReply->property("specialLimit");
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok) {
         responseData.insert("response", replyData);
         error = SocialNetworkInterface::RequestError;
@@ -1145,6 +1146,9 @@ QVariantMap FacebookInterface::facebookContentItemData(ContentItemInterface *con
 /*! \internal */
 void FacebookInterface::setFacebookContentItemData(ContentItemInterface *contentItem, const QVariantMap &data)
 {
+    // TODO: Using FacebookInterface, that have many friends, to call a private method
+    // seems to be wrong. There should be a pretty way to change an object, and
+    // the best way should be to make the setter public.
     setContentItemData(contentItem, data);
 }
 

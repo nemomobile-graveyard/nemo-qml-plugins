@@ -60,7 +60,7 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
 
@@ -134,6 +134,114 @@ void FacebookPhotoInterfacePrivate::finishedHandler()
     }
 }
 
+/*! \reimp */
+void FacebookPhotoInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(FacebookPhotoInterface);
+    QString aidStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
+    QVariantList tagsList = newData.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).toList();
+    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_FROM).toMap();
+    QString nameStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_NAME).toString();
+    QVariantMap ntMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_NAMETAGS).toMap();
+    QString iconStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_ICON).toString();
+    QString picStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_PICTURE).toString();
+    QString srcStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).toString();
+    QString heightInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_HEIGHT).toString();
+    QString widthInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).toString();
+    QVariantMap imgsMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_IMAGES).toMap();
+    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_LINK).toString();
+    QVariantMap placeMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_PLACE).toMap();     // XXX TODO: Location/Place object reference
+    QString ctStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_CREATEDTIME).toString();
+    QString utStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_UPDATEDTIME).toString();
+    QString posInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_POSITION).toString();
+    QString likedBool = newData.value(FACEBOOK_ONTOLOGY_PHOTO_LIKED).toString();
+
+    QString oldAidStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
+    QVariantList oldTagsList = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).toList();
+    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_FROM).toMap();
+    QString oldNameStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_NAME).toString();
+    QVariantMap oldNtMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_NAMETAGS).toMap();
+    QString oldIconStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ICON).toString();
+    QString oldPicStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_PICTURE).toString();
+    QString oldSrcStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).toString();
+    QString oldHeightInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_HEIGHT).toString();
+    QString oldWidthInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).toString();
+    QVariantMap oldImgsMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_IMAGES).toMap();
+    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_LINK).toString();
+    QVariantMap oldPlaceMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_PLACE).toMap();     // XXX TODO: Location/Place object reference
+    QString oldCtStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_CREATEDTIME).toString();
+    QString oldUtStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_UPDATEDTIME).toString();
+    QString oldPosInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_POSITION).toString();
+    QString oldLikedBool = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_LIKED).toString();
+
+    if (aidStr != oldAidStr)
+        emit q->albumIdentifierChanged();
+    if (nameStr != oldNameStr)
+        emit q->nameChanged();
+    if (ntMap != oldNtMap)
+        emit q->nameTagsChanged();
+    if (iconStr != oldIconStr)
+        emit q->iconChanged();
+    if (picStr != oldPicStr)
+        emit q->pictureChanged();
+    if (srcStr != oldSrcStr)
+        emit q->sourceChanged();
+    if (heightInt != oldHeightInt)
+        emit q->heightChanged();
+    if (widthInt != oldWidthInt)
+        emit q->widthChanged();
+    if (imgsMap != oldImgsMap)
+        emit q->imagesChanged();
+    if (linkStr != oldLinkStr)
+        emit q->linkChanged();
+    if (placeMap != oldPlaceMap)
+        emit q->placeChanged();
+    if (ctStr != oldCtStr)
+        emit q->createdTimeChanged();
+    if (utStr != oldUtStr)
+        emit q->updatedTimeChanged();
+    if (posInt != oldPosInt)
+        emit q->positionChanged();
+    if (likedBool != oldLikedBool) {
+        liked = likedBool == QLatin1String("true");
+        emit q->likedChanged();
+    }
+
+    // update tags list
+    if (tagsList != oldTagsList) {
+        // clear the old tags
+        foreach (FacebookTagInterface *doomedTag, tags)
+            doomedTag->deleteLater();
+        tags.clear();
+
+        // update with the new tag data
+        for (int i = 0; i < tagsList.size(); ++i) {
+            QVariantMap currTagMap = tagsList.at(i).toMap();
+            currTagMap.insert(FACEBOOK_ONTOLOGY_TAG_TARGETIDENTIFIER, q->identifier());
+            FacebookTagInterface *currTag = new FacebookTagInterface(q);
+            qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(currTag, currTagMap);
+            tags.append(currTag);
+        }
+
+        // emit change signal
+        emit q->tagsChanged();
+    }
+
+    // update from reference
+    if (fromMap != oldFromMap) {
+        QVariantMap newFromData;
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User); // could also be a Profile ...
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(from, newFromData);
+        emit q->fromChanged();
+    }
+
+    // call the super class implementation
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_PHOTO_ID));
+    IdentifiableContentItemInterfacePrivate::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
+}
 
 /*! \internal */
 void FacebookPhotoInterfacePrivate::tags_append(QDeclarativeListProperty<FacebookTagInterface> *list, FacebookTagInterface *tag)
@@ -291,115 +399,6 @@ bool FacebookPhotoInterface::remove()
 bool FacebookPhotoInterface::reload(const QStringList &whichFields)
 {
     return IdentifiableContentItemInterface::reload(whichFields);
-}
-
-/*! \reimp */
-void FacebookPhotoInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    Q_D(FacebookPhotoInterface);
-    QString aidStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
-    QVariantList tagsList = newData.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).toList();
-    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_FROM).toMap();
-    QString nameStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_NAME).toString();
-    QVariantMap ntMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_NAMETAGS).toMap();
-    QString iconStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_ICON).toString();
-    QString picStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_PICTURE).toString();
-    QString srcStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).toString();
-    QString heightInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_HEIGHT).toString();
-    QString widthInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).toString();
-    QVariantMap imgsMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_IMAGES).toMap();
-    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_LINK).toString();
-    QVariantMap placeMap = newData.value(FACEBOOK_ONTOLOGY_PHOTO_PLACE).toMap();     // XXX TODO: Location/Place object reference
-    QString ctStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_CREATEDTIME).toString();
-    QString utStr = newData.value(FACEBOOK_ONTOLOGY_PHOTO_UPDATEDTIME).toString();
-    QString posInt = newData.value(FACEBOOK_ONTOLOGY_PHOTO_POSITION).toString();
-    QString likedBool = newData.value(FACEBOOK_ONTOLOGY_PHOTO_LIKED).toString();
-
-    QString oldAidStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ALBUMIDENTIFIER).toString();
-    QVariantList oldTagsList = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_TAGS).toList();
-    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_FROM).toMap();
-    QString oldNameStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_NAME).toString();
-    QVariantMap oldNtMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_NAMETAGS).toMap();
-    QString oldIconStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ICON).toString();
-    QString oldPicStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_PICTURE).toString();
-    QString oldSrcStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_SOURCE).toString();
-    QString oldHeightInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_HEIGHT).toString();
-    QString oldWidthInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_WIDTH).toString();
-    QVariantMap oldImgsMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_IMAGES).toMap();
-    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_LINK).toString();
-    QVariantMap oldPlaceMap = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_PLACE).toMap();     // XXX TODO: Location/Place object reference
-    QString oldCtStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_CREATEDTIME).toString();
-    QString oldUtStr = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_UPDATEDTIME).toString();
-    QString oldPosInt = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_POSITION).toString();
-    QString oldLikedBool = oldData.value(FACEBOOK_ONTOLOGY_PHOTO_LIKED).toString();
-
-    if (aidStr != oldAidStr)
-        emit albumIdentifierChanged();
-    if (nameStr != oldNameStr)
-        emit nameChanged();
-    if (ntMap != oldNtMap)
-        emit nameTagsChanged();
-    if (iconStr != oldIconStr)
-        emit iconChanged();
-    if (picStr != oldPicStr)
-        emit pictureChanged();
-    if (srcStr != oldSrcStr)
-        emit sourceChanged();
-    if (heightInt != oldHeightInt)
-        emit heightChanged();
-    if (widthInt != oldWidthInt)
-        emit widthChanged();
-    if (imgsMap != oldImgsMap)
-        emit imagesChanged();
-    if (linkStr != oldLinkStr)
-        emit linkChanged();
-    if (placeMap != oldPlaceMap)
-        emit placeChanged();
-    if (ctStr != oldCtStr)
-        emit createdTimeChanged();
-    if (utStr != oldUtStr)
-        emit updatedTimeChanged();
-    if (posInt != oldPosInt)
-        emit positionChanged();
-    if (likedBool != oldLikedBool) {
-        d->liked = likedBool == QLatin1String("true");
-        emit likedChanged();
-    }
-
-    // update tags list
-    if (tagsList != oldTagsList) {
-        // clear the old tags
-        foreach (FacebookTagInterface *doomedTag, d->tags)
-            doomedTag->deleteLater();
-        d->tags.clear();
-
-        // update with the new tag data
-        for (int i = 0; i < tagsList.size(); ++i) {
-            QVariantMap currTagMap = tagsList.at(i).toMap();
-            currTagMap.insert(FACEBOOK_ONTOLOGY_TAG_TARGETIDENTIFIER, identifier());
-            FacebookTagInterface *currTag = new FacebookTagInterface(this);
-            qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(currTag, currTagMap);
-            d->tags.append(currTag);
-        }
-
-        // emit change signal
-        emit tagsChanged();
-    }
-
-    // update from reference
-    if (fromMap != oldFromMap) {
-        QVariantMap newFromData;
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User); // could also be a Profile ...
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
-        emit fromChanged();
-    }
-
-    // call the super class implementation
-    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_PHOTO_ID));
-    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_PHOTO_ID));
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 /*!

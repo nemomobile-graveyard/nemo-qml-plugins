@@ -34,21 +34,12 @@
 #include "facebookontology_p.h"
 
 #include "facebookinterface.h"
-
-FacebookLikeInterface::FacebookLikeInterface(QObject *parent)
-    : ContentItemInterface(parent)
-{
-}
+#include "facebooklikeinterface_p.h"
 
 /*! \reimp */
-int FacebookLikeInterface::type() const
+void FacebookLikeInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
-    return FacebookInterface::Like;
-}
-
-/*! \reimp */
-void FacebookLikeInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
+    Q_Q(FacebookLikeInterface);
     QString tidStr = newData.value(FACEBOOK_ONTOLOGY_LIKE_TARGETIDENTIFIER).toString();
     QString uidStr = newData.value(FACEBOOK_ONTOLOGY_LIKE_USERIDENTIFIER).toString();
     QString unStr = newData.value(FACEBOOK_ONTOLOGY_LIKE_USERNAME).toString();
@@ -58,14 +49,27 @@ void FacebookLikeInterface::emitPropertyChangeSignals(const QVariantMap &oldData
     QString oldUnStr = newData.value(FACEBOOK_ONTOLOGY_LIKE_USERNAME).toString();
 
     if (tidStr != oldTidStr)
-        emit targetIdentifierChanged();
+        emit q->targetIdentifierChanged();
     if (uidStr != oldUidStr)
-        emit userIdentifierChanged();
+        emit q->userIdentifierChanged();
     if (unStr != oldUnStr)
-        emit userNameChanged();
+        emit q->userNameChanged();
 
     // call super class implementation
-    ContentItemInterface::emitPropertyChangeSignals(oldData, newData);
+    ContentItemInterfacePrivate::emitPropertyChangeSignals(oldData, newData);
+}
+
+//-------------------------------
+
+FacebookLikeInterface::FacebookLikeInterface(QObject *parent)
+    : ContentItemInterface(*(new FacebookLikeInterfacePrivate(this)), parent)
+{
+}
+
+/*! \reimp */
+int FacebookLikeInterface::type() const
+{
+    return FacebookInterface::Like;
 }
 
 /*!

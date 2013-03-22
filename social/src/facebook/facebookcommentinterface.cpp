@@ -59,7 +59,7 @@ void FacebookCommentInterfacePrivate::finishedHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
 
@@ -91,6 +91,59 @@ void FacebookCommentInterfacePrivate::finishedHandler()
         emit q->errorMessageChanged();
         emit q->responseReceived(responseData);
     }
+}
+
+/*! \reimp */
+void FacebookCommentInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(FacebookCommentInterface);
+    // populate our new values
+    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_COMMENT_FROM).toMap();
+    QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
+    QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
+    QString createdTimeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
+    QString messageStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
+    QString likeCountInt = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
+    QString userLikesStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
+    QString typeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_TYPE).toString();
+
+    // populate our old values
+    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_FROM).toMap();
+    QString oldFromIdStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
+    QString oldFromNameStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
+    QString oldCreatedTimeStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
+    QString oldMessageStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
+    QString oldLikeCountInt = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
+    QString oldUserLikesStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
+
+    // determine if any of our properties have changed
+    if (!typeStr.isEmpty() && typeStr != FACEBOOK_ONTOLOGY_COMMENT)
+        qWarning() << Q_FUNC_INFO << "data does not define a comment!  type = " + typeStr;
+    if (createdTimeStr != oldCreatedTimeStr)
+        emit q->createdTimeChanged();
+    if (messageStr != oldMessageStr)
+        emit q->messageChanged();
+    if (likeCountInt != oldLikeCountInt)
+        emit q->likeCountChanged();
+    if (userLikesStr != oldUserLikesStr) {
+        liked = userLikesStr == QLatin1String("true");
+        emit q->likedChanged();
+    }
+
+    // update the from object if required
+    if (fromIdStr != oldFromIdStr || fromNameStr != oldFromNameStr) {
+        QVariantMap newFromData;
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
+        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(from, newFromData);
+        emit q->fromChanged();
+    }
+
+    // then, call super class implementation.
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
+    IdentifiableContentItemInterfacePrivate::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 //-------------------------------
@@ -208,59 +261,6 @@ bool FacebookCommentInterface::remove()
 bool FacebookCommentInterface::reload(const QStringList &whichFields)
 {
     return IdentifiableContentItemInterface::reload(whichFields);
-}
-
-/*! \reimp */
-void FacebookCommentInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    Q_D(FacebookCommentInterface);
-    // populate our new values
-    QVariantMap fromMap = newData.value(FACEBOOK_ONTOLOGY_COMMENT_FROM).toMap();
-    QString fromIdStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
-    QString fromNameStr = fromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
-    QString createdTimeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
-    QString messageStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
-    QString likeCountInt = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
-    QString userLikesStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
-    QString typeStr = newData.value(FACEBOOK_ONTOLOGY_COMMENT_TYPE).toString();
-
-    // populate our old values
-    QVariantMap oldFromMap = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_FROM).toMap();
-    QString oldFromIdStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
-    QString oldFromNameStr = oldFromMap.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
-    QString oldCreatedTimeStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_CREATEDTIME).toString();
-    QString oldMessageStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_MESSAGE).toString();
-    QString oldLikeCountInt = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKECOUNT).toString();
-    QString oldUserLikesStr = oldData.value(FACEBOOK_ONTOLOGY_COMMENT_LIKED).toString();
-
-    // determine if any of our properties have changed
-    if (!typeStr.isEmpty() && typeStr != FACEBOOK_ONTOLOGY_COMMENT)
-        qWarning() << Q_FUNC_INFO << "data does not define a comment!  type = " + typeStr;
-    if (createdTimeStr != oldCreatedTimeStr)
-        emit createdTimeChanged();
-    if (messageStr != oldMessageStr)
-        emit messageChanged();
-    if (likeCountInt != oldLikeCountInt)
-        emit likeCountChanged();
-    if (userLikesStr != oldUserLikesStr) {
-        d->liked = userLikesStr == QLatin1String("true");
-        emit likedChanged();
-    }
-
-    // update the from object if required
-    if (fromIdStr != oldFromIdStr || fromNameStr != oldFromNameStr) {
-        QVariantMap newFromData;
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, fromIdStr);
-        newFromData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, fromNameStr);
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->from, newFromData);
-        emit fromChanged();
-    }
-
-    // then, call super class implementation.
-    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
-    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_COMMENT_ID));
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 /*!

@@ -49,6 +49,7 @@
  * FacebookInterface.
  */
 
+class FacebookLikeInterfacePrivate;
 class FacebookLikeInterface : public ContentItemInterface
 {
     Q_OBJECT
@@ -61,7 +62,6 @@ public:
 
     // overrides.
     int type() const;
-    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     // property accessors
     QString targetIdentifier() const;
@@ -74,7 +74,7 @@ Q_SIGNALS:
     void userNameChanged();
 
 private:
-    Q_DECLARE_PRIVATE(ContentItemInterface)
+    Q_DECLARE_PRIVATE(FacebookLikeInterface)
 };
 
 #endif // FACEBOOKLIKEINTERFACE_H

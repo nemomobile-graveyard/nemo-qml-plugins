@@ -61,11 +61,9 @@ class ContentItemInterface : public QObject, public QDeclarativeParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QDeclarativeParserStatus)
-
     Q_PROPERTY(SocialNetworkInterface *socialNetwork READ socialNetwork WRITE setSocialNetwork NOTIFY socialNetworkChanged)
     Q_PROPERTY(int type READ type CONSTANT)
     Q_PROPERTY(QVariantMap data READ data NOTIFY dataChanged)
-
     Q_PROPERTY(bool isIdentifiable READ isIdentifiable CONSTANT)
 
 public:
@@ -88,9 +86,6 @@ public:
     // invokable api
     Q_INVOKABLE IdentifiableContentItemInterface *asIdentifiable();
 
-    // helper api - parse network reply data into QVariantMap
-    static QVariantMap parseReplyData(const QByteArray &replyData, bool *ok);
-
 Q_SIGNALS:
     void socialNetworkChanged();
     void dataChanged();
@@ -98,15 +93,11 @@ Q_SIGNALS:
 protected:
     explicit ContentItemInterface(ContentItemInterfacePrivate &dd, QObject *parent = 0);
     QScopedPointer<ContentItemInterfacePrivate> d_ptr;
-    virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
-    virtual void initializationComplete();
-    bool isInitialized() const;
-
-private Q_SLOTS:
-    void socialNetworkStatusChangedHandler();
+    bool isInitialized() const; // TODO: Is this method really useful
 
 private:
     Q_DECLARE_PRIVATE(ContentItemInterface)
+    Q_PRIVATE_SLOT(d_func(), void socialNetworkStatusChangedHandler())
     void setDataPrivate(const QVariantMap &v);
     QVariantMap dataPrivate() const;
     friend class SocialNetworkInterface;

@@ -122,7 +122,6 @@ public:
     int type() const;
     Q_INVOKABLE bool remove();
     Q_INVOKABLE bool reload(const QStringList &whichFields = QStringList());
-    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     // invokable API
     Q_INVOKABLE bool uploadPhoto(const QUrl &source, const QString &message = QString());

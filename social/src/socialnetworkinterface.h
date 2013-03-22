@@ -174,8 +174,9 @@ protected:
     friend class IdentifiableContentItemInterface;
 
 private:
-    bool isInitialized() const;
+    bool isInitialized() const; // This might be exported as a public method
     friend class ContentItemInterface;
+    friend class ContentItemInterfacePrivate;
 
 protected:
     SocialNetworkInterface(SocialNetworkInterfacePrivate &dd, QObject *parent = 0);

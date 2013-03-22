@@ -48,6 +48,7 @@ class FacebookAlbumInterfacePrivate : public IdentifiableContentItemInterfacePri
 public:
     explicit FacebookAlbumInterfacePrivate(FacebookAlbumInterface *parent);
     void finishedHandler();
+    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
     FacebookObjectReferenceInterface *from;
     FacebookInterfacePrivate::FacebookAction action;
     bool liked;

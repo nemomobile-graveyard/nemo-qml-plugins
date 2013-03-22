@@ -57,6 +57,7 @@
  * references.
  */
 
+class FacebookObjectReferenceInterfacePrivate;
 class FacebookObjectReferenceInterface : public ContentItemInterface
 {
     Q_OBJECT
@@ -71,7 +72,6 @@ public:
 
     // overrides.
     int type() const;
-    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     // property accessors
     QString objectIdentifier() const;
@@ -84,7 +84,7 @@ Q_SIGNALS:
     void objectTypeChanged();
 
 private:
-    Q_DECLARE_PRIVATE(ContentItemInterface)
+    Q_DECLARE_PRIVATE(FacebookObjectReferenceInterface)
 };
 
 #endif // FACEBOOKOBJECTREFERENCEINTERFACE_H

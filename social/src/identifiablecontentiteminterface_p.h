@@ -51,12 +51,8 @@ public:
     QNetworkReply *reply(); // returns currentReply
     void deleteReply();     // disconnect()s and then deleteLater()s currentReply, sets to null.  DOES NOT SET STATE.
 
-    SocialNetworkInterface::Status status;
-    SocialNetworkInterface::ErrorType error;
-    QString identifier;
-    QString errorMessage;
-
-    bool needsReload;
+    virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
+    virtual void initializationComplete();
 
     void connectFinishedAndErrors();
     void connectErrors();
@@ -67,6 +63,15 @@ public:
     virtual void reloadHandler();
     virtual void errorHandler(QNetworkReply::NetworkError err);
     virtual void sslErrorsHandler(const QList<QSslError> &sslErrors);
+
+    SocialNetworkInterface::Status status;
+    SocialNetworkInterface::ErrorType error;
+    QString identifier;
+    QString errorMessage;
+
+    bool needsReload;
+
+
 private:
     Q_DECLARE_PUBLIC(IdentifiableContentItemInterface)
     QNetworkReply *currentReply; // may only be written to if status != Busy.  MUST be valid at all times, or zero.

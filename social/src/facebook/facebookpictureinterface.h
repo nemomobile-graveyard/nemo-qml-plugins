@@ -50,6 +50,7 @@
  * FacebookInterface.
  */
 
+class FacebookPictureInterfacePrivate;
 class FacebookPictureInterface : public ContentItemInterface
 {
     Q_OBJECT
@@ -72,7 +73,7 @@ Q_SIGNALS:
     void isSilhouetteChanged();
 
 private:
-    Q_DECLARE_PRIVATE(ContentItemInterface)
+    Q_DECLARE_PRIVATE(FacebookPictureInterface)
 };
 
 #endif // FACEBOOKPICTUREINTERFACE_H

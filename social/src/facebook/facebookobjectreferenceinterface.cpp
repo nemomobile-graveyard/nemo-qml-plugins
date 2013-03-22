@@ -30,25 +30,21 @@
  */
 
 #include "facebookobjectreferenceinterface.h"
+#include "facebookobjectreferenceinterface_p.h"
 #include "contentiteminterface_p.h"
 #include "facebookontology_p.h"
 
 #include "facebookinterface.h"
 
-FacebookObjectReferenceInterface::FacebookObjectReferenceInterface(QObject *parent)
-    : ContentItemInterface(parent)
+FacebookObjectReferenceInterfacePrivate::FacebookObjectReferenceInterfacePrivate(FacebookObjectReferenceInterface *q)
+    : ContentItemInterfacePrivate(q)
 {
 }
 
 /*! \reimp */
-int FacebookObjectReferenceInterface::type() const
+void FacebookObjectReferenceInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
-    return FacebookInterface::ObjectReference;
-}
-
-/*! \reimp */
-void FacebookObjectReferenceInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
+    Q_Q(FacebookObjectReferenceInterface);
     QString idStr = newData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER).toString();
     QString nameStr = newData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME).toString();
     int typeInt = newData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE).toInt();
@@ -58,14 +54,27 @@ void FacebookObjectReferenceInterface::emitPropertyChangeSignals(const QVariantM
     int oldTypeInt = oldData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE).toInt();
 
     if (idStr != oldIdStr)
-        emit objectIdentifierChanged();
+        emit q->objectIdentifierChanged();
     if (nameStr != oldNameStr)
-        emit objectNameChanged();
+        emit q->objectNameChanged();
     if (typeInt != oldTypeInt)
-        emit objectTypeChanged();
+        emit q->objectTypeChanged();
 
     // and call the super class implementation
-    ContentItemInterface::emitPropertyChangeSignals(oldData, newData);
+    ContentItemInterfacePrivate::emitPropertyChangeSignals(oldData, newData);
+}
+
+//-------------------------------
+
+FacebookObjectReferenceInterface::FacebookObjectReferenceInterface(QObject *parent)
+    : ContentItemInterface(*(new FacebookObjectReferenceInterfacePrivate(this)), parent)
+{
+}
+
+/*! \reimp */
+int FacebookObjectReferenceInterface::type() const
+{
+    return FacebookInterface::ObjectReference;
 }
 
 /*!

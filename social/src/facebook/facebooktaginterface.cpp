@@ -30,6 +30,7 @@
  */
 
 #include "facebooktaginterface.h"
+#include "facebooktaginterface_p.h"
 #include "contentiteminterface_p.h"
 #include "facebookontology_p.h"
 
@@ -37,20 +38,11 @@
 
 #include <QtDebug>
 
-FacebookTagInterface::FacebookTagInterface(QObject *parent)
-    : ContentItemInterface(parent)
-{
-}
 
 /*! \reimp */
-int FacebookTagInterface::type() const
+void FacebookTagInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
 {
-    return FacebookInterface::Tag;
-}
-
-/*! \reimp */
-void FacebookTagInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
+    Q_Q(FacebookTagInterface);
     QString tidStr = newData.value(FACEBOOK_ONTOLOGY_TAG_TARGETIDENTIFIER).toString();
     QString uidStr = newData.value(FACEBOOK_ONTOLOGY_TAG_USERIDENTIFIER).toString();
     QString textStr = newData.value(FACEBOOK_ONTOLOGY_TAG_TEXT).toString();
@@ -64,21 +56,34 @@ void FacebookTagInterface::emitPropertyChangeSignals(const QVariantMap &oldData,
     QString oldYOffset = oldData.value(FACEBOOK_ONTOLOGY_TAG_YOFFSET).toString();
 
     if (tidStr != oldTidStr)
-        emit targetIdentifierChanged();
+        emit q->targetIdentifierChanged();
     if (uidStr != oldUidStr)
-        emit userIdentifierChanged();
+        emit q->userIdentifierChanged();
     if (textStr != oldTextStr)
-        emit textChanged();
+        emit q->textChanged();
     if (xOffset != oldXOffset)
-        emit xOffsetChanged();
+        emit q->xOffsetChanged();
     if (yOffset != oldYOffset)
-        emit yOffsetChanged();
+        emit q->yOffsetChanged();
 
     if (xOffset == 0 && yOffset == 0)
         qWarning() << Q_FUNC_INFO << "TODO FIXME: xOffset and yOffset are probably sent as strings";
 
     // call the super class implementation
-    ContentItemInterface::emitPropertyChangeSignals(oldData, newData);
+    ContentItemInterfacePrivate::emitPropertyChangeSignals(oldData, newData);
+}
+
+//---------------------------------------
+
+FacebookTagInterface::FacebookTagInterface(QObject *parent)
+    : ContentItemInterface(*(new FacebookTagInterfacePrivate(this)), parent)
+{
+}
+
+/*! \reimp */
+int FacebookTagInterface::type() const
+{
+    return FacebookInterface::Tag;
 }
 
 /*!

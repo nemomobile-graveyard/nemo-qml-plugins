@@ -111,15 +111,12 @@ private:
     FacebookObjectReferenceInterface *objectReference(QObject *parent, int type, QString identifier, QString name);
     QVariantMap facebookContentItemData(ContentItemInterface *contentItem);
     void setFacebookContentItemData(ContentItemInterface *contentItem, const QVariantMap &data);
-    friend class FacebookAlbumInterface;
-    friend class FacebookCommentInterface;
-    friend class FacebookLikeInterface;
+    friend class FacebookAlbumInterfacePrivate;
+    friend class FacebookCommentInterfacePrivate;
     friend class FacebookObjectReferenceInterface;
-    friend class FacebookPhotoInterface;
-    friend class FacebookPictureInterface;
-    friend class FacebookTagInterface;
-    friend class FacebookUserInterface;
-    friend class FacebookNotificationInterface;
+    friend class FacebookPhotoInterfacePrivate;
+    friend class FacebookUserInterfacePrivate;
+    friend class FacebookNotificationInterfacePrivate;
 
     // impl. detail
 private:

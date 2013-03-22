@@ -108,8 +108,6 @@ Q_SIGNALS:
 protected:
     explicit IdentifiableContentItemInterface(IdentifiableContentItemInterfacePrivate &dd,
                                               QObject *parent = 0);
-    virtual void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
-    virtual void initializationComplete();
     enum RequestType { Get = 0, Post, Delete };
     bool request(// sets dd->reply() - caller takes ownership and must call dd->deleteReply()
                  RequestType t,

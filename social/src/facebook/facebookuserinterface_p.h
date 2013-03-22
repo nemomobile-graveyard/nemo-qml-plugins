@@ -49,6 +49,7 @@ class FacebookUserInterfacePrivate : public IdentifiableContentItemInterfacePriv
 public:
     explicit FacebookUserInterfacePrivate(FacebookUserInterface *q);
     void finishedHandler();
+    void emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData);
 
     FacebookObjectReferenceInterface *hometown;
     FacebookObjectReferenceInterface *location;

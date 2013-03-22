@@ -63,7 +63,7 @@ void FacebookUserInterfacePrivate::finishedHandler()
     QByteArray replyData = reply()->readAll();
     deleteReply();
     bool ok = false;
-    QVariantMap responseData = ContentItemInterface::parseReplyData(replyData, &ok);
+    QVariantMap responseData = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
     if (!ok)
         responseData.insert("response", replyData);
 
@@ -119,6 +119,149 @@ void FacebookUserInterfacePrivate::finishedHandler()
         }
         break;
     }
+}
+
+/*! \reimp */
+void FacebookUserInterfacePrivate::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
+{
+    Q_Q(FacebookUserInterface);
+    QString nameStr = newData.value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
+    QString fnStr = newData.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
+    QString mnStr = newData.value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
+    QString lnStr = newData.value(FACEBOOK_ONTOLOGY_USER_LASTNAME).toString();
+    QString gnStr = newData.value(FACEBOOK_ONTOLOGY_USER_GENDER).toString();
+    QString locStr = newData.value(FACEBOOK_ONTOLOGY_USER_LOCALE).toString();
+    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_USER_LINK).toString();
+    QString unStr = newData.value(FACEBOOK_ONTOLOGY_USER_USERNAME).toString();
+    QString tpiStr = newData.value(FACEBOOK_ONTOLOGY_USER_THIRDPARTYIDENTIFIER).toString();
+    QString insStr = newData.value(FACEBOOK_ONTOLOGY_USER_INSTALLED).toString();
+    QString tzoStr = newData.value(FACEBOOK_ONTOLOGY_USER_TIMEZONEOFFSET).toString();
+    QString verStr = newData.value(FACEBOOK_ONTOLOGY_USER_VERIFIED).toString();
+    QString udtStr = newData.value(FACEBOOK_ONTOLOGY_USER_UPDATEDTIME).toString();
+    QString bioStr = newData.value(FACEBOOK_ONTOLOGY_USER_BIO).toString();
+    QString bdayStr = newData.value(FACEBOOK_ONTOLOGY_USER_BIRTHDAY).toString();
+    QString emailStr = newData.value(FACEBOOK_ONTOLOGY_USER_EMAIL).toString();
+    QStringList iinStr = newData.value(FACEBOOK_ONTOLOGY_USER_INTERESTEDIN).toStringList();
+    QString polStr = newData.value(FACEBOOK_ONTOLOGY_USER_POLITICAL).toString();
+    QString quoStr = newData.value(FACEBOOK_ONTOLOGY_USER_QUOTES).toString();
+    QString rssStr = newData.value(FACEBOOK_ONTOLOGY_USER_RELATIONSHIPSTATUS).toString();
+    QString relStr = newData.value(FACEBOOK_ONTOLOGY_USER_RELIGION).toString();
+    QString webStr = newData.value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString();
+    QVariantMap htMap = newData.value(FACEBOOK_ONTOLOGY_USER_HOMETOWN).toMap();
+    QVariantMap locMap = newData.value(FACEBOOK_ONTOLOGY_USER_LOCATION).toMap();
+    QVariantMap picMap = newData.value(FACEBOOK_ONTOLOGY_USER_PICTURE).toMap();
+    QVariantMap sigMap = newData.value(FACEBOOK_ONTOLOGY_USER_SIGNIFICANTOTHER).toMap();
+
+    QString oldNameStr = oldData.value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
+    QString oldFnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
+    QString oldMnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
+    QString oldLnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LASTNAME).toString();
+    QString oldGnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_GENDER).toString();
+    QString oldLocStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LOCALE).toString();
+    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LINK).toString();
+    QString oldUnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_USERNAME).toString();
+    QString oldTpiStr = oldData.value(FACEBOOK_ONTOLOGY_USER_THIRDPARTYIDENTIFIER).toString();
+    QString oldInsStr = oldData.value(FACEBOOK_ONTOLOGY_USER_INSTALLED).toString();
+    QString oldTzoStr = newData.value(FACEBOOK_ONTOLOGY_USER_TIMEZONEOFFSET).toString();
+    QString oldVerStr = newData.value(FACEBOOK_ONTOLOGY_USER_VERIFIED).toString();
+    QString oldUdtStr = newData.value(FACEBOOK_ONTOLOGY_USER_UPDATEDTIME).toString();
+    QString oldBioStr = oldData.value(FACEBOOK_ONTOLOGY_USER_BIO).toString();
+    QString oldBdayStr = oldData.value(FACEBOOK_ONTOLOGY_USER_BIRTHDAY).toString();
+    QString oldEmailStr = oldData.value(FACEBOOK_ONTOLOGY_USER_EMAIL).toString();
+    QStringList oldIinStr = oldData.value(FACEBOOK_ONTOLOGY_USER_INTERESTEDIN).toStringList();
+    QString oldPolStr = oldData.value(FACEBOOK_ONTOLOGY_USER_POLITICAL).toString();
+    QString oldQuoStr = oldData.value(FACEBOOK_ONTOLOGY_USER_QUOTES).toString();
+    QString oldRssStr = oldData.value(FACEBOOK_ONTOLOGY_USER_RELATIONSHIPSTATUS).toString();
+    QString oldRelStr = oldData.value(FACEBOOK_ONTOLOGY_USER_RELIGION).toString();
+    QString oldWebStr = oldData.value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString();
+    QVariantMap oldHtMap = oldData.value(FACEBOOK_ONTOLOGY_USER_HOMETOWN).toMap();
+    QVariantMap oldLocMap = oldData.value(FACEBOOK_ONTOLOGY_USER_LOCATION).toMap();
+    QVariantMap oldPicMap = oldData.value(FACEBOOK_ONTOLOGY_USER_PICTURE).toMap();
+    QVariantMap oldSigMap = oldData.value(FACEBOOK_ONTOLOGY_USER_SIGNIFICANTOTHER).toMap();
+
+    // standard properties
+    if (nameStr != oldNameStr)
+        emit q->nameChanged();
+    if (fnStr != oldFnStr)
+        emit q->firstNameChanged();
+    if (mnStr != oldMnStr)
+        emit q->middleNameChanged();
+    if (lnStr != oldLnStr)
+        emit q->lastNameChanged();
+    if (gnStr != oldGnStr)
+        emit q->genderChanged();
+    if (locStr != oldLocStr)
+        emit q->locationChanged();
+    if (linkStr != oldLinkStr)
+        emit q->linkChanged();
+    if (unStr != oldUnStr)
+        emit q->userNameChanged();
+    if (tpiStr != oldTpiStr)
+        emit q->thirdPartyIdentifierChanged();
+    if (insStr != oldInsStr)
+        emit q->installedChanged();
+    if (tzoStr != oldTzoStr)
+        emit q->timezoneOffsetChanged();
+    if (verStr != oldVerStr)
+        emit q->verifiedChanged();
+    if (udtStr != oldUdtStr)
+        emit q->updatedTimeChanged();
+    if (bioStr != oldBioStr)
+        emit q->bioChanged();
+    if (bdayStr != oldBdayStr)
+        emit q->birthdayChanged();
+    if (emailStr != oldEmailStr)
+        emit q->emailChanged();
+    if (iinStr != oldIinStr)
+        emit q->interestedInChanged();
+    if (polStr != oldPolStr)
+        emit q->politicalChanged();
+    if (quoStr != oldQuoStr)
+        emit q->quotesChanged();
+    if (rssStr != oldRssStr)
+        emit q->relationshipStatusChanged();
+    if (relStr != oldRelStr)
+        emit q->religionChanged();
+    if (webStr != oldWebStr)
+        emit q->websiteChanged();
+
+    // variantmap / object reference properties
+    if (htMap != oldHtMap) {
+        QVariantMap newHtData;
+        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
+        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
+        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(hometown, newHtData);
+        emit q->hometownChanged();
+    }
+
+    if (locMap != oldLocMap) {
+        QVariantMap newLocData;
+        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
+        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
+        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(location, newLocData);
+        emit q->locationChanged();
+    }
+
+    if (picMap != oldPicMap) {
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(picture, picMap);
+        emit q->pictureChanged();
+    }
+
+    if (sigMap != oldSigMap) {
+        QVariantMap newSigData;
+        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
+        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
+        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
+        qobject_cast<FacebookInterface*>(q->socialNetwork())->setFacebookContentItemData(significantOther, newSigData);
+        emit q->significantOtherChanged();
+    }
+
+    // call the super class implementation
+    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_USER_ID));
+    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_USER_ID));
+    IdentifiableContentItemInterfacePrivate::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
 }
 
 //-------------------------------------------
@@ -234,150 +377,6 @@ bool FacebookUserInterface::reload(const QStringList &whichFields)
 {
     return IdentifiableContentItemInterface::reload(whichFields);
 }
-
-/*! \reimp */
-void FacebookUserInterface::emitPropertyChangeSignals(const QVariantMap &oldData, const QVariantMap &newData)
-{
-    Q_D(FacebookUserInterface);
-    QString nameStr = newData.value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
-    QString fnStr = newData.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
-    QString mnStr = newData.value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
-    QString lnStr = newData.value(FACEBOOK_ONTOLOGY_USER_LASTNAME).toString();
-    QString gnStr = newData.value(FACEBOOK_ONTOLOGY_USER_GENDER).toString();
-    QString locStr = newData.value(FACEBOOK_ONTOLOGY_USER_LOCALE).toString();
-    QString linkStr = newData.value(FACEBOOK_ONTOLOGY_USER_LINK).toString();
-    QString unStr = newData.value(FACEBOOK_ONTOLOGY_USER_USERNAME).toString();
-    QString tpiStr = newData.value(FACEBOOK_ONTOLOGY_USER_THIRDPARTYIDENTIFIER).toString();
-    QString insStr = newData.value(FACEBOOK_ONTOLOGY_USER_INSTALLED).toString();
-    QString tzoStr = newData.value(FACEBOOK_ONTOLOGY_USER_TIMEZONEOFFSET).toString();
-    QString verStr = newData.value(FACEBOOK_ONTOLOGY_USER_VERIFIED).toString();
-    QString udtStr = newData.value(FACEBOOK_ONTOLOGY_USER_UPDATEDTIME).toString();
-    QString bioStr = newData.value(FACEBOOK_ONTOLOGY_USER_BIO).toString();
-    QString bdayStr = newData.value(FACEBOOK_ONTOLOGY_USER_BIRTHDAY).toString();
-    QString emailStr = newData.value(FACEBOOK_ONTOLOGY_USER_EMAIL).toString();
-    QStringList iinStr = newData.value(FACEBOOK_ONTOLOGY_USER_INTERESTEDIN).toStringList();
-    QString polStr = newData.value(FACEBOOK_ONTOLOGY_USER_POLITICAL).toString();
-    QString quoStr = newData.value(FACEBOOK_ONTOLOGY_USER_QUOTES).toString();
-    QString rssStr = newData.value(FACEBOOK_ONTOLOGY_USER_RELATIONSHIPSTATUS).toString();
-    QString relStr = newData.value(FACEBOOK_ONTOLOGY_USER_RELIGION).toString();
-    QString webStr = newData.value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString();
-    QVariantMap htMap = newData.value(FACEBOOK_ONTOLOGY_USER_HOMETOWN).toMap();
-    QVariantMap locMap = newData.value(FACEBOOK_ONTOLOGY_USER_LOCATION).toMap();
-    QVariantMap picMap = newData.value(FACEBOOK_ONTOLOGY_USER_PICTURE).toMap();
-    QVariantMap sigMap = newData.value(FACEBOOK_ONTOLOGY_USER_SIGNIFICANTOTHER).toMap();
-
-    QString oldNameStr = oldData.value(FACEBOOK_ONTOLOGY_USER_NAME).toString();
-    QString oldFnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_FIRSTNAME).toString();
-    QString oldMnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_MIDDLENAME).toString();
-    QString oldLnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LASTNAME).toString();
-    QString oldGnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_GENDER).toString();
-    QString oldLocStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LOCALE).toString();
-    QString oldLinkStr = oldData.value(FACEBOOK_ONTOLOGY_USER_LINK).toString();
-    QString oldUnStr = oldData.value(FACEBOOK_ONTOLOGY_USER_USERNAME).toString();
-    QString oldTpiStr = oldData.value(FACEBOOK_ONTOLOGY_USER_THIRDPARTYIDENTIFIER).toString();
-    QString oldInsStr = oldData.value(FACEBOOK_ONTOLOGY_USER_INSTALLED).toString();
-    QString oldTzoStr = newData.value(FACEBOOK_ONTOLOGY_USER_TIMEZONEOFFSET).toString();
-    QString oldVerStr = newData.value(FACEBOOK_ONTOLOGY_USER_VERIFIED).toString();
-    QString oldUdtStr = newData.value(FACEBOOK_ONTOLOGY_USER_UPDATEDTIME).toString();
-    QString oldBioStr = oldData.value(FACEBOOK_ONTOLOGY_USER_BIO).toString();
-    QString oldBdayStr = oldData.value(FACEBOOK_ONTOLOGY_USER_BIRTHDAY).toString();
-    QString oldEmailStr = oldData.value(FACEBOOK_ONTOLOGY_USER_EMAIL).toString();
-    QStringList oldIinStr = oldData.value(FACEBOOK_ONTOLOGY_USER_INTERESTEDIN).toStringList();
-    QString oldPolStr = oldData.value(FACEBOOK_ONTOLOGY_USER_POLITICAL).toString();
-    QString oldQuoStr = oldData.value(FACEBOOK_ONTOLOGY_USER_QUOTES).toString();
-    QString oldRssStr = oldData.value(FACEBOOK_ONTOLOGY_USER_RELATIONSHIPSTATUS).toString();
-    QString oldRelStr = oldData.value(FACEBOOK_ONTOLOGY_USER_RELIGION).toString();
-    QString oldWebStr = oldData.value(FACEBOOK_ONTOLOGY_USER_WEBSITE).toString();
-    QVariantMap oldHtMap = oldData.value(FACEBOOK_ONTOLOGY_USER_HOMETOWN).toMap();
-    QVariantMap oldLocMap = oldData.value(FACEBOOK_ONTOLOGY_USER_LOCATION).toMap();
-    QVariantMap oldPicMap = oldData.value(FACEBOOK_ONTOLOGY_USER_PICTURE).toMap();
-    QVariantMap oldSigMap = oldData.value(FACEBOOK_ONTOLOGY_USER_SIGNIFICANTOTHER).toMap();
-
-    // standard properties
-    if (nameStr != oldNameStr)
-        emit nameChanged();
-    if (fnStr != oldFnStr)
-        emit firstNameChanged();
-    if (mnStr != oldMnStr)
-        emit middleNameChanged();
-    if (lnStr != oldLnStr)
-        emit lastNameChanged();
-    if (gnStr != oldGnStr)
-        emit genderChanged();
-    if (locStr != oldLocStr)
-        emit locationChanged();
-    if (linkStr != oldLinkStr)
-        emit linkChanged();
-    if (unStr != oldUnStr)
-        emit userNameChanged();
-    if (tpiStr != oldTpiStr)
-        emit thirdPartyIdentifierChanged();
-    if (insStr != oldInsStr)
-        emit installedChanged();
-    if (tzoStr != oldTzoStr)
-        emit timezoneOffsetChanged();
-    if (verStr != oldVerStr)
-        emit verifiedChanged();
-    if (udtStr != oldUdtStr)
-        emit updatedTimeChanged();
-    if (bioStr != oldBioStr)
-        emit bioChanged();
-    if (bdayStr != oldBdayStr)
-        emit birthdayChanged();
-    if (emailStr != oldEmailStr)
-        emit emailChanged();
-    if (iinStr != oldIinStr)
-        emit interestedInChanged();
-    if (polStr != oldPolStr)
-        emit politicalChanged();
-    if (quoStr != oldQuoStr)
-        emit quotesChanged();
-    if (rssStr != oldRssStr)
-        emit relationshipStatusChanged();
-    if (relStr != oldRelStr)
-        emit religionChanged();
-    if (webStr != oldWebStr)
-        emit websiteChanged();
-
-    // variantmap / object reference properties
-    if (htMap != oldHtMap) {
-        QVariantMap newHtData;
-        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
-        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
-        newHtData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newHtData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->hometown, newHtData);
-        emit hometownChanged();
-    }
-
-    if (locMap != oldLocMap) {
-        QVariantMap newLocData;
-        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::Location);
-        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
-        newLocData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newLocData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->location, newLocData);
-        emit locationChanged();
-    }
-
-    if (picMap != oldPicMap) {
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->picture, picMap);
-        emit pictureChanged();
-    }
-
-    if (sigMap != oldSigMap) {
-        QVariantMap newSigData;
-        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTTYPE, FacebookInterface::User);
-        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTIDENTIFIER));
-        newSigData.insert(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME, newSigData.value(FACEBOOK_ONTOLOGY_OBJECTREFERENCE_OBJECTNAME));
-        qobject_cast<FacebookInterface*>(socialNetwork())->setFacebookContentItemData(d->significantOther, newSigData);
-        emit significantOtherChanged();
-    }
-
-    // call the super class implementation
-    QVariantMap oldDataWithId = oldData; oldDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, oldData.value(FACEBOOK_ONTOLOGY_USER_ID));
-    QVariantMap newDataWithId = newData; newDataWithId.insert(NEMOQMLPLUGINS_SOCIAL_CONTENTITEMID, newData.value(FACEBOOK_ONTOLOGY_USER_ID));
-    IdentifiableContentItemInterface::emitPropertyChangeSignals(oldDataWithId, newDataWithId);
-}
-
 
 /*!
     \qmlmethod bool FacebookUser::uploadPhoto(const QUrl &source, const QString &message)

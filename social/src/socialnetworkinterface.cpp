@@ -33,6 +33,7 @@
 #include "socialnetworkinterface_p.h"
 
 #include "contentiteminterface.h"
+#include "contentiteminterface_p.h"
 #include "identifiablecontentiteminterface.h"
 #include "filterinterface_p.h"
 #include "sorterinterface_p.h"
@@ -138,7 +139,7 @@ void ArbitraryRequestHandler::finishedHandler()
         isError = false;
     } else {
         bool ok = false;
-        QVariantMap parsed = ContentItemInterface::parseReplyData(replyData, &ok);
+        QVariantMap parsed = ContentItemInterfacePrivate::parseReplyData(replyData, &ok);
         if (!ok) {
             responseData.insert(QLatin1String("response"), replyData);
         } else {
