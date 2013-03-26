@@ -743,38 +743,64 @@ SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
 
 namespace { // Helper functions
 
-template<class ListType, class MapType>
-typename MapType::mapped_type selectMatching(ListType list, MapType map)
-{
-    // Return the mapped value for the first supplied key that we find in the map
-    foreach (const typename ListType::value_type &item, list) {
-        const typename MapType::const_iterator it = map.constFind(item);
-        if (it != map.constEnd()) {
-            return *it;
-        }
-    }
-
-    return typename MapType::mapped_type();
-}
-
-}
-
-QStringList SeasidePerson::presenceAccountUris() const
+template<class ListType>
+QStringList listPropertyFromFieldName(ListType list, const QString &fieldName, const QString defaultIfNotPresent = QString())
 {
     QStringList rv;
 
-    QMap<QString, QString> accountUris;
-    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
-        if (account.hasValue("AccountPath"))
-            accountUris.insert(account.detailUri(), account.value("AccountPath"));
-    }
-
-    // Return the account URIs as reported by the presence details
-    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
-        rv.append(selectMatching(presence.linkedDetailUris(), accountUris));
+    foreach (const typename ListType::value_type &item, list) {
+        if (item.hasValue(fieldName)) {
+            rv.append(item.value(fieldName));
+        } else if (!defaultIfNotPresent.isNull()) {
+            rv.append(defaultIfNotPresent);
+        }
     }
 
     return rv;
+}
+
+int someElementPresentAtIndex(const QStringList &needleList, const QStringList &haystack)
+{
+    QStringList::const_iterator it = haystack.constBegin(), end = haystack.constEnd();
+    for ( ; it != end; ++it) {
+        if (needleList.contains(*it)) {
+            return (it - haystack.constBegin());
+        }
+    }
+
+    return -1;
+}
+
+template<class ListType, class AccountListType>
+ListType inAccountOrder(ListType list, AccountListType accountList)
+{
+    ListType rv;
+    rv.reserve(accountList.count());
+
+    // Find the detailUri for each account in the order they're yielded
+    QStringList uriList;
+    foreach (const typename AccountListType::value_type &account, accountList) {
+        uriList.append(account.detailUri());
+    }
+
+    // For each value, insert in the order that the linked account is present
+    foreach (const typename ListType::value_type &item, list) {
+        int index = someElementPresentAtIndex(item.linkedDetailUris(), uriList);
+        if (index != -1) {
+            if (rv.count() > index) {
+                rv[index] = item;
+            } else {
+                while (rv.count() < index) {
+                    rv.append(typename ListType::value_type());
+                }
+                rv.append(item);
+            }
+        }
+    }
+
+    return rv;
+}
+
 }
 
 QStringList SeasidePerson::presenceAccountProviders() const
@@ -783,12 +809,7 @@ QStringList SeasidePerson::presenceAccountProviders() const
 
     QMap<QString, QString> accountProviders;
     foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
-        accountProviders.insert(account.detailUri(), account.serviceProvider());
-    }
-
-    // Return the account provider names as reported by the presence details
-    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
-        rv.append(selectMatching(presence.linkedDetailUris(), accountProviders));
+        rv.append(account.serviceProvider());
     }
 
     return rv;
@@ -796,28 +817,19 @@ QStringList SeasidePerson::presenceAccountProviders() const
 
 QStringList SeasidePerson::presenceServiceIconPaths() const
 {
-    QStringList rv;
-
-    QMap<QString, QString> serviceIconPaths;
-    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
-        if (account.hasValue("ServiceIconPath"))
-            serviceIconPaths.insert(account.detailUri(), account.value("ServiceIconPath"));
-    }
-
-    // Return the service icon paths as reported by the presence details
-    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
-        rv.append(selectMatching(presence.linkedDetailUris(), serviceIconPaths));
-    }
-
-    return rv;
+    return listPropertyFromFieldName(mContact.details<QContactOnlineAccount>(), QString("ServiceIconPath"), QString(""));
 }
 
 QList<int> SeasidePerson::presenceStates() const
 {
     QList<int> rv;
 
-    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
-        rv.append(static_cast<int>(presence.presenceState()));
+    foreach (const QContactPresence &presence, inAccountOrder(mContact.details<QContactPresence>(), mContact.details<QContactOnlineAccount>())) {
+        if (!presence.isEmpty()) {
+            rv.append(static_cast<int>(presence.presenceState()));
+        } else {
+            rv.append(QContactPresence::PresenceUnknown);
+        }
     }
 
     return rv;
@@ -827,8 +839,12 @@ QStringList SeasidePerson::presenceMessages() const
 {
     QStringList rv;
 
-    foreach (const QContactPresence &presence, mContact.details<QContactPresence>()) {
-        rv.append(presence.customMessage());
+    foreach (const QContactPresence &presence, inAccountOrder(mContact.details<QContactPresence>(), mContact.details<QContactOnlineAccount>())) {
+        if (!presence.isEmpty()) {
+            rv.append(presence.customMessage());
+        } else {
+            rv.append(QString());
+        }
     }
 
     return rv;
@@ -934,7 +950,6 @@ void SeasidePerson::setContact(const QContact &contact)
             emit presenceMessagesChanged();
         }
         if (urisChanged) {
-            emit presenceAccountUrisChanged();
             emit presenceAccountProvidersChanged();
             emit presenceServiceIconPathsChanged();
         }
