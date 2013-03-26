@@ -20,7 +20,7 @@ class EmailAccountListModel : public QMailAccountListModel
     Q_OBJECT
 
 public:
-    explicit EmailAccountListModel (QObject *parent = 0);
+    explicit EmailAccountListModel(QObject *parent = 0);
     ~EmailAccountListModel();
 
     enum Role {

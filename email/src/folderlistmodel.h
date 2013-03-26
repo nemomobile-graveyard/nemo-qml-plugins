@@ -19,7 +19,7 @@ class FolderListModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    explicit FolderListModel (QObject *parent = 0);
+    explicit FolderListModel(QObject *parent = 0);
     ~FolderListModel();
 
     enum Role {
@@ -33,12 +33,12 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
 
-    Q_INVOKABLE void setAccountKey (QVariant id);
+    Q_INVOKABLE void setAccountKey(QVariant id);
     Q_INVOKABLE QStringList folderNames();
     Q_INVOKABLE QVariant folderId(int index);
     Q_INVOKABLE int indexFromFolderId(QVariant vFolderId);
     Q_INVOKABLE QVariant folderServerCount(QVariant vFolderId);
-    Q_INVOKABLE QVariant inboxFolderId ();
+    Q_INVOKABLE QVariant inboxFolderId();
     Q_INVOKABLE QVariant inboxFolderName();
     Q_INVOKABLE int totalNumberOfFolders();
     Q_INVOKABLE QVariant folderUnreadCount(QVariant folderId);

@@ -97,8 +97,8 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     QMailMessageKey accountKey = QMailMessageKey::parentAccountId(m_mailAccountIds);
     QMailMessageListModel::setKey(accountKey);
     m_key = key();
-    QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    QMailMessageListModel::setSortKey(sortKey);
+    m_sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
+    QMailMessageListModel::setSortKey(m_sortKey);
     m_selectedMsgIds.clear();
 }
 
@@ -270,8 +270,7 @@ void EmailMessageListModel::setFolderKey (QVariant id)
     QMailMessageKey folderKey = QMailMessageKey::parentFolderId(m_currentFolderId);
     QMailMessageListModel::setKey(folderKey);
     m_key=key();
-    QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    QMailMessageListModel::setSortKey(sortKey);
+    QMailMessageListModel::setSortKey(m_sortKey);
 
     if (combinedInbox())
         setCombinedInbox(false);
@@ -304,9 +303,7 @@ void EmailMessageListModel::setAccountKey (QVariant id)
                     SLOT(foldersAdded( const QMailFolderIdList &)));
         }
     }
-
-    QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    QMailMessageListModel::setSortKey(sortKey);
+    QMailMessageListModel::setSortKey(m_sortKey);
 
     m_key= key();
 
@@ -337,36 +334,32 @@ void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
 
 void EmailMessageListModel::sortBySender(int key)
 {
-    impl()->reset();
-    QMailMessageSortKey sortKey;
     if (key == 0)  // descending
-        sortKey = QMailMessageSortKey::sender(Qt::DescendingOrder);
+        m_sortKey = QMailMessageSortKey::sender(Qt::DescendingOrder);
     else
-        sortKey = QMailMessageSortKey::sender(Qt::AscendingOrder);
+        m_sortKey = QMailMessageSortKey::sender(Qt::AscendingOrder);
 
-    QMailMessageListModel::setSortKey(sortKey);
+    QMailMessageListModel::setSortKey(m_sortKey);
 }
 
 void EmailMessageListModel::sortBySubject(int key)
 {
-    QMailMessageSortKey sortKey;
     if (key == 0)  // descending
-        sortKey = QMailMessageSortKey::subject(Qt::DescendingOrder);
+        m_sortKey = QMailMessageSortKey::subject(Qt::DescendingOrder);
     else
-        sortKey = QMailMessageSortKey::subject(Qt::AscendingOrder);
+        m_sortKey = QMailMessageSortKey::subject(Qt::AscendingOrder);
 
-    QMailMessageListModel::setSortKey(sortKey);
+    QMailMessageListModel::setSortKey(m_sortKey);
 }
 
 void EmailMessageListModel::sortByDate(int key)
 {
-    QMailMessageSortKey sortKey;
     if (key == 0)  // descending
-        sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
+        m_sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     else
-        sortKey = QMailMessageSortKey::timeStamp(Qt::AscendingOrder);
+        m_sortKey = QMailMessageSortKey::timeStamp(Qt::AscendingOrder);
 
-    QMailMessageListModel::setSortKey(sortKey);
+    QMailMessageListModel::setSortKey(m_sortKey);
 }
 
 void EmailMessageListModel::sortByAttachment(int key)
@@ -526,7 +519,7 @@ void EmailMessageListModel::moveSelectedMessageIds(QVariant vFolderId)
     m_selectedMsgIds.clear();
     EmailAgent::instance()->exportUpdates(msg.parentAccountId());
 }
-
+//TODO: support to delete messages from mutiple accounts
 void EmailMessageListModel::deleteSelectedMessageIds()
 {
     if (m_selectedMsgIds.empty())
@@ -636,8 +629,7 @@ void EmailMessageListModel::setCombinedInbox(bool c)
         }
         QMailMessageListModel::setKey(accountKey);
         m_key = key();
-        QMailMessageSortKey sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-        QMailMessageListModel::setSortKey(sortKey);
+        QMailMessageListModel::setSortKey(m_sortKey);
         m_combinedInbox = false;
     }
     emit combinedInboxChanged();
