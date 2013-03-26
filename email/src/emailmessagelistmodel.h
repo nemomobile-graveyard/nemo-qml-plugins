@@ -46,7 +46,8 @@ public:
         MessagePreviewRole,                                    // returns message preview if available
         MessageTimeSectionRole,                                // returns time section relative to the current time
         MessagePriorityRole,                                   // returns message priority
-        MessageAccountIdRole                                   // returns parent account id for the message
+        MessageAccountIdRole,                                  // returns parent account id for the message
+        MessageHasAttachmentsRole                              // returns 1 if message has attachments, 0 otherwise
     };
 
     EmailMessageListModel(QObject *parent = 0);
@@ -58,7 +59,7 @@ public:
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
 
-    enum Sort { Time, Sender, Size, ReadStatus, Importance, Attachments, Subject};
+    enum Sort { Time, Sender, Size, ReadStatus, Priority, Attachments, Subject};
 
     Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox NOTIFY combinedInboxChanged)
     Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread NOTIFY filterUnreadChanged)
@@ -82,8 +83,9 @@ public slots:
     Q_INVOKABLE void sortBySender(int key = 1);
     Q_INVOKABLE void sortBySubject(int key = 1);
     Q_INVOKABLE void sortByDate(int key = 0);
-    Q_INVOKABLE void sortByAttachment(int key = 1);
+    Q_INVOKABLE void sortByAttachment(int key = 0);
     Q_INVOKABLE void sortByReadStatus(int key = 1);
+    Q_INVOKABLE void sortByPriority(int key = 1);
     Q_INVOKABLE void setSearch(const QString search);
 
     Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);
