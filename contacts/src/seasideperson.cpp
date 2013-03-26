@@ -775,13 +775,16 @@ template<class ListType, class AccountListType>
 ListType inAccountOrder(ListType list, AccountListType accountList)
 {
     ListType rv;
-    rv.reserve(accountList.count());
 
-    // Find the detailUri for each account in the order they're yielded
+    // Find the detailUri for each reportable account in the order they're yielded
     QStringList uriList;
     foreach (const typename AccountListType::value_type &account, accountList) {
-        uriList.append(account.detailUri());
+        if (account.hasValue("AccountPath")) {
+            uriList.append(account.detailUri());
+        }
     }
+
+    rv.reserve(uriList.count());
 
     // For each value, insert in the order that the linked account is present
     foreach (const typename ListType::value_type &item, list) {
@@ -805,14 +808,7 @@ ListType inAccountOrder(ListType list, AccountListType accountList)
 
 QStringList SeasidePerson::presenceAccountProviders() const
 {
-    QStringList rv;
-
-    QMap<QString, QString> accountProviders;
-    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
-        rv.append(account.serviceProvider());
-    }
-
-    return rv;
+    return accountProviders();
 }
 
 QStringList SeasidePerson::presenceServiceIconPaths() const
@@ -868,6 +864,20 @@ QStringList SeasidePerson::accountUris() const
 QStringList SeasidePerson::accountPaths() const
 {
     LIST_PROPERTY_FROM_FIELD_NAME(QContactOnlineAccount, "AccountPath") // QContactOnlineAccount__FieldAccountPath
+}
+
+QStringList SeasidePerson::accountProviders() const
+{
+    QStringList rv;
+
+    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
+        // Include the provider value for each account returned by accountPaths
+        if (account.hasValue("AccountPath")) {
+            rv.append(account.serviceProvider());
+        }
+    }
+
+    return rv;
 }
 
 QContact SeasidePerson::contact() const
@@ -960,6 +970,7 @@ void SeasidePerson::setContact(const QContact &contact)
     emit emailAddressesChanged();
     emit accountUrisChanged();
     emit accountPathsChanged();
+    emit accountProvidersChanged();
 
     recalculateDisplayLabel();
 }
