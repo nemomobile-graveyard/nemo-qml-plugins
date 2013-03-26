@@ -58,7 +58,7 @@ public:
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
 
-    enum Sort { Time, Sender, Size, Status, Importance, Attachments, Subject};
+    enum Sort { Time, Sender, Size, ReadStatus, Importance, Attachments, Subject};
 
     Q_PROPERTY(bool combinedInbox READ combinedInbox WRITE setCombinedInbox NOTIFY combinedInboxChanged)
     Q_PROPERTY(bool filterUnread READ filterUnread WRITE setFilterUnread NOTIFY filterUnreadChanged)
@@ -83,6 +83,7 @@ public slots:
     Q_INVOKABLE void sortBySubject(int key = 1);
     Q_INVOKABLE void sortByDate(int key = 0);
     Q_INVOKABLE void sortByAttachment(int key = 1);
+    Q_INVOKABLE void sortByReadStatus(int key = 1);
     Q_INVOKABLE void setSearch(const QString search);
 
     Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);

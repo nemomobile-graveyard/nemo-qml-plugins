@@ -368,6 +368,21 @@ void EmailMessageListModel::sortByAttachment(int key)
     Q_UNUSED(key);
 }
 
+void EmailMessageListModel::sortByReadStatus(int key)
+{
+    if (key == 0) {
+        // read before non-read
+        m_sortKey = QMailMessageSortKey::status(QMailMessage::Read, Qt::DescendingOrder);
+        m_sortKey &= QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
+    }
+    else {
+        m_sortKey = QMailMessageSortKey::status(QMailMessage::Read, Qt::AscendingOrder);
+        m_sortKey &= QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
+    }
+
+    QMailMessageListModel::setSortKey(m_sortKey);
+}
+
 QVariant EmailMessageListModel::accountIdForMessage(QVariant messageId)
 {
     QMailMessageId msgId = messageId.value<QMailMessageId>();
