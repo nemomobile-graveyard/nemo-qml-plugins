@@ -111,7 +111,7 @@ QVariant NemoCalendarAgendaModel::data(const QModelIndex &index, int role) const
         case SectionBucketRole:
             return mEvents.at(index.row())->startTime().date();
         case NotebookColorRole:
-            return "blue"; // TODO: hardcoded, as we only support local events for now
+            return "#00aeef"; // TODO: hardcoded, as we only support local events for now
         default:
             return QVariant();
     }
