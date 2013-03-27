@@ -30,44 +30,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef CALENDARAGENDAMODEL_H
-#define CALENDARAGENDAMODEL_H
+#ifndef CALENDAREVENTCACHE_H
+#define CALENDAREVENTCACHE_H
 
-#include <QDate>
+// Qt
+#include <QDebug>
+#include <QObject>
 
-#include "calendarabstractmodel.h"
-class NemoCalendarEvent;
+// mkcal
+#include <event.h>
+#include <extendedstorage.h>
 
-class NemoCalendarAgendaModel : public NemoCalendarAbstractModel
+class NemoCalendarEventCache : public QObject, public mKCal::ExtendedStorageObserver
 {
     Q_OBJECT
+private:
+    NemoCalendarEventCache();
 
 public:
-    enum {
-        EventObjectRole = Qt::UserRole,
-        SectionBucketRole,
-        NotebookColorRole
-    };
+    static NemoCalendarEventCache *instance();
 
-    explicit NemoCalendarAgendaModel(QObject *parent = 0);
-    virtual ~NemoCalendarAgendaModel();
-
-    Q_PROPERTY(QDate startDate READ startDate WRITE setStartDate NOTIFY startDateChanged)
-    QDate startDate() const;
-    void setStartDate(const QDate &startDate);
-
-    int rowCount(const QModelIndex &index) const;
-    QVariant data(const QModelIndex &index, int role) const;
+    /* mKCal::ExtendedStorageObserver */
+    void storageModified(mKCal::ExtendedStorage *storage, const QString &info);
+    void storageProgress(mKCal::ExtendedStorage *storage, const QString &info);
+    void storageFinished(mKCal::ExtendedStorage *storage, bool error, const QString &info);
 
 signals:
-    void startDateChanged();
-
-private slots:
-    void load();
-
-private:
-    QDate mStartDate;
-    QList<NemoCalendarEvent *> mEvents;
+    void modelReset();
 };
 
-#endif // CALENDARAGENDAMODEL_H
+#endif // CALENDAREVENTCACHE_H

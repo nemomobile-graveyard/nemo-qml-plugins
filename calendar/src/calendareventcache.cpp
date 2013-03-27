@@ -30,44 +30,57 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef CALENDARAGENDAMODEL_H
-#define CALENDARAGENDAMODEL_H
+// Qt
+#include <QDebug>
 
-#include <QDate>
+// mkcal
+#include <event.h>
 
-#include "calendarabstractmodel.h"
-class NemoCalendarEvent;
+#include "calendardb.h"
+#include "calendareventcache.h"
 
-class NemoCalendarAgendaModel : public NemoCalendarAbstractModel
+NemoCalendarEventCache::NemoCalendarEventCache()
+    : QObject(0)
+    , mKCal::ExtendedStorageObserver()
 {
-    Q_OBJECT
+    NemoCalendarDb::storage()->registerObserver(this);
 
-public:
-    enum {
-        EventObjectRole = Qt::UserRole,
-        SectionBucketRole,
-        NotebookColorRole
-    };
+    // initialize storage
+    NemoCalendarDb::storage()->loadNotebookIncidences(NemoCalendarDb::storage()->defaultNotebook()->uid());
+}
 
-    explicit NemoCalendarAgendaModel(QObject *parent = 0);
-    virtual ~NemoCalendarAgendaModel();
+NemoCalendarEventCache *NemoCalendarEventCache::instance()
+{
+    static NemoCalendarEventCache *cacheInstance;
+    if (!cacheInstance)
+        cacheInstance = new NemoCalendarEventCache;
 
-    Q_PROPERTY(QDate startDate READ startDate WRITE setStartDate NOTIFY startDateChanged)
-    QDate startDate() const;
-    void setStartDate(const QDate &startDate);
+    return cacheInstance;
+}
 
-    int rowCount(const QModelIndex &index) const;
-    QVariant data(const QModelIndex &index, int role) const;
+void NemoCalendarEventCache::storageModified(mKCal::ExtendedStorage *storage, const QString &info)
+{
+    // 'info' is either a path to the database (in which case we're screwed, we
+    // have no idea what changed, so tell all interested models to reload) or a
+    // space-seperated list of event UIDs.
+    //
+    // unfortunately we don't know *what* about these events changed with the
+    // current mkcal API, so we'll have to try our best to guess when the time
+    // comes.
+    //
+    // for now, let's just ask models to reload whenever a change happens.
+    NemoCalendarDb::storage()->loadNotebookIncidences(NemoCalendarDb::storage()->defaultNotebook()->uid());
+    qDebug() << Q_FUNC_INFO << "Emitting reset";
+    emit modelReset();
+}
 
-signals:
-    void startDateChanged();
+void NemoCalendarEventCache::storageProgress(mKCal::ExtendedStorage *storage, const QString &info)
+{
 
-private slots:
-    void load();
+}
 
-private:
-    QDate mStartDate;
-    QList<NemoCalendarEvent *> mEvents;
-};
+void NemoCalendarEventCache::storageFinished(mKCal::ExtendedStorage *storage, bool error, const QString &info)
+{
 
-#endif // CALENDARAGENDAMODEL_H
+}
+
