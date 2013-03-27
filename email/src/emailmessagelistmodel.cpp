@@ -88,6 +88,7 @@ EmailMessageListModel::EmailMessageListModel(QObject *parent)
     roles[MessagePriorityRole] = "priority";
     roles[MessageAccountIdRole] = "accountId";
     roles[MessageHasAttachmentsRole] = "hasAttachments";
+    roles[MessageSizeSectionRole] = "sizeSection";
     setRoleNames(roles);
 
     EmailAgent::instance()->initMailServer();
@@ -250,6 +251,21 @@ QVariant EmailMessageListModel::data(const QModelIndex & index, int role) const 
         else
             return 0;
     }
+    else if (role == MessageSizeSectionRole) {
+        const uint size(messageMetaData.size());
+        // <100 KB
+        if (size < 100 * 1024) {
+            return 0;
+        }
+        // <500 KB
+        else if (size < 500 * 1024) {
+            return 1;
+        }
+        // >500 KB
+        else {
+            return 2;
+        }
+    }
     return QMailMessageListModel::data(index, role);
 }
 
@@ -339,79 +355,68 @@ void EmailMessageListModel::foldersAdded(const QMailFolderIdList &folderIds)
     }
 }
 
-void EmailMessageListModel::sortBySender(int key)
+void EmailMessageListModel::sortBySender(int order)
 {
-    if (key == 0)  // descending
-        m_sortKey = QMailMessageSortKey::sender(Qt::DescendingOrder);
-    else
-        m_sortKey = QMailMessageSortKey::sender(Qt::AscendingOrder);
-
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::sender(sortOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 
-void EmailMessageListModel::sortBySubject(int key)
+void EmailMessageListModel::sortBySubject(int order)
 {
-    if (key == 0)  // descending
-        m_sortKey = QMailMessageSortKey::subject(Qt::DescendingOrder);
-    else
-        m_sortKey = QMailMessageSortKey::subject(Qt::AscendingOrder);
-
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::subject(sortOrder) &
+            QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 
-void EmailMessageListModel::sortByDate(int key)
+void EmailMessageListModel::sortByDate(int order)
 {
-    if (key == 0)  // descending
-        m_sortKey = QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    else
-        m_sortKey = QMailMessageSortKey::timeStamp(Qt::AscendingOrder);
-
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::timeStamp(sortOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 
-void EmailMessageListModel::sortByAttachment(int key)
+void EmailMessageListModel::sortByAttachment(int order)
 {
-    if (key == 0) {
-        //messages with attachments before messages without
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::HasAttachments, Qt::DescendingOrder) &
-                QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    }
-    else {
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::HasAttachments, Qt::AscendingOrder) &
-                QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    }
-
+    // 0 - messages with attachments before messages without
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::status(QMailMessage::HasAttachments, sortOrder) &
+            QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 
-void EmailMessageListModel::sortByReadStatus(int key)
+void EmailMessageListModel::sortByReadStatus(int order)
 {
-    if (key == 0) {
-        // read before non-read
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::Read, Qt::DescendingOrder) &
-                QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    }
-    else {
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::Read, Qt::AscendingOrder) &
-                QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
-    }
-
+    // 0 - read before non-read
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::status(QMailMessage::Read, sortOrder) &
+            QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 
-void EmailMessageListModel::sortByPriority(int key)
+void EmailMessageListModel::sortByPriority(int order)
 {
-    if (key == 0) {
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::HighPriority, Qt::AscendingOrder) &
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+
+    if (sortOrder == Qt::AscendingOrder) {
+        m_sortKey = QMailMessageSortKey::status(QMailMessage::HighPriority, sortOrder) &
                   QMailMessageSortKey::status(QMailMessage::LowPriority, Qt::DescendingOrder) &
                   QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     }
     else {
-        m_sortKey = QMailMessageSortKey::status(QMailMessage::HighPriority, Qt::DescendingOrder) &
+        m_sortKey = QMailMessageSortKey::status(QMailMessage::HighPriority, sortOrder) &
                 QMailMessageSortKey::status(QMailMessage::LowPriority, Qt::AscendingOrder) &
                 QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     }
+    QMailMessageListModel::setSortKey(m_sortKey);
+}
 
+void EmailMessageListModel::sortBySize(int order)
+{
+    Qt::SortOrder sortOrder = static_cast<Qt::SortOrder>(order);
+    m_sortKey = QMailMessageSortKey::size(sortOrder) &
+            QMailMessageSortKey::timeStamp(Qt::DescendingOrder);
     QMailMessageListModel::setSortKey(m_sortKey);
 }
 

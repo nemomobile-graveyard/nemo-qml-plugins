@@ -47,7 +47,8 @@ public:
         MessageTimeSectionRole,                                // returns time section relative to the current time
         MessagePriorityRole,                                   // returns message priority
         MessageAccountIdRole,                                  // returns parent account id for the message
-        MessageHasAttachmentsRole                              // returns 1 if message has attachments, 0 otherwise
+        MessageHasAttachmentsRole,                             // returns 1 if message has attachments, 0 otherwise
+        MessageSizeSectionRole                                 // returns size section (0-2)
     };
 
     EmailMessageListModel(QObject *parent = 0);
@@ -80,12 +81,13 @@ signals:
 public slots:
     Q_INVOKABLE void setFolderKey(QVariant id);
     Q_INVOKABLE void setAccountKey(QVariant id);
-    Q_INVOKABLE void sortBySender(int key = 1);
-    Q_INVOKABLE void sortBySubject(int key = 1);
-    Q_INVOKABLE void sortByDate(int key = 0);
-    Q_INVOKABLE void sortByAttachment(int key = 0);
-    Q_INVOKABLE void sortByReadStatus(int key = 1);
-    Q_INVOKABLE void sortByPriority(int key = 1);
+    Q_INVOKABLE void sortBySender(int order = 0);
+    Q_INVOKABLE void sortBySubject(int order = 0);
+    Q_INVOKABLE void sortByDate(int order = 1);
+    Q_INVOKABLE void sortByAttachment(int order = 1);
+    Q_INVOKABLE void sortByReadStatus(int order = 0);
+    Q_INVOKABLE void sortByPriority(int order = 1);
+    Q_INVOKABLE void sortBySize(int order = 1);
     Q_INVOKABLE void setSearch(const QString search);
 
     Q_INVOKABLE QVariant accountIdForMessage(QVariant messageId);
