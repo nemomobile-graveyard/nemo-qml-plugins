@@ -36,6 +36,7 @@
 // mkcal
 #include <event.h>
 
+#include "calendareventcache.h"
 #include "calendaragendamodel.h"
 #include "calendarevent.h"
 #include "calendardb.h"
@@ -48,6 +49,9 @@ NemoCalendarAgendaModel::NemoCalendarAgendaModel(QObject *parent)
     roles[SectionBucketRole] = "sectionBucket";
     roles[NotebookColorRole] = "notebookColor";
     setRoleNames(roles);
+
+    connect(this, SIGNAL(startDateChanged()), this, SLOT(load()));
+    connect(NemoCalendarEventCache::instance(), SIGNAL(modelReset()), this, SLOT(load()));
 }
 
 NemoCalendarAgendaModel::~NemoCalendarAgendaModel()
@@ -67,14 +71,13 @@ void NemoCalendarAgendaModel::setStartDate(const QDate &startDate)
 
     mStartDate = startDate;
     emit startDateChanged();
+}
 
-    // load from database
-    // TODO: this init code should only run once, probably
-    NemoCalendarDb::storage()->loadNotebookIncidences(NemoCalendarDb::storage()->defaultNotebook()->uid());
-
+void NemoCalendarAgendaModel::load()
+{
     // TODO: we really need a centralised event cache
-    KCalCore::Event::List eventList = NemoCalendarDb::calendar()->rawEventsForDate(startDate, KDateTime::Spec(KDateTime::LocalZone), KCalCore::EventSortStartDate, KCalCore::SortDirectionAscending);
-    qDebug() << Q_FUNC_INFO << "Loaded " << eventList.count() << " events for " << startDate;
+    KCalCore::Event::List eventList = NemoCalendarDb::calendar()->rawEventsForDate(mStartDate, KDateTime::Spec(KDateTime::LocalZone), KCalCore::EventSortStartDate, KCalCore::SortDirectionAscending);
+    qDebug() << Q_FUNC_INFO << "Loaded " << eventList.count() << " events for " << mStartDate;
 
     beginResetModel();
     qDeleteAll(mEvents);

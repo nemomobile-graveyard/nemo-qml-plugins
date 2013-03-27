@@ -9,13 +9,15 @@ SOURCES += \
     calendarabstractmodel.cpp \
     calendarevent.cpp \
     calendaragendamodel.cpp \
-    calendardb.cpp
+    calendardb.cpp \
+    calendareventcache.cpp
 
 HEADERS += \
     calendarevent.h \
     calendarabstractmodel.h \
     calendaragendamodel.h \
-    calendardb.h
+    calendardb.h \
+    calendareventcache.h
 
 MOC_DIR = $$PWD/../.moc
 OBJECTS_DIR = $$PWD/../.obj
