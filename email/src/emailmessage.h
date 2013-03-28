@@ -20,19 +20,19 @@ class EmailMessage : public QDeclarativeItem
     Q_ENUMS(Priority)
 
 public:
-    explicit EmailMessage (QDeclarativeItem *parent = 0);
+    explicit EmailMessage(QDeclarativeItem *parent = 0);
     ~EmailMessage ();
 
     enum Priority { LowPriority, NormalPriority, HighPriority };
 
-    Q_INVOKABLE void setFrom (const QString &sender);
-    Q_INVOKABLE void setTo (const QStringList &toList);
-    Q_INVOKABLE void setCc (const QStringList &ccList);
+    Q_INVOKABLE void setFrom(const QString &sender);
+    Q_INVOKABLE void setTo(const QStringList &toList);
+    Q_INVOKABLE void setCc(const QStringList &ccList);
     Q_INVOKABLE void setBcc(const QStringList &bccList);
-    Q_INVOKABLE void setSubject (const QString &subject);
-    Q_INVOKABLE void setBody (const QString &body, bool textOnly);
-    Q_INVOKABLE void setAttachments (const QStringList &uris);
-    Q_INVOKABLE void setPriority (Priority priority);
+    Q_INVOKABLE void setSubject(const QString &subject);
+    Q_INVOKABLE void setBody(const QString &body, bool textOnly);
+    Q_INVOKABLE void setAttachments(const QStringList &uris);
+    Q_INVOKABLE void setPriority(Priority priority);
     Q_INVOKABLE void send();
     Q_INVOKABLE void saveDraft();
 

@@ -30,11 +30,11 @@ class EmailAgent : public QDeclarativeItem
 public:
     static EmailAgent *instance();
 
-    explicit EmailAgent (QDeclarativeItem *parent = 0);
+    explicit EmailAgent(QDeclarativeItem *parent = 0);
     ~EmailAgent();
 
     void initMailServer();
-    void sendMessages (const QMailAccountId &id);
+    void sendMessages(const QMailAccountId &id);
     bool isSynchronizing() const;
 
     void exportUpdates(const QMailAccountId id);
@@ -76,7 +76,7 @@ signals:
     void error(const QMailAccountId &id, const QString &msg, int code);
     void attachmentDownloadStarted();
     void attachmentDownloadCompleted();
-    void progressUpdate (int percent);
+    void progressUpdate(int percent);
     void folderRetrievalCompleted(const QMailAccountId &id);
 
 private slots:
