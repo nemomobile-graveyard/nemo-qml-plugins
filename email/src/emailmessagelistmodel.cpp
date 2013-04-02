@@ -285,7 +285,7 @@ void EmailMessageListModel::setSearch(const QString search)
     m_search = search;
 }
 
-void EmailMessageListModel::setFolderKey (QVariant id)
+void EmailMessageListModel::setFolderKey(QVariant id)
 {
     m_currentFolderId = id.value<QMailFolderId>();
     if (!m_currentFolderId.isValid())
@@ -299,7 +299,7 @@ void EmailMessageListModel::setFolderKey (QVariant id)
         setCombinedInbox(false);
 }
 
-void EmailMessageListModel::setAccountKey (QVariant id)
+void EmailMessageListModel::setAccountKey(QVariant id)
 {
     QMailAccountId accountId = id.value<QMailAccountId>();
     if (!accountId.isValid()) {
@@ -434,7 +434,7 @@ QVariant EmailMessageListModel::folderIdForMessage(QVariant messageId)
     return metaData.parentFolderId();
 }
 
-QVariant EmailMessageListModel::indexFromMessageId (QString uuid)
+QVariant EmailMessageListModel::indexFromMessageId(QString uuid)
 {
     quint64 id = uuid.toULongLong();
     QMailMessageId msgId (id);
@@ -447,78 +447,103 @@ QVariant EmailMessageListModel::indexFromMessageId (QString uuid)
     return -1;
 }
 
-QVariant EmailMessageListModel::messageId (int idx)
+QVariant EmailMessageListModel::messageId(int idx)
 {
     QMailMessageId id = idFromIndex (index(idx));
     return id;
 }
 
-QVariant EmailMessageListModel::subject (int idx)
+QVariant EmailMessageListModel::subject(int idx)
 {
     return data(index(idx), QMailMessageModelBase::MessageSubjectTextRole);
 }
 
-QVariant EmailMessageListModel::mailSender (int idx)
+QVariant EmailMessageListModel::mailSender(int idx)
 {
     return data(index(idx), QMailMessageModelBase::MessageAddressTextRole);
 }
 
-QVariant EmailMessageListModel::timeStamp (int idx)
+QVariant EmailMessageListModel::senderDisplayName(int idx)
+{
+    return data(index(idx), MessageSenderDisplayNameRole);
+}
+
+QVariant EmailMessageListModel::senderEmailAddress(int idx)
+{
+    return data(index(idx), MessageSenderEmailAddressRole);
+}
+
+QVariant EmailMessageListModel::timeStamp(int idx)
 {
     return data(index(idx), QMailMessageModelBase::MessageTimeStampTextRole);
 }
 
-QVariant EmailMessageListModel::body (int idx)
+QVariant EmailMessageListModel::body(int idx)
 {
     return data(index(idx), QMailMessageModelBase::MessageBodyTextRole);
 }
 
-QVariant EmailMessageListModel::quotedBody (int idx)
+QVariant EmailMessageListModel::quotedBody(int idx)
 {
     return data(index(idx), MessageQuotedBodyRole);
 }
 
-QVariant EmailMessageListModel::htmlBody (int idx)
+QVariant EmailMessageListModel::htmlBody(int idx)
 {
     return data(index(idx), MessageHtmlBodyRole);
 }
 
-QVariant EmailMessageListModel::attachments (int idx)
+QVariant EmailMessageListModel::attachments(int idx)
 {
     return data(index(idx), MessageAttachmentsRole);
 }
 
-QVariant EmailMessageListModel::numberOfAttachments (int idx)
+QVariant EmailMessageListModel::numberOfAttachments(int idx)
 {
     return data(index(idx), MessageAttachmentCountRole);
 }
 
-QVariant EmailMessageListModel::toList (int idx)
+QVariant EmailMessageListModel::toList(int idx)
 {
     return data(index(idx), MessageToRole);
 }
 
-QVariant EmailMessageListModel::recipients (int idx)
+QVariant EmailMessageListModel::recipients(int idx)
 {
     return data(index(idx), MessageRecipientsRole);
 }
 
-QVariant EmailMessageListModel::ccList (int idx)
+QVariant EmailMessageListModel::ccList(int idx)
 {
     return data(index(idx), MessageCcRole);
 }
 
-QVariant EmailMessageListModel::bccList (int idx)
+QVariant EmailMessageListModel::bccList(int idx)
 {
     return data(index(idx), MessageBccRole);
 }
 
-QVariant EmailMessageListModel::messageRead (int idx)
+QVariant EmailMessageListModel::messageRead(int idx)
 {
     return data(index(idx), MessageReadStatusRole);
 }
 
-int EmailMessageListModel::messagesCount ()
+QVariant EmailMessageListModel::size(int idx)
+{
+    return data(index(idx), QMailMessageModelBase::MessageSizeTextRole);
+}
+
+QVariant EmailMessageListModel::accountId(int idx)
+{
+    return data(index(idx), MessageAccountIdRole);
+}
+
+QVariant EmailMessageListModel::priority(int idx)
+{
+    return data(index(idx), MessagePriorityRole);
+}
+
+int EmailMessageListModel::messagesCount()
 {
     return rowCount();
 }
@@ -540,7 +565,7 @@ void EmailMessageListModel::deSelectAllMessages()
     }
 }
 
-void EmailMessageListModel::selectMessage( int idx )
+void EmailMessageListModel::selectMessage(int idx)
 {
     QMailMessageId msgId = idFromIndex(index(idx));
 
@@ -550,7 +575,7 @@ void EmailMessageListModel::selectMessage( int idx )
     }
 }
 
-void EmailMessageListModel::deSelectMessage (int idx )
+void EmailMessageListModel::deSelectMessage(int idx)
 {
     QMailMessageId msgId = idFromIndex(index(idx));
 

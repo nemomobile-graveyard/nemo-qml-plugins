@@ -96,6 +96,8 @@ public slots:
     Q_INVOKABLE QVariant messageId(int index);
     Q_INVOKABLE QVariant subject(int index);
     Q_INVOKABLE QVariant mailSender(int index);
+    Q_INVOKABLE QVariant senderDisplayName(int index);
+    Q_INVOKABLE QVariant senderEmailAddress(int index);
     Q_INVOKABLE QVariant timeStamp(int index);
     Q_INVOKABLE QVariant body(int index);
     Q_INVOKABLE QVariant htmlBody(int index);
@@ -107,6 +109,9 @@ public slots:
     Q_INVOKABLE QVariant bccList(int index);
     Q_INVOKABLE QVariant toList(int index);
     Q_INVOKABLE QVariant messageRead(int index);
+    Q_INVOKABLE QVariant size(int index);
+    Q_INVOKABLE QVariant accountId(int index);
+    Q_INVOKABLE QVariant priority(int index);
     Q_INVOKABLE int messagesCount();
     Q_INVOKABLE void deSelectAllMessages();
     Q_INVOKABLE void selectMessage(int index);
