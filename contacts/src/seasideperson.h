@@ -113,7 +113,7 @@ public:
         GlobalPresenceStateType,
         AccountProvidersType,
         PresenceAccountProvidersType = AccountProvidersType,  // To be removed
-        PresenceServiceIconPathsType,
+        AccountIconPathsType,
         PresenceStatesType,
         PresenceMessagesType,
     };
@@ -225,9 +225,6 @@ public:
     Q_PROPERTY(QStringList presenceAccountProviders READ presenceAccountProviders NOTIFY presenceAccountProvidersChanged)
     QStringList presenceAccountProviders() const;
 
-    Q_PROPERTY(QStringList presenceServiceIconPaths READ presenceServiceIconPaths NOTIFY presenceServiceIconPathsChanged)
-    QStringList presenceServiceIconPaths() const;
-
     Q_PROPERTY(QList<int> presenceStates READ presenceStates NOTIFY presenceStatesChanged)
     QList<int> presenceStates() const;
 
@@ -242,6 +239,9 @@ public:
 
     Q_PROPERTY(QStringList accountProviders READ accountProviders NOTIFY accountProvidersChanged)
     QStringList accountProviders() const;
+
+    Q_PROPERTY(QStringList accountIconPaths READ accountIconPaths NOTIFY accountIconPathsChanged)
+    QStringList accountIconPaths() const;
 
     QContact contact() const;
     void setContact(const QContact &contact);
@@ -282,12 +282,12 @@ signals:
     void anniversaryChanged();
     void globalPresenceStateChanged();
     void presenceAccountProvidersChanged();
-    void presenceServiceIconPathsChanged();
     void presenceStatesChanged();
     void presenceMessagesChanged();
     void accountUrisChanged();
     void accountPathsChanged();
     void accountProvidersChanged();
+    void accountIconPathsChanged();
 
 public slots:
     void recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);

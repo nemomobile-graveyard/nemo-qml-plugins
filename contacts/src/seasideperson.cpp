@@ -743,22 +743,6 @@ SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
 
 namespace { // Helper functions
 
-template<class ListType>
-QStringList listPropertyFromFieldName(ListType list, const QString &fieldName, const QString defaultIfNotPresent = QString())
-{
-    QStringList rv;
-
-    foreach (const typename ListType::value_type &item, list) {
-        if (item.hasValue(fieldName)) {
-            rv.append(item.value(fieldName));
-        } else if (!defaultIfNotPresent.isNull()) {
-            rv.append(defaultIfNotPresent);
-        }
-    }
-
-    return rv;
-}
-
 int someElementPresentAtIndex(const QStringList &needleList, const QStringList &haystack)
 {
     QStringList::const_iterator it = haystack.constBegin(), end = haystack.constEnd();
@@ -809,11 +793,6 @@ ListType inAccountOrder(ListType list, AccountListType accountList)
 QStringList SeasidePerson::presenceAccountProviders() const
 {
     return accountProviders();
-}
-
-QStringList SeasidePerson::presenceServiceIconPaths() const
-{
-    return listPropertyFromFieldName(mContact.details<QContactOnlineAccount>(), QString("ServiceIconPath"), QString(""));
 }
 
 QList<int> SeasidePerson::presenceStates() const
@@ -874,6 +853,20 @@ QStringList SeasidePerson::accountProviders() const
         // Include the provider value for each account returned by accountPaths
         if (account.hasValue("AccountPath")) {
             rv.append(account.serviceProvider());
+        }
+    }
+
+    return rv;
+}
+
+QStringList SeasidePerson::accountIconPaths() const
+{
+    QStringList rv;
+
+    foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
+        // Include the icon path value for each account returned by accountPaths
+        if (account.hasValue("AccountPath")) {
+            rv.append(account.value("ServiceIconPath"));
         }
     }
 
@@ -961,7 +954,6 @@ void SeasidePerson::setContact(const QContact &contact)
         }
         if (urisChanged) {
             emit presenceAccountProvidersChanged();
-            emit presenceServiceIconPathsChanged();
         }
     }
 
@@ -971,6 +963,7 @@ void SeasidePerson::setContact(const QContact &contact)
     emit accountUrisChanged();
     emit accountPathsChanged();
     emit accountProvidersChanged();
+    emit accountIconPathsChanged();
 
     recalculateDisplayLabel();
 }
