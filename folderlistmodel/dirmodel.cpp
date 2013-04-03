@@ -141,7 +141,7 @@ QHash<int, QByteArray> DirModel::buildRoleNames() const
             roleMapping.insert(it.value(), it.key());
 
         // make sure we cover all roles
-        //    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
+    //    Q_ASSERT(roles.count() == IsFileRole - FileNameRole);
     }
 
     return roles;
@@ -411,28 +411,6 @@ void DirModel::setNameFilters(const QStringList &nameFilters)
 bool DirModel::awaitingResults() const
 {
     return mAwaitingResults;
-}
-
-QString DirModel::parentPath() const
-{
-    QDir dir(mCurrentDir);
-    if (dir.isRoot()) {
-        qDebug() << Q_FUNC_INFO << "already at root";
-        return mCurrentDir;
-    }
-
-    bool success = dir.cdUp();
-    if (!success) {
-        qWarning() << Q_FUNC_INFO << "Failed to to go to parent of " << mCurrentDir;
-        return mCurrentDir;
-    }
-    qDebug() << Q_FUNC_INFO << "returning" << dir.absolutePath();
-    return dir.absolutePath();
-}
-
-QString DirModel::homePath() const
-{
-    return QDir::homePath();
 }
 
 // for dirlistworker
