@@ -82,6 +82,7 @@ public:
     Q_PROPERTY(QString path READ path WRITE setPath NOTIFY pathChanged);
     inline QString path() const { return mCurrentDir; }
 
+    Q_PROPERTY(QString parentPath READ parentPath NOTIFY pathChanged);
     Q_INVOKABLE QString parentPath() const;
 
     Q_INVOKABLE QString homePath() const;
