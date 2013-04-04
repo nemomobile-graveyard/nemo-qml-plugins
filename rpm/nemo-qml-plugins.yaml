@@ -1,0 +1,195 @@
+Name: nemo-qml-plugins
+Summary: Nemo QML plugins source package.
+Group: System/Libraries
+Description: Do not install this, install the subpackaged plugins.
+Version: 0.3.5
+Release: 1
+Sources:
+    - "%{name}-%{version}.tar.bz2"
+License: BSD
+URL: https://github.com/nemomobile/nemo-qml-plugins
+Configure: none
+Builder: qmake
+NoFiles: true
+
+PkgConfigBR:
+    - QtCore >= 4.7.0
+    - QtDeclarative
+    - QtGui
+    - QtContacts
+    - QtWebKit
+    - qmfclient
+    - mlite
+    - gstreamer-0.10
+    - gstreamer-app-0.10
+    - libsignon-qt
+    - accounts-qt >= 1.4
+    - timed
+    - x11 # utilities
+    - QtSparql # contacts
+    - QJson # social
+    - libmkcal # calendar
+
+SubPackages:
+    - Name: thumbnailer
+      Summary: QML thumbnail service plugin
+      Group: System/Libraries
+      Description: QML plugin for accessing a shared thumbnail cache and fast image thumbnailing.
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/libnemothumbnailer.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/qmldir"
+
+    - Name: gstvideo-thumbnailer
+      Summary: Video thumbnailer for QML thumbnail service plugin
+      Group: System/Libraries
+      Description: A Gstreamer based video thumbnail generator utilized by the QML thumbnailer plugin.
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/thumbnailers/libvideothumbnailer.so"
+
+    - Name: contacts
+      Summary: QML contacts plugin
+      Group: System/Libraries
+      Description: A more performant (and less problematic) QtContacts QML binding
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/contacts/libnemocontacts.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/contacts/qmldir"
+    - Name: contacts-tests
+      Summary: QML contacts plugin tests
+      Group: System/Libraries
+      Description: Tests for QML contacts plugin
+      Files:
+          - "/opt/tests/nemo-qml-plugins/contacts/*"
+
+    - Name: qrencode
+      Summary: QR encoder plugin
+      Group: System/Libraries
+      Description: A QML QR encoder plugin
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/qrencode/libqrencoder.so"
+
+    - Name: folderlistmodel
+      Summary: Folder list model for QML applications
+      Group: System/Libraries
+      Description: A model providing a view of the filesystem for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/libnemofolderlistmodel.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/qmldir"
+
+    - Name: configuration
+      Summary: Persistant configuration plugin for QML applications
+      Group: System/Libraries
+      Description: A plugin providing persistent configuration for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/configuration/libnemoconfiguration.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/configuration/qmldir"
+
+    - Name: email
+      Summary: Plugin providing email via Qt Messaging Framework (QMF) backend
+      Group: System/Libraries
+      Description: Plugin providing email via Qt Messaging Framework (QMF) backend.
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/email/libnemoemail.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/email/qmldir"
+
+    - Name: messages
+      Summary: Plugin providing public messages API
+      Group: System/Libraries
+      Description: Plugin providing public API for interacting with messages applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/messages/libnemomessages.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/messages/qmldir"
+
+    - Name: accounts
+      Summary: Accounts framework support for QML applications
+      Group: System/Libraries
+      Description: Plugin providing libaccounts framework support for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/accounts/libnemoaccounts.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/accounts/qmldir"
+
+    - Name: accounts-tests
+      Summary: QML accounts plugin tests
+      Group: System/Libraries
+      Description: Tests for QML accounts plugin
+      Files:
+          - "/opt/tests/nemo-qml-plugins/accounts/*"
+          - "%{_datadir}/accounts/providers/test-provider.provider"
+          - "%{_datadir}/accounts/services/test-service2.service"
+          - "%{_datadir}/accounts/service_types/test-service-type2.service-type"
+
+    - Name: signon
+      Summary: Signon framework support for QML applications
+      Group: System/Libraries
+      Description: Plugin providing libsignon framework support for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/signon/libnemosignon.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/signon/qmldir"
+
+    - Name: signon-tests
+      Summary: QML signon plugin tests
+      Group: System/Libraries
+      Description: Tests for QML signon plugin
+      Files:
+          - "/opt/tests/nemo-qml-plugins/signon/*"
+
+    - Name: time
+      Summary: Time and wallclock API for QML applications
+      Group: System/Libraries
+      Description: Plugin providing time/wallclock API for system time
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/time/libnemotime.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/time/qmldir"
+
+    - Name: time-tests
+      Summary: QML time plugin tests
+      Group: System/Libraries
+      Description: Tests for QML time plugin
+      Files:
+          - "/opt/tests/nemo-qml-plugins/time/*"
+
+    - Name: alarms
+      Summary: Alarms API for QML applications
+      Group: System/Libraries
+      Description: Plugin providing alarms API
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/alarms/libnemoalarms.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/alarms/qmldir"
+
+    - Name: alarms-tests
+      Summary: QML alarms plugin tests
+      Group: System/Libraries
+      Description: Tests for QML alarms plugin
+      Files:
+          - "/opt/tests/nemo-qml-plugins/alarms/*"
+
+    - Name: utilities
+      Summary: Miscellaneous utility elements for QML applications
+      Group: System/Libraries
+      Description: Miscellaneous utility elements for QML applications.
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/utilities/libnemoutilities.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/utilities/qmldir"
+    
+    - Name: social
+      Summary: QML social network abstraction
+      Group: System/Libraries
+      Description: Social network abstraction API for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/social/libnemosocial.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/social/qmldir"
+    
+    - Name: notifications
+      Summary: Notification support for QML applications
+      Group: System/Libraries
+      Description: Plugin providing notification support for QML applications
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/notifications/libnemonotifications.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/notifications/qmldir"
+
+    - Name: calendar
+      Summary: Plugin providing a QML interface for calendars, backed by mkcal
+      Group: System/Libraries
+      Description: Plugin providing a QML interface for calendars, backed by mkcal.
+      Files:
+          - "%{_libdir}/qt4/imports/org/nemomobile/calendar/libnemocalendar.so"
+          - "%{_libdir}/qt4/imports/org/nemomobile/calendar/qmldir"
