@@ -1,0 +1,13 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/qt4/imports/org/nemomobile/notifications
+includedir=${prefix}/include/nemo-qml-plugins/notifications
+qt_config=include_source_dir lex yacc warn_on uic resources qt warn_on release incremental link_prl gdb_dwarf_index def_files_disabled exceptions no_mocdepend release stl qt_no_framework qt hide_symbols create_pc create_prl moc thread dbusadaptors dbusinterfaces dll
+
+Name: libnemonotifications
+Description: Library for creating notifications
+Version: 1.0.0
+Libs: -L${libdir} -lnemonotifications 
+Libs.private: -L/usr/lib  -lQtDeclarative -lQtDBus -lQtGui -lQtCore -lpthread   
+Cflags:  -I${includedir}
+

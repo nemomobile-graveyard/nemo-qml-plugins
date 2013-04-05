@@ -15,3 +15,9 @@ HEADERS += \
 OTHER_FILES += qmldir notifications.qdoc notifications.qdocconf
 
 include(../../plugin.pri)
+
+headers.files = notification.h
+headers.path = /usr/include/nemo-qml-plugins/notifications
+pkgconfig.files = nemonotifications.pc
+pkgconfig.path = /usr/lib/pkgconfig
+INSTALLS += headers pkgconfig
