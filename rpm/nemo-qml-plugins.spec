@@ -176,6 +176,13 @@ Group:      System/Libraries
 %description notifications
 Plugin providing notification support for QML applications
 
+%package notifications-devel
+Summary:    Notification support for C++ applications
+Group:      System/Libraries
+
+%description notifications-devel
+Library providing notification support for C++ applications
+
 %package calendar
 Summary:    Plugin providing a QML interface for calendars, backed by mkcal
 Group:      System/Libraries
@@ -346,6 +353,13 @@ rm -rf %{buildroot}
 %{_libdir}/qt4/imports/org/nemomobile/notifications/qmldir
 # >> files notifications
 # << files notifications
+
+%files notifications-devel
+%defattr(-,root,root,-)
+%{_includedir}/nemo-qml-plugins/notifications/*.h
+%{_libdir}/pkgconfig/nemonotifications.pc
+# >> files notifications-devel
+# << files notifications-devel
 
 %files calendar
 %defattr(-,root,root,-)

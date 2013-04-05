@@ -186,6 +186,14 @@ SubPackages:
           - "%{_libdir}/qt4/imports/org/nemomobile/notifications/libnemonotifications.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/notifications/qmldir"
 
+    - Name: notifications-devel
+      Summary: Notification support for C++ applications
+      Group: System/Libraries
+      Description: Library providing notification support for C++ applications
+      Files:
+          - "%{_includedir}/nemo-qml-plugins/notifications/*.h"
+          - "%{_libdir}/pkgconfig/nemonotifications.pc"
+
     - Name: calendar
       Summary: Plugin providing a QML interface for calendars, backed by mkcal
       Group: System/Libraries
