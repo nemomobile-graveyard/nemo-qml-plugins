@@ -7,7 +7,7 @@ qt_config=include_source_dir lex yacc warn_on uic resources qt warn_on release i
 Name: libnemonotifications
 Description: Library for creating notifications
 Version: 1.0.0
-Libs: -L${libdir} -lnemonotifications 
+Libs: ${libdir}/libnemonotifications.so
 Libs.private: -L/usr/lib  -lQtDeclarative -lQtDBus -lQtGui -lQtCore -lpthread   
 Cflags:  -I${includedir}
 

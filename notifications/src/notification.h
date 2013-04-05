@@ -38,7 +38,7 @@
 #include <QVariantHash>
 #include <QDBusArgument>
 
-class Notification : public QObject
+class Q_DECL_EXPORT Notification : public QObject
 {
     Q_OBJECT
 
