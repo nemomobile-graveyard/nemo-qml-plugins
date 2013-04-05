@@ -37,17 +37,6 @@ HEADERS += $$PWD/localeutils_p.h \
            $$PWD/seasidecache.h \
            $$PWD/seasidefilteredmodel.h
 
-CONFIG += seaside-tracker
-contains(CONFIG, seaside-tracker) {
-    CONFIG += qtsparql
-    DEFINES += SEASIDE_SPARQL_QUERIES
-    SOURCES += \
-            sparqlfetchrequest.cpp
-
-    HEADERS += \
-            sparqlfetchrequest_p.h
-}
-
 MOC_DIR = $$PWD/../.moc
 OBJECTS_DIR = $$PWD/../.obj
 
