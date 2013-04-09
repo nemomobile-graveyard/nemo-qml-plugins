@@ -64,8 +64,18 @@ public:
     Q_PROPERTY(QObjectList activeDialogs READ activeDialogs NOTIFY activeDialogsChanged)
     QObjectList activeDialogs() const;
 
-    Q_INVOKABLE void dialogOnScreen();
-    Q_INVOKABLE void dialogNotOnScreen();
+    /*!
+     *  \qmlproperty bool AlarmHandler::dialogOnScreen
+     *
+     *  A property that the application importing AlarmHandler uses to indicate
+     *  when an alarm dialog is displayed. Setting this property to true tells
+     *  DSME that the device display should be turned on, setting to false indicates
+     *  that the display may be turned off.
+     */
+    Q_PROPERTY(bool dialogOnScreen READ dialogOnScreen WRITE setDialogOnScreen NOTIFY dialogOnScreenChanged)
+
+    bool dialogOnScreen();
+    void setDialogOnScreen(bool onScreen);
 
 signals:
     /*!
@@ -84,7 +94,7 @@ signals:
     void error(const QString &message);
 
     void activeDialogsChanged();
-
+    void dialogOnScreenChanged();
     void visual_reminders_status(int status);
 
 private slots:
@@ -95,6 +105,7 @@ private:
     VolandAdaptor *adaptor;
     VolandSignalAdaptor *signalAdaptor;
     QHash<int, AlarmDialogObject*> dialogs;
+    bool m_dialogOnScreen;
 
     friend class VolandAdaptor;
 

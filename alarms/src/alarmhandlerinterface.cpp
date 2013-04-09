@@ -38,7 +38,8 @@
 AlarmHandlerInterface::AlarmHandlerInterface(QDeclarativeItem *parent)
     : QDeclarativeItem(parent),
       adaptor(new VolandAdaptor(this)),
-      signalAdaptor(new VolandSignalAdaptor(this))
+      signalAdaptor(new VolandSignalAdaptor(this)),
+      m_dialogOnScreen(false)
 {
     QTimer::singleShot(0, this, SLOT(setupInterface()));
 }
@@ -147,15 +148,24 @@ QObjectList AlarmHandlerInterface::activeDialogs() const
     return re;
 }
 
-void AlarmHandlerInterface::dialogOnScreen()
+bool AlarmHandlerInterface::dialogOnScreen()
 {
-    emit visual_reminders_status(0);
+    return m_dialogOnScreen;
 }
 
 
-void AlarmHandlerInterface::dialogNotOnScreen()
+void AlarmHandlerInterface::setDialogOnScreen(bool onScreen)
 {
-    emit visual_reminders_status(1);
+    if (onScreen != m_dialogOnScreen) {
+        m_dialogOnScreen = onScreen;
+        if (m_dialogOnScreen)
+            emit visual_reminders_status(0);
+        else
+            emit visual_reminders_status(1);
+
+        emit dialogOnScreenChanged();
+
+    }
 }
 
 VolandSignalAdaptor::VolandSignalAdaptor(QObject *parent) : QDBusAbstractAdaptor(parent)
