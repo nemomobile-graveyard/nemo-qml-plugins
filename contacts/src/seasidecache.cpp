@@ -113,6 +113,7 @@ SeasideCache::SeasideCache()
     , m_populated(0)
     , m_cacheIndex(0)
     , m_queryIndex(0)
+    , m_appendIndex(0)
     , m_selfId(0)
     , m_fetchFilter(SeasideFilteredModel::FilterFavorites)
     , m_displayLabelOrder(SeasideFilteredModel::FirstNameFirst)
@@ -169,6 +170,9 @@ SeasideCache::SeasideCache()
     fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships
             | QContactFetchHint::NoActionPreferences
             | QContactFetchHint::NoBinaryBlobs);
+
+    /* Possibly too aggressive - this filters out details we may need, such as nickname.
+       Remove until performance testing indicates it is worthwhile.
     fetchHint.setDetailDefinitionsHint(QStringList()
             << QContactName::DefinitionName
             << QContactAvatar::DefinitionName
@@ -176,6 +180,7 @@ SeasideCache::SeasideCache()
             << QContactEmailAddress::DefinitionName
             << QContactOrganization::DefinitionName
             << QContactOnlineAccount::DefinitionName);
+    */
 
     m_fetchRequest.setFetchHint(fetchHint);
     m_fetchRequest.setFilter(QContactFavorite::match());
@@ -468,6 +473,7 @@ bool SeasideCache::event(QEvent *event)
 
         m_changedContacts.clear();
 
+        m_appendIndex = 0;
         m_fetchRequest.setFilter(filter);
         m_fetchRequest.start();
     } else if (m_refreshRequired) {
@@ -742,7 +748,7 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
     cacheIds.reserve(contacts.count());
 
     const int begin = cacheIds.count();
-    int end = contacts.count() - 1;
+    int end = cacheIds.count() + contacts.count() - m_appendIndex - 1;
 
 #ifndef SEASIDE_SPARQL_QUERIES
     // Exclude the self contact Id.
@@ -757,8 +763,8 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceAboutToInsertItems(begin, end);
 
-    for (int i = cacheIds.count(); i < contacts.count(); ++i) {
-        QContact contact = contacts.at(i);
+    for (; m_appendIndex < contacts.count(); ++m_appendIndex) {
+        QContact contact = contacts.at(m_appendIndex);
 
 #ifndef SEASIDE_SPARQL_QUERIES
         if (contact.localId() == m_selfId)
@@ -800,6 +806,7 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
             m_contactIdRequest.setFavoritesOnly(false);
             m_contactIdRequest.start();
 #else
+            m_appendIndex = 0;
             m_fetchRequest.setFilter(QContactFilter());
             m_fetchRequest.start();
 #endif
@@ -824,6 +831,7 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
             m_contactIdRequest.start();
 #else
             // Not correct, but better than nothing...
+            m_appendIndex = 0;
             m_fetchRequest.setFilter(QContactGlobalPresence::match(QContactPresence::PresenceAvailable));
             m_fetchRequest.start();
 #endif

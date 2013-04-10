@@ -178,6 +178,7 @@ private:
     int m_populated;
     int m_cacheIndex;
     int m_queryIndex;
+    int m_appendIndex;
     QContactLocalId m_selfId;
     SeasideFilteredModel::FilterType m_fetchFilter;
     SeasideFilteredModel::DisplayLabelOrder m_displayLabelOrder;
