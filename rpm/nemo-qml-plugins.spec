@@ -71,13 +71,6 @@ Group:      System/Libraries
 %description qrencode
 A QML QR encoder plugin
 
-%package folderlistmodel
-Summary:    Folder list model for QML applications
-Group:      System/Libraries
-
-%description folderlistmodel
-A model providing a view of the filesystem for QML applications
-
 %package configuration
 Summary:    Persistant configuration plugin for QML applications
 Group:      System/Libraries
@@ -249,13 +242,6 @@ rm -rf %{buildroot}
 %{_libdir}/qt4/imports/org/nemomobile/qrencode/libqrencoder.so
 # >> files qrencode
 # << files qrencode
-
-%files folderlistmodel
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/libnemofolderlistmodel.so
-%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/qmldir
-# >> files folderlistmodel
-# << files folderlistmodel
 
 %files configuration
 %defattr(-,root,root,-)

@@ -67,14 +67,6 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/qrencode/libqrencoder.so"
 
-    - Name: folderlistmodel
-      Summary: Folder list model for QML applications
-      Group: System/Libraries
-      Description: A model providing a view of the filesystem for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/libnemofolderlistmodel.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/folderlistmodel/qmldir"
-
     - Name: configuration
       Summary: Persistant configuration plugin for QML applications
       Group: System/Libraries

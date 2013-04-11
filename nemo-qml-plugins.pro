@@ -3,7 +3,6 @@ SUBDIRS += calendar \
            thumbnailer \
            contacts \
            qrencoder \
-           folderlistmodel \
            configuration \
            email \
            messages \
