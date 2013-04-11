@@ -4,7 +4,6 @@ SUBDIRS += calendar \
            contacts \
            qrencoder \
            configuration \
-           email \
            messages \
            signon \
            accounts \

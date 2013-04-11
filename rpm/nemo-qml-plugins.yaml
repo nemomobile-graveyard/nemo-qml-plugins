@@ -18,7 +18,6 @@ PkgConfigBR:
     - QtGui
     - QtContacts
     - QtWebKit
-    - qmfclient
     - mlite
     - gstreamer-0.10
     - gstreamer-app-0.10
@@ -74,14 +73,6 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/configuration/libnemoconfiguration.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/configuration/qmldir"
-
-    - Name: email
-      Summary: Plugin providing email via Qt Messaging Framework (QMF) backend
-      Group: System/Libraries
-      Description: Plugin providing email via Qt Messaging Framework (QMF) backend.
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/email/libnemoemail.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/email/qmldir"
 
     - Name: messages
       Summary: Plugin providing public messages API

@@ -21,7 +21,6 @@ BuildRequires:  pkgconfig(QtDeclarative)
 BuildRequires:  pkgconfig(QtGui)
 BuildRequires:  pkgconfig(QtContacts)
 BuildRequires:  pkgconfig(QtWebKit)
-BuildRequires:  pkgconfig(qmfclient)
 BuildRequires:  pkgconfig(mlite)
 BuildRequires:  pkgconfig(gstreamer-0.10)
 BuildRequires:  pkgconfig(gstreamer-app-0.10)
@@ -77,13 +76,6 @@ Group:      System/Libraries
 
 %description configuration
 A plugin providing persistent configuration for QML applications
-
-%package email
-Summary:    Plugin providing email via Qt Messaging Framework (QMF) backend
-Group:      System/Libraries
-
-%description email
-Plugin providing email via Qt Messaging Framework (QMF) backend.
 
 %package messages
 Summary:    Plugin providing public messages API
@@ -249,13 +241,6 @@ rm -rf %{buildroot}
 %{_libdir}/qt4/imports/org/nemomobile/configuration/qmldir
 # >> files configuration
 # << files configuration
-
-%files email
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/email/libnemoemail.so
-%{_libdir}/qt4/imports/org/nemomobile/email/qmldir
-# >> files email
-# << files email
 
 %files messages
 %defattr(-,root,root,-)
