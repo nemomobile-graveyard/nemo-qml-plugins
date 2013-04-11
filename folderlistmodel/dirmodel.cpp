@@ -73,7 +73,6 @@ public:
             directoryContents.append(it.fileInfo());
             if (directoryContents.count() >= 50) {
                 emit itemsAdded(directoryContents);
-
                 // clear() would force a deallocation, micro-optimisation
                 directoryContents.erase(directoryContents.begin(), directoryContents.end());
             }
@@ -81,12 +80,13 @@ public:
 
         // last batch
         emit itemsAdded(directoryContents);
-
+        emit workerFinished();
         //std::sort(directoryContents.begin(), directoryContents.end(), DirModel::fileCompare);
     }
 
 signals:
     void itemsAdded(const QVector<QFileInfo> &files);
+    void workerFinished();
 
 private:
     QString mPathName;
@@ -247,6 +247,7 @@ void DirModel::setPath(const QString &pathName)
     // TODO: we need to set a spinner active before we start getting results from DirListWorker
     DirListWorker *dlw = new DirListWorker(pathName);
     connect(dlw, SIGNAL(itemsAdded(QVector<QFileInfo>)), SLOT(onItemsAdded(QVector<QFileInfo>)));
+    connect(dlw, SIGNAL(workerFinished()), SLOT(onResultsFetched()));
     ioWorkerThread()->addRequest(dlw);
 
     mCurrentDir = pathName;
@@ -264,15 +265,17 @@ static bool fileCompare(const QFileInfo &a, const QFileInfo &b)
     return QString::localeAwareCompare(a.fileName(), b.fileName()) < 0;
 }
 
-void DirModel::onItemsAdded(const QVector<QFileInfo> &newFiles)
-{
-    qDebug() << Q_FUNC_INFO << "Got new files: " << newFiles.count();
-
+void DirModel::onResultsFetched() {
     if (mAwaitingResults) {
         qDebug() << Q_FUNC_INFO << "No longer awaiting results";
         mAwaitingResults = false;
         emit awaitingResultsChanged();
     }
+}
+
+void DirModel::onItemsAdded(const QVector<QFileInfo> &newFiles)
+{
+    qDebug() << Q_FUNC_INFO << "Got new files: " << newFiles.count();
 
     foreach (const QFileInfo &fi, newFiles) {
         if (!mShowDirectories && fi.isDir())

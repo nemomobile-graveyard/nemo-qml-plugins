@@ -103,7 +103,7 @@ public:
 
 public slots:
     void onItemsAdded(const QVector<QFileInfo> &newFiles);
-
+    void onResultsFetched();
 signals:
     void awaitingResultsChanged();
     void nameFiltersChanged();
