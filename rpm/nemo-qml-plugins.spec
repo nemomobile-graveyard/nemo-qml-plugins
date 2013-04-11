@@ -63,13 +63,6 @@ Group:      System/Libraries
 %description contacts-tests
 Tests for QML contacts plugin
 
-%package qrencode
-Summary:    QR encoder plugin
-Group:      System/Libraries
-
-%description qrencode
-A QML QR encoder plugin
-
 %package configuration
 Summary:    Persistant configuration plugin for QML applications
 Group:      System/Libraries
@@ -228,12 +221,6 @@ rm -rf %{buildroot}
 /opt/tests/nemo-qml-plugins/contacts/*
 # >> files contacts-tests
 # << files contacts-tests
-
-%files qrencode
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/qrencode/libqrencoder.so
-# >> files qrencode
-# << files qrencode
 
 %files configuration
 %defattr(-,root,root,-)

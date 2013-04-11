@@ -59,13 +59,6 @@ SubPackages:
       Files:
           - "/opt/tests/nemo-qml-plugins/contacts/*"
 
-    - Name: qrencode
-      Summary: QR encoder plugin
-      Group: System/Libraries
-      Description: A QML QR encoder plugin
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/qrencode/libqrencoder.so"
-
     - Name: configuration
       Summary: Persistant configuration plugin for QML applications
       Group: System/Libraries

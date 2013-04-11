@@ -2,7 +2,6 @@ TEMPLATE = subdirs
 SUBDIRS += calendar \
            thumbnailer \
            contacts \
-           qrencoder \
            configuration \
            messages \
            signon \
