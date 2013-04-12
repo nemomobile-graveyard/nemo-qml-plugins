@@ -36,7 +36,10 @@
 #include <QTimer>
 
 AlarmHandlerInterface::AlarmHandlerInterface(QDeclarativeItem *parent)
-    : QDeclarativeItem(parent), adaptor(new VolandAdaptor(this))
+    : QDeclarativeItem(parent),
+      adaptor(new VolandAdaptor(this)),
+      signalWrapper(new VolandSignalWrapper(this)),
+      m_dialogOnScreen(false)
 {
     QTimer::singleShot(0, this, SLOT(setupInterface()));
 }
@@ -61,6 +64,10 @@ void AlarmHandlerInterface::setupInterface()
         emit error(QLatin1String("Cannot register alarm handler object"));
         return;
     }
+
+    signalWrapper->setupInterface();
+    connect(this, SIGNAL(visual_reminders_status(int)), signalWrapper, SIGNAL(visual_reminders_status(int)));
+    connect(signalWrapper, SIGNAL(error(QString)), this, SIGNAL(error(QString)));
 }
 
 bool VolandAdaptor::open(const Maemo::Timed::Voland::Reminder &data)
@@ -132,3 +139,48 @@ QObjectList AlarmHandlerInterface::activeDialogs() const
     return re;
 }
 
+bool AlarmHandlerInterface::dialogOnScreen()
+{
+    return m_dialogOnScreen;
+}
+
+
+void AlarmHandlerInterface::setDialogOnScreen(bool onScreen)
+{
+    if (onScreen != m_dialogOnScreen) {
+        m_dialogOnScreen = onScreen;
+        if (m_dialogOnScreen)
+            emit visual_reminders_status(0);
+        else
+            emit visual_reminders_status(1);
+
+        emit dialogOnScreenChanged();
+
+    }
+}
+
+VolandSignalAdaptor::VolandSignalAdaptor(QObject *parent) : QDBusAbstractAdaptor(parent)
+{
+    setAutoRelaySignals(true);
+}
+
+VolandSignalWrapper::VolandSignalWrapper(QObject *parent) : QObject(parent)
+{
+    new VolandSignalAdaptor(this);
+}
+
+void VolandSignalWrapper::setupInterface()
+{
+    QDBusConnection signalBus = QDBusConnection::systemBus();
+    if (!signalBus.registerService("com.nokia.voland.signal")) {
+        qWarning() << "org.nemomobile.alarms: Cannot register voland signal serivce for AlarmHandler";
+        emit error(QLatin1String("Cannot register alarm handler signal service"));
+        return;
+    }
+
+    if (!signalBus.registerObject("/com/nokia/voland/signal", this)) {
+        qWarning() << "org.nemomobile.alarms: Cannot register voland signal object for AlarmHandler";
+        emit error(QLatin1String("Cannot register alarm handler signal object"));
+        return;
+    }
+}

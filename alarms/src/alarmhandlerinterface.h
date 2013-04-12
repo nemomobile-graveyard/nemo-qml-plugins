@@ -34,9 +34,12 @@
 #define ALARMHANDLERINTERFACE_H
 
 #include <QDeclarativeItem>
+#include <QDBusAbstractAdaptor>
 #include <timed-voland/interface>
 
 class VolandAdaptor;
+class VolandSignalAdaptor;
+class VolandSignalWrapper;
 class AlarmDialogObject;
 
 namespace Maemo {
@@ -62,6 +65,18 @@ public:
     Q_PROPERTY(QObjectList activeDialogs READ activeDialogs NOTIFY activeDialogsChanged)
     QObjectList activeDialogs() const;
 
+    /*!
+     *  \qmlproperty bool AlarmHandler::dialogOnScreen
+     *
+     *  A property that the application importing AlarmHandler uses to indicate
+     *  when an alarm dialog is displayed. Setting this property to true tells
+     *  DSME that the device display should be turned on, setting to false indicates
+     *  that the display may be turned off.
+     */
+    Q_PROPERTY(bool dialogOnScreen READ dialogOnScreen WRITE setDialogOnScreen NOTIFY dialogOnScreenChanged)
+    bool dialogOnScreen();
+    void setDialogOnScreen(bool onScreen);
+
 signals:
     /*!
      *  \qmlsignal void AlarmHandler::alarmReady(AlarmDialog alarm)
@@ -79,6 +94,8 @@ signals:
     void error(const QString &message);
 
     void activeDialogsChanged();
+    void dialogOnScreenChanged();
+    void visual_reminders_status(int status);
 
 private slots:
     void dialogClosed(QObject *alarm);
@@ -86,7 +103,9 @@ private slots:
 
 private:
     VolandAdaptor *adaptor;
+    VolandSignalWrapper *signalWrapper;
     QHash<int, AlarmDialogObject*> dialogs;
+    bool m_dialogOnScreen;
 
     friend class VolandAdaptor;
 
@@ -111,6 +130,31 @@ public:
     virtual bool open(const Maemo::Timed::Voland::Reminder &data);
     virtual bool open(const QList<QVariant> &data);
     virtual bool close(uint cookie);
+};
+
+class VolandSignalWrapper: public QObject
+{
+    Q_OBJECT
+
+public:
+    VolandSignalWrapper(QObject *parent);
+    void setupInterface();
+
+signals:
+    void visual_reminders_status(int status);
+    void error(const QString &message);
+};
+
+class VolandSignalAdaptor:  public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "com.nokia.voland.signal")
+
+public:
+    VolandSignalAdaptor(QObject *parent);
+
+signals:
+    void visual_reminders_status(int status);
 };
 
 #endif
