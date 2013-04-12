@@ -59,14 +59,6 @@ SubPackages:
       Files:
           - "/opt/tests/nemo-qml-plugins/contacts/*"
 
-    - Name: configuration
-      Summary: Persistant configuration plugin for QML applications
-      Group: System/Libraries
-      Description: A plugin providing persistent configuration for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/configuration/libnemoconfiguration.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/configuration/qmldir"
-
     - Name: messages
       Summary: Plugin providing public messages API
       Group: System/Libraries

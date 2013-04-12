@@ -63,13 +63,6 @@ Group:      System/Libraries
 %description contacts-tests
 Tests for QML contacts plugin
 
-%package configuration
-Summary:    Persistant configuration plugin for QML applications
-Group:      System/Libraries
-
-%description configuration
-A plugin providing persistent configuration for QML applications
-
 %package messages
 Summary:    Plugin providing public messages API
 Group:      System/Libraries
@@ -221,13 +214,6 @@ rm -rf %{buildroot}
 /opt/tests/nemo-qml-plugins/contacts/*
 # >> files contacts-tests
 # << files contacts-tests
-
-%files configuration
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/configuration/libnemoconfiguration.so
-%{_libdir}/qt4/imports/org/nemomobile/configuration/qmldir
-# >> files configuration
-# << files configuration
 
 %files messages
 %defattr(-,root,root,-)
