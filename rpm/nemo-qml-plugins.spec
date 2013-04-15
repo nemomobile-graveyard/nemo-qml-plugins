@@ -27,7 +27,6 @@ BuildRequires:  pkgconfig(accounts-qt) >= 1.4
 BuildRequires:  pkgconfig(timed)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(QtSparql)
-BuildRequires:  pkgconfig(QJson)
 
 %description
 Do not install this, install the subpackaged plugins.
@@ -87,13 +86,6 @@ Group:      System/Libraries
 
 %description utilities
 Miscellaneous utility elements for QML applications.
-
-%package social
-Summary:    QML social network abstraction
-Group:      System/Libraries
-
-%description social
-Social network abstraction API for QML applications
 
 %package notifications
 Summary:    Notification support for QML applications
@@ -192,13 +184,6 @@ rm -rf %{buildroot}
 %{_libdir}/qt4/imports/org/nemomobile/utilities/qmldir
 # >> files utilities
 # << files utilities
-
-%files social
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/social/libnemosocial.so
-%{_libdir}/qt4/imports/org/nemomobile/social/qmldir
-# >> files social
-# << files social
 
 %files notifications
 %defattr(-,root,root,-)

@@ -24,7 +24,6 @@ PkgConfigBR:
     - timed
     - x11 # utilities
     - QtSparql # contacts
-    - QJson # social
 
 SubPackages:
     - Name: contacts
@@ -89,14 +88,6 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/utilities/libnemoutilities.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/utilities/qmldir"
-    
-    - Name: social
-      Summary: QML social network abstraction
-      Group: System/Libraries
-      Description: Social network abstraction API for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/social/libnemosocial.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/social/qmldir"
     
     - Name: notifications
       Summary: Notification support for QML applications
