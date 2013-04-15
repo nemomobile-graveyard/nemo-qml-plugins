@@ -30,7 +30,6 @@ BuildRequires:  pkgconfig(timed)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(QtSparql)
 BuildRequires:  pkgconfig(QJson)
-BuildRequires:  pkgconfig(libmkcal)
 
 %description
 Do not install this, install the subpackaged plugins.
@@ -153,13 +152,6 @@ Group:      System/Libraries
 
 %description notifications-devel
 Library providing notification support for C++ applications
-
-%package calendar
-Summary:    Plugin providing a QML interface for calendars, backed by mkcal
-Group:      System/Libraries
-
-%description calendar
-Plugin providing a QML interface for calendars, backed by mkcal.
 
 
 %prep
@@ -304,10 +296,3 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/nemonotifications.pc
 # >> files notifications-devel
 # << files notifications-devel
-
-%files calendar
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/calendar/libnemocalendar.so
-%{_libdir}/qt4/imports/org/nemomobile/calendar/qmldir
-# >> files calendar
-# << files calendar

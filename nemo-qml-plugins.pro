@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-SUBDIRS += calendar \
+SUBDIRS += \
            thumbnailer \
            contacts \
            messages \

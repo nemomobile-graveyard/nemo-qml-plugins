@@ -27,7 +27,6 @@ PkgConfigBR:
     - x11 # utilities
     - QtSparql # contacts
     - QJson # social
-    - libmkcal # calendar
 
 SubPackages:
     - Name: thumbnailer
@@ -161,11 +160,3 @@ SubPackages:
       Files:
           - "%{_includedir}/nemo-qml-plugins/notifications/*.h"
           - "%{_libdir}/pkgconfig/nemonotifications.pc"
-
-    - Name: calendar
-      Summary: Plugin providing a QML interface for calendars, backed by mkcal
-      Group: System/Libraries
-      Description: Plugin providing a QML interface for calendars, backed by mkcal.
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/calendar/libnemocalendar.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/calendar/qmldir"

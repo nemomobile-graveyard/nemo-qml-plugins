@@ -13,14 +13,6 @@ current plugins:
 - contacts: offers an API similar to QtMobility.contacts, except without the
   fail
 
-- qrencode: QR encoder API, using qrencode library.
-
-- folderlistmodel: threaded (and faster) version of Qt.labs.folderlistmodel
-
-- configuration: offers ConfigurationValue, a QML object interacting with dconf.
-
-- email: offers a QML-friendly email API using Qt Messaging Framework as a backend.
-
 - time: provides WallClock element useful for clock displays, including keeping
 time in sync with system time changes.
 
@@ -28,5 +20,3 @@ time in sync with system time changes.
   about alarms
 
 - notifications: provides QML/C++ APIs for publishing notifications
-
-- calendar: offers a QML interface for calendars, backed by mkcal
