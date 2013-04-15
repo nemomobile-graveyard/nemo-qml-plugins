@@ -6,6 +6,5 @@ SUBDIRS += \
            signon \
            accounts \
            social \
-           alarms \
            utilities \
            notifications

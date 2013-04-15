@@ -97,34 +97,6 @@ Group:      System/Libraries
 %description signon-tests
 Tests for QML signon plugin
 
-%package time
-Summary:    Time and wallclock API for QML applications
-Group:      System/Libraries
-
-%description time
-Plugin providing time/wallclock API for system time
-
-%package time-tests
-Summary:    QML time plugin tests
-Group:      System/Libraries
-
-%description time-tests
-Tests for QML time plugin
-
-%package alarms
-Summary:    Alarms API for QML applications
-Group:      System/Libraries
-
-%description alarms
-Plugin providing alarms API
-
-%package alarms-tests
-Summary:    QML alarms plugin tests
-Group:      System/Libraries
-
-%description alarms-tests
-Tests for QML alarms plugin
-
 %package utilities
 Summary:    Miscellaneous utility elements for QML applications
 Group:      System/Libraries
@@ -242,32 +214,6 @@ rm -rf %{buildroot}
 /opt/tests/nemo-qml-plugins/signon/*
 # >> files signon-tests
 # << files signon-tests
-
-%files time
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/time/libnemotime.so
-%{_libdir}/qt4/imports/org/nemomobile/time/qmldir
-# >> files time
-# << files time
-
-%files time-tests
-%defattr(-,root,root,-)
-/opt/tests/nemo-qml-plugins/time/*
-# >> files time-tests
-# << files time-tests
-
-%files alarms
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/alarms/libnemoalarms.so
-%{_libdir}/qt4/imports/org/nemomobile/alarms/qmldir
-# >> files alarms
-# << files alarms
-
-%files alarms-tests
-%defattr(-,root,root,-)
-/opt/tests/nemo-qml-plugins/alarms/*
-# >> files alarms-tests
-# << files alarms-tests
 
 %files utilities
 %defattr(-,root,root,-)

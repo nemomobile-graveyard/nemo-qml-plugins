@@ -99,21 +99,6 @@ SubPackages:
       Files:
           - "/opt/tests/nemo-qml-plugins/signon/*"
 
-    - Name: alarms
-      Summary: Alarms API for QML applications
-      Group: System/Libraries
-      Description: Plugin providing alarms API
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/alarms/libnemoalarms.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/alarms/qmldir"
-
-    - Name: alarms-tests
-      Summary: QML alarms plugin tests
-      Group: System/Libraries
-      Description: Tests for QML alarms plugin
-      Files:
-          - "/opt/tests/nemo-qml-plugins/alarms/*"
-
     - Name: utilities
       Summary: Miscellaneous utility elements for QML applications
       Group: System/Libraries

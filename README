@@ -13,7 +13,4 @@ current plugins:
 - contacts: offers an API similar to QtMobility.contacts, except without the
   fail
 
-- alarms: provides QML APIs for creating, editing, and fetching information
-  about alarms
-
 - notifications: provides QML/C++ APIs for publishing notifications
