@@ -1,8 +1,0 @@
-project = Nemo Mobile libsignon-qt QML Adapters
-description = QML adapters to allow applications to use libsignon-qt in their QML applications
-outputdir   = ../doc/html
-outputformats = HTML
-headerdirs  = .
-sourcedirs  = .
-sources.fileextensions = "*.cpp *.qdoc *.qml"
-headers.fileextensions = "*.h"
