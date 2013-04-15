@@ -19,8 +19,6 @@ PkgConfigBR:
     - QtContacts
     - QtWebKit
     - mlite
-    - gstreamer-0.10
-    - gstreamer-app-0.10
     - libsignon-qt
     - accounts-qt >= 1.4
     - timed
@@ -29,21 +27,6 @@ PkgConfigBR:
     - QJson # social
 
 SubPackages:
-    - Name: thumbnailer
-      Summary: QML thumbnail service plugin
-      Group: System/Libraries
-      Description: QML plugin for accessing a shared thumbnail cache and fast image thumbnailing.
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/libnemothumbnailer.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/qmldir"
-
-    - Name: gstvideo-thumbnailer
-      Summary: Video thumbnailer for QML thumbnail service plugin
-      Group: System/Libraries
-      Description: A Gstreamer based video thumbnail generator utilized by the QML thumbnailer plugin.
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/thumbnailers/libvideothumbnailer.so"
-
     - Name: contacts
       Summary: QML contacts plugin
       Group: System/Libraries

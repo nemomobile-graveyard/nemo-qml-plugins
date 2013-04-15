@@ -22,8 +22,6 @@ BuildRequires:  pkgconfig(QtGui)
 BuildRequires:  pkgconfig(QtContacts)
 BuildRequires:  pkgconfig(QtWebKit)
 BuildRequires:  pkgconfig(mlite)
-BuildRequires:  pkgconfig(gstreamer-0.10)
-BuildRequires:  pkgconfig(gstreamer-app-0.10)
 BuildRequires:  pkgconfig(libsignon-qt)
 BuildRequires:  pkgconfig(accounts-qt) >= 1.4
 BuildRequires:  pkgconfig(timed)
@@ -33,20 +31,6 @@ BuildRequires:  pkgconfig(QJson)
 
 %description
 Do not install this, install the subpackaged plugins.
-
-%package thumbnailer
-Summary:    QML thumbnail service plugin
-Group:      System/Libraries
-
-%description thumbnailer
-QML plugin for accessing a shared thumbnail cache and fast image thumbnailing.
-
-%package gstvideo-thumbnailer
-Summary:    Video thumbnailer for QML thumbnail service plugin
-Group:      System/Libraries
-
-%description gstvideo-thumbnailer
-A Gstreamer based video thumbnail generator utilized by the QML thumbnailer plugin.
 
 %package contacts
 Summary:    QML contacts plugin
@@ -152,19 +136,6 @@ rm -rf %{buildroot}
 # >> install post
 # << install post
 
-
-%files thumbnailer
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/libnemothumbnailer.so
-%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/qmldir
-# >> files thumbnailer
-# << files thumbnailer
-
-%files gstvideo-thumbnailer
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/thumbnailer/thumbnailers/libvideothumbnailer.so
-# >> files gstvideo-thumbnailer
-# << files gstvideo-thumbnailer
 
 %files contacts
 %defattr(-,root,root,-)

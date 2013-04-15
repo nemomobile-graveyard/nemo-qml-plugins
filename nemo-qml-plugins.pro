@@ -1,6 +1,5 @@
 TEMPLATE = subdirs
 SUBDIRS += \
-           thumbnailer \
            contacts \
            messages \
            signon \
