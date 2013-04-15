@@ -1,0 +1,22 @@
+This test is a manual test, as automated testing would require an
+account on Facebook with a known number of albums/photos/comments
+etc, and credentials would need to be included in the code, which
+of course is against the Terms Of Service.
+
+Thus, the test is actually an application which should be run when
+any code is changed, to ensure correct working.
+
+It consists of:
+1) Notifications View
+2) Albums View
+3) Per-Album Photos View
+4) Per-Photo Comments View
+
+The test should be invoked from the command line, with an access token
+passed as the only parameter.
+
+e.g.:
+
+./socialtest ABCDEF123456
+
+Note that the test uses the SailFish.Silica component set.

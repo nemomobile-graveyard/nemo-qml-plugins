@@ -1,4 +1,3 @@
 TEMPLATE = subdirs
-SUBDIRS = src
-#SUBDIRS = src tests
-#tests.depends = src
+SUBDIRS = src test
+test.depends = src
