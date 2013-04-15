@@ -19,7 +19,6 @@ PkgConfigBR:
     - QtContacts
     - QtWebKit
     - mlite
-    - libsignon-qt
     - accounts-qt >= 1.4
     - timed
     - x11 # utilities
@@ -65,21 +64,6 @@ SubPackages:
           - "%{_datadir}/accounts/providers/test-provider.provider"
           - "%{_datadir}/accounts/services/test-service2.service"
           - "%{_datadir}/accounts/service_types/test-service-type2.service-type"
-
-    - Name: signon
-      Summary: Signon framework support for QML applications
-      Group: System/Libraries
-      Description: Plugin providing libsignon framework support for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/signon/libnemosignon.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/signon/qmldir"
-
-    - Name: signon-tests
-      Summary: QML signon plugin tests
-      Group: System/Libraries
-      Description: Tests for QML signon plugin
-      Files:
-          - "/opt/tests/nemo-qml-plugins/signon/*"
 
     - Name: utilities
       Summary: Miscellaneous utility elements for QML applications

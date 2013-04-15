@@ -22,7 +22,6 @@ BuildRequires:  pkgconfig(QtGui)
 BuildRequires:  pkgconfig(QtContacts)
 BuildRequires:  pkgconfig(QtWebKit)
 BuildRequires:  pkgconfig(mlite)
-BuildRequires:  pkgconfig(libsignon-qt)
 BuildRequires:  pkgconfig(accounts-qt) >= 1.4
 BuildRequires:  pkgconfig(timed)
 BuildRequires:  pkgconfig(x11)
@@ -65,20 +64,6 @@ Group:      System/Libraries
 
 %description accounts-tests
 Tests for QML accounts plugin
-
-%package signon
-Summary:    Signon framework support for QML applications
-Group:      System/Libraries
-
-%description signon
-Plugin providing libsignon framework support for QML applications
-
-%package signon-tests
-Summary:    QML signon plugin tests
-Group:      System/Libraries
-
-%description signon-tests
-Tests for QML signon plugin
 
 %package utilities
 Summary:    Miscellaneous utility elements for QML applications
@@ -164,19 +149,6 @@ rm -rf %{buildroot}
 %{_datadir}/accounts/service_types/test-service-type2.service-type
 # >> files accounts-tests
 # << files accounts-tests
-
-%files signon
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/signon/libnemosignon.so
-%{_libdir}/qt4/imports/org/nemomobile/signon/qmldir
-# >> files signon
-# << files signon
-
-%files signon-tests
-%defattr(-,root,root,-)
-/opt/tests/nemo-qml-plugins/signon/*
-# >> files signon-tests
-# << files signon-tests
 
 %files utilities
 %defattr(-,root,root,-)
