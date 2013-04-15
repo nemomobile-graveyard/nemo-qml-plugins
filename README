@@ -13,9 +13,6 @@ current plugins:
 - contacts: offers an API similar to QtMobility.contacts, except without the
   fail
 
-- time: provides WallClock element useful for clock displays, including keeping
-time in sync with system time changes.
-
 - alarms: provides QML APIs for creating, editing, and fetching information
   about alarms
 

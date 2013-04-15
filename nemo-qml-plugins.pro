@@ -7,6 +7,5 @@ SUBDIRS += \
            accounts \
            social \
            alarms \
-           time \
            utilities \
            notifications

@@ -99,21 +99,6 @@ SubPackages:
       Files:
           - "/opt/tests/nemo-qml-plugins/signon/*"
 
-    - Name: time
-      Summary: Time and wallclock API for QML applications
-      Group: System/Libraries
-      Description: Plugin providing time/wallclock API for system time
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/time/libnemotime.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/time/qmldir"
-
-    - Name: time-tests
-      Summary: QML time plugin tests
-      Group: System/Libraries
-      Description: Tests for QML time plugin
-      Files:
-          - "/opt/tests/nemo-qml-plugins/time/*"
-
     - Name: alarms
       Summary: Alarms API for QML applications
       Group: System/Libraries
