@@ -19,8 +19,6 @@ PkgConfigBR:
     - QtContacts
     - QtWebKit
     - mlite
-    - accounts-qt >= 1.4
-    - timed
     - x11 # utilities
     - QtSparql # contacts
 
@@ -46,24 +44,6 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/messages/libnemomessages.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/messages/qmldir"
-
-    - Name: accounts
-      Summary: Accounts framework support for QML applications
-      Group: System/Libraries
-      Description: Plugin providing libaccounts framework support for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/accounts/libnemoaccounts.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/accounts/qmldir"
-
-    - Name: accounts-tests
-      Summary: QML accounts plugin tests
-      Group: System/Libraries
-      Description: Tests for QML accounts plugin
-      Files:
-          - "/opt/tests/nemo-qml-plugins/accounts/*"
-          - "%{_datadir}/accounts/providers/test-provider.provider"
-          - "%{_datadir}/accounts/services/test-service2.service"
-          - "%{_datadir}/accounts/service_types/test-service-type2.service-type"
 
     - Name: utilities
       Summary: Miscellaneous utility elements for QML applications

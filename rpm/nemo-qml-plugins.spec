@@ -22,8 +22,6 @@ BuildRequires:  pkgconfig(QtGui)
 BuildRequires:  pkgconfig(QtContacts)
 BuildRequires:  pkgconfig(QtWebKit)
 BuildRequires:  pkgconfig(mlite)
-BuildRequires:  pkgconfig(accounts-qt) >= 1.4
-BuildRequires:  pkgconfig(timed)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(QtSparql)
 
@@ -50,20 +48,6 @@ Group:      System/Libraries
 
 %description messages
 Plugin providing public API for interacting with messages applications
-
-%package accounts
-Summary:    Accounts framework support for QML applications
-Group:      System/Libraries
-
-%description accounts
-Plugin providing libaccounts framework support for QML applications
-
-%package accounts-tests
-Summary:    QML accounts plugin tests
-Group:      System/Libraries
-
-%description accounts-tests
-Tests for QML accounts plugin
 
 %package utilities
 Summary:    Miscellaneous utility elements for QML applications
@@ -133,22 +117,6 @@ rm -rf %{buildroot}
 %{_libdir}/qt4/imports/org/nemomobile/messages/qmldir
 # >> files messages
 # << files messages
-
-%files accounts
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/accounts/libnemoaccounts.so
-%{_libdir}/qt4/imports/org/nemomobile/accounts/qmldir
-# >> files accounts
-# << files accounts
-
-%files accounts-tests
-%defattr(-,root,root,-)
-/opt/tests/nemo-qml-plugins/accounts/*
-%{_datadir}/accounts/providers/test-provider.provider
-%{_datadir}/accounts/services/test-service2.service
-%{_datadir}/accounts/service_types/test-service-type2.service-type
-# >> files accounts-tests
-# << files accounts-tests
 
 %files utilities
 %defattr(-,root,root,-)
