@@ -52,19 +52,3 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/utilities/libnemoutilities.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/utilities/qmldir"
-    
-    - Name: notifications
-      Summary: Notification support for QML applications
-      Group: System/Libraries
-      Description: Plugin providing notification support for QML applications
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/notifications/libnemonotifications.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/notifications/qmldir"
-
-    - Name: notifications-devel
-      Summary: Notification support for C++ applications
-      Group: System/Libraries
-      Description: Library providing notification support for C++ applications
-      Files:
-          - "%{_includedir}/nemo-qml-plugins/notifications/*.h"
-          - "%{_libdir}/pkgconfig/nemonotifications.pc"

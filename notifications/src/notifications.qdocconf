@@ -1,8 +1,0 @@
-project = Nemo Mobile notification C++/QML classes
-description = C++/QML classes to allow applications to easily use notifications in their C++/QML applications
-outputdir   = ../doc/html
-outputformats = HTML
-headerdirs  = .
-sourcedirs  = .
-sources.fileextensions = "*.cpp *.qdoc *.qml"
-headers.fileextensions = "*.h"
