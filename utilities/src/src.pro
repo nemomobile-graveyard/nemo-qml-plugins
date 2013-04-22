@@ -2,8 +2,10 @@ TARGET = nemoutilities
 PLUGIN_IMPORT_PATH = org/nemomobile/utilities
 
 SOURCES += plugin.cpp \
-    declarativewindowattributes.cpp
+    declarativewindowattributes.cpp \
+    declarativescreenshots.cpp
 
-HEADERS += declarativewindowattributes.h
+HEADERS += declarativewindowattributes.h \
+    declarativescreenshots.h
 
 include(../../plugin.pri)
