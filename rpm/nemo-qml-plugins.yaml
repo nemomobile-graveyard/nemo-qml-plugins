@@ -17,9 +17,7 @@ PkgConfigBR:
     - QtDeclarative
     - QtGui
     - QtContacts
-    - QtWebKit
     - mlite
-    - x11 # utilities
     - QtSparql # contacts
 
 SubPackages:
@@ -44,11 +42,3 @@ SubPackages:
       Files:
           - "%{_libdir}/qt4/imports/org/nemomobile/messages/libnemomessages.so"
           - "%{_libdir}/qt4/imports/org/nemomobile/messages/qmldir"
-
-    - Name: utilities
-      Summary: Miscellaneous utility elements for QML applications
-      Group: System/Libraries
-      Description: Miscellaneous utility elements for QML applications.
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/utilities/libnemoutilities.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/utilities/qmldir"
