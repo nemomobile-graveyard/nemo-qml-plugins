@@ -243,6 +243,9 @@ public:
     Q_PROPERTY(QStringList accountIconPaths READ accountIconPaths NOTIFY accountIconPathsChanged)
     QStringList accountIconPaths() const;
 
+    Q_INVOKABLE void addAccount(const QString &path, const QString &uri, const QString &provider,
+                                const QString &iconPath = QString());
+
     QContact contact() const;
     void setContact(const QContact &contact);
 
