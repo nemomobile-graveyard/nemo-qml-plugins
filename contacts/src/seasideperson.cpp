@@ -873,6 +873,22 @@ QStringList SeasidePerson::accountIconPaths() const
     return rv;
 }
 
+void SeasidePerson::addAccount(const QString &path, const QString &uri, const QString &provider, const QString &iconPath)
+{
+    QContactOnlineAccount detail;
+    detail.setValue("AccountPath", path);
+    detail.setAccountUri(uri);
+    detail.setServiceProvider(provider);
+    detail.setValue("ServiceIconPath", iconPath);
+
+    mContact.saveDetail(&detail);
+
+    QContactPresence presence;
+    presence.setLinkedDetailUris(QStringList() << detail.detailUri());
+    
+    mContact.saveDetail(&presence);
+}
+
 QContact SeasidePerson::contact() const
 {
     return mContact;
