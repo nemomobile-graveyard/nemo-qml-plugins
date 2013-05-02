@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (C) 2013 Jolla Mobile <bea.lam@jollamobile.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,43 +29,53 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
-#include <QtDeclarative>
-#include <QDeclarativeEngine>
-#include <QDeclarativeExtensionPlugin>
+#ifndef SEASIDEPEOPLENAMEGROUPMODEL_H
+#define SEASIDEPEOPLENAMEGROUPMODEL_H
 
-#include "seasideproxymodel.h"
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidenamegroupmodel.h"
+#include <QAbstractListModel>
+#include <QStringList>
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QDeclarativeExtensionPlugin
+#include <QContactId>
+
+#include "seasidecache.h"
+
+QTM_USE_NAMESPACE
+
+class SeasideNameGroup
 {
 public:
-    virtual ~NemoContactsPlugin() { }
+    SeasideNameGroup() : count(0) {}
+    SeasideNameGroup(const QChar &n, int c = 0) : name(n), count(c) {}
 
-    void initializeEngine(QDeclarativeEngine *engine, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+    inline bool operator==(const SeasideNameGroup &other) { return other.name == name; }
 
-/*
- * not a good solution, let's solve it properly this time
- * -    rootContext->setContextProperty(QString::fromLatin1("localeUtils"""), 
- * -                                    LocaleUtils::self());
- */
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleProxyModel");
-        qmlRegisterType<SeasideNameGroupModel>(uri, 1, 0, "PeopleNameGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-    }
+    QChar name;
+    int count;
 };
 
-Q_EXPORT_PLUGIN2(nemocontacts, NemoContactsPlugin);
+class SeasideNameGroupModel : public QAbstractListModel, public SeasideNameGroupChangeListener
+{
+    Q_OBJECT
+    Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+public:
+    enum Role {
+        NameRole = Qt::UserRole,
+        EntryCount
+    };
 
+    SeasideNameGroupModel(QObject *parent = 0);
+    ~SeasideNameGroupModel();
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    QVariant data(const QModelIndex &index, int role) const;
+
+    void nameGroupsUpdated(const QHash<QChar, int> &groups);
+
+signals:
+    void countChanged();
+
+private:
+    QList<SeasideNameGroup> m_groups;
+};
+
+#endif

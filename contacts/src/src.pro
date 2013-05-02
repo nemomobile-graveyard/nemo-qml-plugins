@@ -26,7 +26,8 @@ SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasideperson.cpp \
            $$PWD/seasideproxymodel.cpp \
            $$PWD/seasidecache.cpp \
-           $$PWD/seasidefilteredmodel.cpp
+           $$PWD/seasidefilteredmodel.cpp \
+           $$PWD/seasidenamegroupmodel.cpp
 
 HEADERS += $$PWD/localeutils_p.h \
            $$PWD/synchronizelists_p.h \
@@ -35,7 +36,8 @@ HEADERS += $$PWD/localeutils_p.h \
            $$PWD/seasideperson.h \
            $$PWD/seasideproxymodel.h \
            $$PWD/seasidecache.h \
-           $$PWD/seasidefilteredmodel.h
+           $$PWD/seasidefilteredmodel.h \
+           $$PWD/seasidenamegroupmodel.h
 
 CONFIG += seaside-tracker
 contains(CONFIG, seaside-tracker) {

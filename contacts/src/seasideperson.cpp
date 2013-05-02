@@ -179,6 +179,21 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
         return displayLabel;
     }
 
+    displayLabel = generateDisplayLabelFromNonNameDetails(mContact);
+    if (!displayLabel.isEmpty()) {
+        return displayLabel;
+    }
+
+    // This is last because the custom label is often source from this function, so we want to
+    // overwrite that value in many cases.
+    if (!name.customLabel().isNull())
+        return name.customLabel();
+
+    return "(Unnamed)"; // TODO: localisation
+}
+
+QString SeasidePerson::generateDisplayLabelFromNonNameDetails(const QContact &mContact)
+{
     foreach (const QContactNickname& nickname, mContact.details<QContactNickname>()) {
         if (!nickname.nickname().isNull()) {
             return nickname.nickname();
@@ -219,13 +234,7 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
             return phone.number();
     }
 
-    // This is last because the custom label is often source from this function, so we want to
-    // overwrite that value in many cases.
-    if (!name.customLabel().isNull())
-        return name.customLabel();
-
-
-    return "(Unnamed)"; // TODO: localisation
+    return QString();
 }
 
 void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder order)
