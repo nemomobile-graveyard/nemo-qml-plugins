@@ -309,27 +309,28 @@ void SeasideFilteredModel::refineIndex()
 
 void SeasideFilteredModel::updateIndex()
 {
-    int f = 0;
-    int r = 0;
-    synchronizeFilteredList(this, m_filteredContactIds, f, *m_referenceContactIds, r);
+    // Find the new list of filtered contact ids.
+    QVector<QContactLocalId> updatedContactIds;
+    updatedContactIds.reserve(m_filteredContactIds.count());
+    for (int i = 0; i < m_referenceContactIds->count(); ++i) {
+        if (filterId(m_referenceContactIds->at(i)))
+            updatedContactIds.append(m_referenceContactIds->at(i));
+    }
 
-    if (f < m_filteredContactIds.count())
-        removeRange(f, m_filteredContactIds.count() - f);
+    // Replace the old list of filtered ids with the new one.
+    int filteredIndex = 0;
+    int updatedIndex = 0;
+    synchronizeList(this, m_filteredContactIds, filteredIndex, updatedContactIds, updatedIndex);
 
-    if (r < m_referenceContactIds->count()) {
-        QVector<QContactLocalId> insertIds;
-        for (; r < m_referenceContactIds->count(); ++r) {
-            if (filterId(m_referenceContactIds->at(r)))
-                insertIds.append(m_referenceContactIds->at(r));
-        }
-        if (insertIds.count() > 0) {
-            beginInsertRows(
-                    QModelIndex(),
-                    m_filteredContactIds.count(),
-                    m_filteredContactIds.count() + insertIds.count() - 1);
-            m_filteredContactIds += insertIds;
-            endInsertRows();
-        }
+    if (filteredIndex < m_filteredContactIds.count())
+        removeRange(filteredIndex, m_filteredContactIds.count() - filteredIndex);
+
+    if (updatedIndex < updatedContactIds.count()) {
+        insertRange(
+                m_filteredContactIds.count(),
+                updatedContactIds.count() - updatedIndex,
+                updatedContactIds,
+                updatedIndex);
     }
 }
 

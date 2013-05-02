@@ -223,6 +223,8 @@ void tst_SynchronizeLists::filtered_data()
     }
 }
 
+// Not really a test of synchronize lists anymore but of the surrounding logic for implementing
+// filtering and then synchronizing the results.
 void tst_SynchronizeLists::filtered()
 {
     QFETCH(QVector<QContactLocalId>, reference);
@@ -233,17 +235,21 @@ void tst_SynchronizeLists::filtered()
     m_cache = original;
     m_filter = expected;
 
-    int c = 0;
-    int r = 0;
+    QVector<QContactLocalId> filtered;
+    for (int i = 0; i < reference.count(); ++i) {
+        if (filterId(reference.at(i)))
+            filtered.append(reference.at(i));
+    }
+    QCOMPARE(filtered, expected);
 
-    synchronizeFilteredList(this, m_cache, c, reference, r);
+    int c = 0;
+    int f = 0;
+    synchronizeList(this, m_cache, c, filtered, f);
 
     if (c < m_cache.count())
         m_cache.remove(c, m_cache.count() - c);
-    for (; r < reference.count(); ++r) {
-        if (m_filter.contains(reference.at(r)))
-            m_cache.append(reference.at(r));
-    }
+    for (; f < filtered.count(); ++f)
+        m_cache.append(filtered.at(f));
 
     if (m_cache != expected) {
         qDebug() << "expected" << expected;
