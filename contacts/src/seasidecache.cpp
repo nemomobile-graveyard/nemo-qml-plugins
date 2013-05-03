@@ -77,7 +77,6 @@ SeasideCache::SeasideCache()
     , m_cacheIndex(0)
     , m_queryIndex(0)
     , m_appendIndex(0)
-    , m_selfId(0)
     , m_fetchFilter(SeasideFilteredModel::FilterFavorites)
     , m_displayLabelOrder(SeasideFilteredModel::FirstNameFirst)
     , m_updatesPending(true)
@@ -126,7 +125,6 @@ SeasideCache::SeasideCache()
 
     m_contactIdRequest.start();
 #else
-    m_selfId = m_manager.selfContactId();
     m_contactIdRequest.setManager(&m_manager);
 
     QContactFetchHint fetchHint;
@@ -220,9 +218,14 @@ SeasidePerson *SeasideCache::personById(QContactLocalId id)
     } else {
         // Insert a new item into the cache if the one doesn't exist.
         SeasideCacheItem &cacheItem = instance->m_people[id];
-        QContactId contactId;
-        contactId.setLocalId(id);
-        cacheItem.contact.setId(contactId);
+        if (id == instance->m_manager.selfContactId()) {
+            cacheItem.contact = instance->m_manager.contact(id);
+            cacheItem.hasCompleteContact = true;
+        } else {
+            QContactId contactId;
+            contactId.setLocalId(id);
+            cacheItem.contact.setId(contactId);
+        }
         return person(&cacheItem);
     }
 }
@@ -552,23 +555,14 @@ int SeasideCache::insertRange(
 {
     QVector<QContactLocalId> &cacheIds = m_contacts[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
+    const QContactLocalId selfId = m_manager.selfContactId();
 
     int end = index + count - 1;
-#ifndef SEASIDE_SPARQL_QUERIES
-    // Exclude the self contact Id.
-    for (int i = 0; i < count; ++i) {
-        if (queryIds.at(queryIndex + i) == m_selfId) {
-            --end;
-            break;
-        }
-    }
-#endif
-
     for (int i = 0; i < models.count(); ++i)
         models[i]->sourceAboutToInsertItems(index, end);
 
     for (int i = 0; i < count; ++i) {
-        if (queryIds.at(queryIndex + i) == m_selfId)
+        if (queryIds.at(queryIndex + i) == selfId)
             continue;
 
         if (filter == SeasideFilteredModel::FilterAll)
@@ -592,26 +586,11 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
     const int begin = cacheIds.count();
     int end = cacheIds.count() + contacts.count() - m_appendIndex - 1;
 
-#ifndef SEASIDE_SPARQL_QUERIES
-    // Exclude the self contact Id.
-    for (int i = cacheIds.count(); i < contacts.count(); ++i) {
-        if (contacts.at(i).localId() == m_selfId) {
-            --end;
-            break;
-        }
-    }
-#endif
-
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceAboutToInsertItems(begin, end);
 
     for (; m_appendIndex < contacts.count(); ++m_appendIndex) {
         QContact contact = contacts.at(m_appendIndex);
-
-#ifndef SEASIDE_SPARQL_QUERIES
-        if (contact.localId() == m_selfId)
-            continue;
-#endif
 
         cacheIds.append(contact.localId());
         SeasideCacheItem &cacheItem = m_people[contact.localId()];
@@ -748,7 +727,7 @@ void SeasideCache::displayLabelOrderChanged()
         m_contactIdRequest.setSorting(sorting);
 #endif
         typedef QHash<QContactLocalId, SeasideCacheItem>::iterator iterator;
-        for (iterator it = m_people.begin(); it != m_people.begin(); ++it) {
+        for (iterator it = m_people.begin(); it != m_people.end(); ++it) {
             if (it->person) {
                 it->person->recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder(m_displayLabelOrder));
                 it->contact = it->person->contact();
