@@ -431,6 +431,7 @@ void SeasidePeopleModelPriv::onDataResetFetchChanged(QContactAbstractRequest::St
         return;
 
     QList<QContact> contactsList = fetchRequest->contacts();
+    contactsList.append(manager->contact(manager->selfContactId()));
     int size = 0;
 
     MODEL_DEBUG() << Q_FUNC_INFO << "Starting model reset";
