@@ -153,8 +153,12 @@ void SeasidePerson::setMiddleName(const QString &name)
 QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasideProxyModel::DisplayLabelOrder order)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
-    QString displayLabel;
     QContactName name = mContact.detail<QContactName>();
+
+    if (!name.customLabel().isNull())
+        return name.customLabel();
+
+    QString displayLabel;
 
     QString nameStr1;
     QString nameStr2;
@@ -219,12 +223,6 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
             return phone.number();
     }
 
-    // This is last because the custom label is often source from this function, so we want to
-    // overwrite that value in many cases.
-    if (!name.customLabel().isNull())
-        return name.customLabel();
-
-
     return "(Unnamed)"; // TODO: localisation
 }
 
@@ -234,23 +232,17 @@ void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder
     QString newDisplayLabel = generateDisplayLabel(mContact, order);
 
     if (oldDisplayLabel != newDisplayLabel) {
-        // Save the display label as the custom label.
-        QContactName name = mContact.detail<QContactName>();
-        name.setCustomLabel(newDisplayLabel);
-        mContact.saveDetail(&name);
-
         mDisplayLabel = newDisplayLabel;
         emit displayLabelChanged();
+
+        // TODO: If required, store this to the contact backend to prevent later recalculation
     }
 }
 
 QString SeasidePerson::displayLabel()
 {
     if (mDisplayLabel.isEmpty()) {
-        QContactName name = mContact.detail<QContactName>();
-        mDisplayLabel = name.customLabel();
-        if (mDisplayLabel.isEmpty())
-            recalculateDisplayLabel();
+        recalculateDisplayLabel();
     }
 
     return mDisplayLabel;

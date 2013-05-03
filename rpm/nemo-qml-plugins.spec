@@ -9,7 +9,7 @@ Name:       nemo-qml-plugins
 # << macros
 
 Summary:    Nemo QML plugins source package.
-Version:    0.3.5
+Version:    0.3.7
 Release:    1
 Group:      System/Libraries
 License:    BSD
