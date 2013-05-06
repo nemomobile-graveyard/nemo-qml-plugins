@@ -257,6 +257,7 @@ public:
     static QString generateDisplayLabel(
                 const QContact &mContact,
                 SeasideProxyModel::DisplayLabelOrder order = SeasideProxyModel::FirstNameFirst);
+    static QString generateDisplayLabelFromNonNameDetails(const QContact &mContact);
 
     static SeasidePersonAttached *qmlAttachedProperties(QObject *object);
 

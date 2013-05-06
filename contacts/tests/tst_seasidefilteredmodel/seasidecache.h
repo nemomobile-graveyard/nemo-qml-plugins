@@ -31,6 +31,8 @@ public:
     static SeasidePerson *personById(QContactLocalId id);
     static SeasidePerson *selfPerson();
     static QContact contactById(QContactLocalId id);
+    static QChar nameGroupForCacheItem(SeasideCacheItem *cacheItem);
+    static QList<QChar> allNameGroups();
 
     static SeasidePerson *person(SeasideCacheItem *item);
 
@@ -61,6 +63,7 @@ public:
     QVector<SeasideCacheItem> m_cache;
 
     static SeasideCache *instance;
+    static QList<QChar> allContactNameGroups;
 };
 
 

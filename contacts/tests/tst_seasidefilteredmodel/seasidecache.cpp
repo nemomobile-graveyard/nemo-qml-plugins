@@ -61,7 +61,44 @@ static const Contact contactsData[] =
 /*6*/   { "Robin",  "Burchell", "Robin Burchell", true,  false, 0, 0 }
 };
 
+static QList<QChar> getAllContactNameGroups()
+{
+    QList<QChar> groups;
+    groups << QLatin1Char('A')
+           << QLatin1Char('B')
+           << QLatin1Char('C')
+           << QLatin1Char('D')
+           << QLatin1Char('E')
+           << QLatin1Char('F')
+           << QLatin1Char('G')
+           << QLatin1Char('H')
+           << QLatin1Char('I')
+           << QLatin1Char('J')
+           << QLatin1Char('K')
+           << QLatin1Char('L')
+           << QLatin1Char('M')
+           << QLatin1Char('N')
+           << QLatin1Char('O')
+           << QLatin1Char('P')
+           << QLatin1Char('Q')
+           << QLatin1Char('R')
+           << QLatin1Char('S')
+           << QLatin1Char('T')
+           << QLatin1Char('U')
+           << QLatin1Char('V')
+           << QLatin1Char('W')
+           << QLatin1Char('X')
+           << QLatin1Char('Y')
+           << QLatin1Char('Z')
+           << QChar(0x00c5)     // Å
+           << QChar(0x00c4)     // Ä
+           << QChar(0x00d6)     // Ö
+           << QLatin1Char('#');
+    return groups;
+}
+
 SeasideCache *SeasideCache::instance = 0;
+QList<QChar> SeasideCache::allContactNameGroups = getAllContactNameGroups();
 
 SeasideCache::SeasideCache()
 {
@@ -161,6 +198,53 @@ SeasidePerson *SeasideCache::personById(QContactLocalId id)
 QContact SeasideCache::contactById(QContactLocalId id)
 {
     return instance->m_cache[id].contact;
+}
+
+QChar SeasideCache::nameGroupForCacheItem(SeasideCacheItem *cacheItem)
+{
+    if (!cacheItem)
+        return QChar();
+
+    QChar group;
+    QString first;
+    QString last;
+    QContactName nameDetail = cacheItem->contact.detail<QContactName>();
+    if (SeasideCache::displayLabelOrder() == SeasideFilteredModel::FirstNameFirst) {
+        first = nameDetail.firstName();
+        last = nameDetail.lastName();
+    } else {
+        first = nameDetail.lastName();
+        last = nameDetail.firstName();
+    }
+    if (!first.isEmpty()) {
+        group = first[0].toUpper();
+    } else if (!last.isEmpty()) {
+        group = last[0].toUpper();
+    } else {
+        QString displayLabel = (cacheItem->person)
+                ? cacheItem->person->displayLabel()
+                : SeasidePerson::generateDisplayLabel(cacheItem->contact);
+        if (!displayLabel.isEmpty())
+            group = displayLabel[0].toUpper();
+    }
+
+    // XXX temporary workaround for non-latin names: use non-name details to try to find a
+    // latin character group
+    if (!group.isNull() && group.toLatin1() != group) {
+        QString displayLabel = SeasidePerson::generateDisplayLabelFromNonNameDetails(cacheItem->contact);
+        if (!displayLabel.isEmpty())
+            group = displayLabel[0].toUpper();
+    }
+
+    if (group.isNull() || !allContactNameGroups.contains(group)) {
+        group = QLatin1Char('#');   // 'other' group
+    }
+    return group;
+}
+
+QList<QChar> SeasideCache::allNameGroups()
+{
+    return QList<QChar>();
 }
 
 SeasidePerson *SeasideCache::person(SeasideCacheItem *item)

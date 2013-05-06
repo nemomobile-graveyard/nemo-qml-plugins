@@ -32,8 +32,11 @@
 #include <QObject>
 #include <QtTest>
 
+#include <QContactName>
+
 #include "seasidefilteredmodel.h"
 #include "seasidecache.h"
+#include "seasideperson.h"
 
 Q_DECLARE_METATYPE(QModelIndex)
 
@@ -65,6 +68,7 @@ private slots:
     void dataChanged();
     void data();
     void filterId();
+    void searchByFirstNameCharacter();
 
 private:
     SeasideCache cache;
@@ -591,6 +595,40 @@ void tst_SeasideFilteredModel::filterId()
     model.setFilterPattern("Robin Brooks");     QVERIFY(!model.filterId(6));
     model.setFilterPattern("John Burchell");    QVERIFY(!model.filterId(6));
     model.setFilterPattern("Brooks");           QVERIFY(!model.filterId(6));
+}
+
+void tst_SeasideFilteredModel::searchByFirstNameCharacter()
+{
+    SeasideFilteredModel model;
+    model.setSearchByFirstNameCharacter(true);
+
+    model.setFilterPattern("R");
+    QCOMPARE(model.filterType(), SeasideFilteredModel::FilterAll);
+    QCOMPARE(model.rowCount(), 1);
+
+    model.setFilterPattern("A");
+    QCOMPARE(model.rowCount(), 4);
+
+    model.setFilterPattern("r");    // not case-sensitive
+    QCOMPARE(model.rowCount(), 1);
+    model.setFilterPattern("aaron");    // only first letter counts
+    QCOMPARE(model.rowCount(), 4);
+
+    SeasideCacheItem *cacheItem = SeasideCache::cacheItemById(0);
+    QContactName origName = cacheItem->contact.detail<QContactName>();
+    QContactName name = origName;
+    name.setFirstName("123");
+    name.setLastName("");
+    name.setCustomLabel("");
+    cacheItem->contact.saveDetail(&name);
+    model.setFilterPattern("#");    // non-letters
+    QCOMPARE(model.rowCount(), 1);
+
+    cacheItem->contact.saveDetail(&origName);
+    model.setFilterPattern("");
+    QCOMPARE(model.rowCount(), 7);
+    model.setFilterPattern("#");
+    QCOMPARE(model.rowCount(), 0);
 }
 
 #include "tst_seasidefilteredmodel.moc"

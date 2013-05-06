@@ -50,6 +50,7 @@ class SeasideFilteredModel : public QAbstractListModel
     Q_PROPERTY(FilterType filterType READ filterType WRITE setFilterType NOTIFY filterTypeChanged)
     Q_PROPERTY(DisplayLabelOrder displayLabelOrder READ displayLabelOrder WRITE setDisplayLabelOrder NOTIFY displayLabelOrderChanged)
     Q_PROPERTY(QString filterPattern READ filterPattern WRITE setFilterPattern NOTIFY filterPatternChanged)
+    Q_PROPERTY(bool searchByFirstNameCharacter READ searchByFirstNameCharacter WRITE setSearchByFirstNameCharacter NOTIFY searchByFirstNameCharacterChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
     Q_ENUMS(FilterType DisplayLabelOrder)
 public:
@@ -84,6 +85,9 @@ public:
 
     QString filterPattern() const;
     void setFilterPattern(const QString &pattern);
+
+    bool searchByFirstNameCharacter() const;
+    void setSearchByFirstNameCharacter(bool searchByFirstNameCharacter);
 
     DisplayLabelOrder displayLabelOrder() const;
     void setDisplayLabelOrder(DisplayLabelOrder order);
@@ -129,6 +133,7 @@ signals:
     void populatedChanged();
     void filterTypeChanged();
     void filterPatternChanged();
+    void searchByFirstNameCharacterChanged();
     void displayLabelOrderChanged();
     void countChanged();
 
@@ -146,6 +151,7 @@ private:
     int m_filterIndex;
     int m_referenceIndex;
     FilterType m_filterType;
+    bool m_searchByFirstNameCharacter;
 };
 
 #endif
