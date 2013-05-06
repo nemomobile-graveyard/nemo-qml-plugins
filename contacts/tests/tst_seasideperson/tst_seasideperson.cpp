@@ -453,12 +453,6 @@ void tst_SeasidePerson::marshalling()
     QCOMPARE(person->displayLabel(), QString::fromLatin1("Hello World"));
     QVERIFY(person->favorite());
 
-    {   // Seaside person saves the display label as the custom label.
-        QContactName nameDetail = contact.detail<QContactName>();
-        nameDetail.setCustomLabel("Hello World");
-        contact.saveDetail(&nameDetail);
-    }
-
     QCOMPARE(person->contact(), contact);
 }
 

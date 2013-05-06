@@ -64,6 +64,7 @@
 #include "seasideperson.h"
 #include "seasidepeoplemodel.h"
 #include "seasidepeoplemodel_p.h"
+#include "normalization_p.h"
 
 #ifdef DEBUG_MODEL
 #define MODEL_DEBUG qDebug
@@ -152,7 +153,7 @@ SeasidePerson *SeasidePeopleModel::personById(int id) const
 
 SeasidePerson *SeasidePeopleModel::personByPhoneNumber(const QString &msisdn) const
 {
-    QString normalizedNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+    QString normalizedNumber = Normalization::normalizePhoneNumber(msisdn);
 
     if(normalizedNumber.isEmpty() || !priv->phoneNumbersToContactIds.contains(normalizedNumber)) return NULL;
 

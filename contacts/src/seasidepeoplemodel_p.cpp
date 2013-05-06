@@ -37,6 +37,7 @@
 
 #include "seasideperson.h"
 #include "seasidepeoplemodel_p.h"
+#include "normalization_p.h"
 
 #ifdef DEBUG_MODEL
 #define MODEL_DEBUG qDebug
@@ -79,14 +80,6 @@ SeasidePeopleModelPriv::SeasidePeopleModelPriv(SeasidePeopleModel *parent)
     connect(displayLabelOrderConf, SIGNAL(valueChanged()), this, SLOT(onDisplayLabelOrderConfChanged()));
 }
 
-QString SeasidePeopleModelPriv::normalizePhoneNumber(const QString &msisdn)
-{
-    // TODO:Possibly be more efficient here.
-    QString normalized = msisdn;
-    normalized.replace(QRegExp("[^0-9]"), "");
-    return normalized.right(7);
-}
-
 void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int size)
 {
     foreach (const QContact &contact, contactsList) {
@@ -103,7 +96,7 @@ void SeasidePeopleModelPriv::addContacts(const QList<QContact> contactsList, int
 
         // Create normalized numbers -> contact id map.
         foreach(const QString &sourcePhoneNumber, person->phoneNumbers()) {
-            QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(sourcePhoneNumber);
+            QString normalizedPhoneNumber = Normalization::normalizePhoneNumber(sourcePhoneNumber);
             if(phoneNumbersToContactIds.contains(normalizedPhoneNumber)) continue; // Ignore duplicates, first-come-first-serve.
 
             phoneNumbersToContactIds.insert(normalizedPhoneNumber, contact.localId());
@@ -341,10 +334,9 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
 
         idToContact[id]->setContact(changedContact);
 
-        // TODO: use normalized number from qtcontacts-tracker/mobility
         SeasidePerson *person = idToContact[id];
         foreach(const QString &msisdn, person->phoneNumbers()) {
-            QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+            QString normalizedPhoneNumber = Normalization::normalizePhoneNumber(msisdn);
 
             if(!phoneNumbersToContactIds.contains(normalizedPhoneNumber)) {
                 phoneNumbersToContactIds.insert(normalizedPhoneNumber, id);
@@ -354,7 +346,7 @@ void SeasidePeopleModelPriv::onChangedFetchChanged(QContactAbstractRequest::Stat
         foreach(const QString &phoneNumber, phoneNumbersToContactIds.keys()) {
            bool remove = true;
            foreach(const QString &msisdn, person->phoneNumbers()) {
-               QString normalizedPhoneNumber = SeasidePeopleModelPriv::normalizePhoneNumber(msisdn);
+               QString normalizedPhoneNumber = Normalization::normalizePhoneNumber(msisdn);
                if(phoneNumber == normalizedPhoneNumber) {
                    remove = false;
                    break;
