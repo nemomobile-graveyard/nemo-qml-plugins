@@ -67,6 +67,15 @@ struct SeasideCacheItem
     bool hasCompleteContact;
 };
 
+class SeasideNameGroupChangeListener
+{
+public:
+    SeasideNameGroupChangeListener() {}
+    ~SeasideNameGroupChangeListener() {}
+
+    virtual void nameGroupsUpdated(const QHash<QChar, int> &groups) = 0;
+};
+
 class SeasideCache : public QObject
 {
     Q_OBJECT
@@ -74,12 +83,17 @@ public:
     static void registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type);
     static void unregisterModel(SeasideFilteredModel *model);
 
+    static void registerNameGroupChangeListener(SeasideNameGroupChangeListener *listener);
+    static void unregisterNameGroupChangeListener(SeasideNameGroupChangeListener *listener);
+
     static SeasideFilteredModel::DisplayLabelOrder displayLabelOrder();
 
     static SeasideCacheItem *cacheItemById(QContactLocalId);
     static SeasidePerson *personById(QContactLocalId id);
     static SeasidePerson *selfPerson();
     static QContact contactById(QContactLocalId id);
+    static QChar nameGroupForCacheItem(SeasideCacheItem *cacheItem);
+    static QList<QChar> allNameGroups();
 
     static SeasidePerson *person(SeasideCacheItem *item);
 
@@ -132,13 +146,19 @@ private:
     void removeContactData(QContactLocalId contactId, SeasideFilteredModel::FilterType filter);
     void makePopulated(SeasideFilteredModel::FilterType filter);
 
+    void addToContactNameGroup(const QChar &group, QList<QChar> *modifiedGroups = 0);
+    void removeFromContactNameGroup(const QChar &group, QList<QChar> *modifiedGroups = 0);
+    void notifyNameGroupsChanged(const QList<QChar> &groups);
+
     QBasicTimer m_expiryTimer;
     QHash<QContactLocalId, SeasideCacheItem> m_people;
     QHash<QString, QContactLocalId> m_phoneNumberIds;
     QHash<QContactLocalId, QContact> m_contactsToSave;
+    QHash<QChar, int> m_contactNameGroups;
     QList<QContact> m_contactsToCreate;
     QList<QContactLocalId> m_contactsToRemove;
     QList<QContactLocalId> m_changedContacts;
+    QList<SeasideNameGroupChangeListener*> m_nameGroupChangeListeners;
     QVector<QContactLocalId> m_contacts[SeasideFilteredModel::FilterTypesCount];
     QList<SeasideFilteredModel *> m_models[SeasideFilteredModel::FilterTypesCount];
     QHash<QContactLocalId,int> m_expiredContacts;
@@ -168,6 +188,7 @@ private:
     QElapsedTimer m_timer;
 
     static SeasideCache *instance;
+    static QList<QChar> allContactNameGroups;
 };
 
 

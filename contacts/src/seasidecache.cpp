@@ -57,7 +57,44 @@
 
 #include <QtDebug>
 
+static QList<QChar> getAllContactNameGroups()
+{
+    QList<QChar> groups;
+    groups << QLatin1Char('A')
+           << QLatin1Char('B')
+           << QLatin1Char('C')
+           << QLatin1Char('D')
+           << QLatin1Char('E')
+           << QLatin1Char('F')
+           << QLatin1Char('G')
+           << QLatin1Char('H')
+           << QLatin1Char('I')
+           << QLatin1Char('J')
+           << QLatin1Char('K')
+           << QLatin1Char('L')
+           << QLatin1Char('M')
+           << QLatin1Char('N')
+           << QLatin1Char('O')
+           << QLatin1Char('P')
+           << QLatin1Char('Q')
+           << QLatin1Char('R')
+           << QLatin1Char('S')
+           << QLatin1Char('T')
+           << QLatin1Char('U')
+           << QLatin1Char('V')
+           << QLatin1Char('W')
+           << QLatin1Char('X')
+           << QLatin1Char('Y')
+           << QLatin1Char('Z')
+           << QChar(0x00c5)     // Å
+           << QChar(0x00c4)     // Ä
+           << QChar(0x00d6)     // Ö
+           << QLatin1Char('#');
+    return groups;
+}
+
 SeasideCache *SeasideCache::instance = 0;
+QList<QChar> SeasideCache::allContactNameGroups = getAllContactNameGroups();
 
 static QString managerName()
 {
@@ -199,6 +236,67 @@ void SeasideCache::unregisterModel(SeasideFilteredModel *model)
         instance->m_expiryTimer.start(30000, instance);
 }
 
+void SeasideCache::registerNameGroupChangeListener(SeasideNameGroupChangeListener *listener)
+{
+    if (!instance)
+        new SeasideCache;
+    instance->m_nameGroupChangeListeners.append(listener);
+}
+
+void SeasideCache::unregisterNameGroupChangeListener(SeasideNameGroupChangeListener *listener)
+{
+    if (!instance)
+        return;
+    instance->m_nameGroupChangeListeners.removeAll(listener);
+}
+
+QChar SeasideCache::nameGroupForCacheItem(SeasideCacheItem *cacheItem)
+{
+    if (!cacheItem)
+        return QChar();
+
+    QChar group;
+    QString first;
+    QString last;
+    QContactName nameDetail = cacheItem->contact.detail<QContactName>();
+    if (SeasideCache::displayLabelOrder() == SeasideFilteredModel::FirstNameFirst) {
+        first = nameDetail.firstName();
+        last = nameDetail.lastName();
+    } else {
+        first = nameDetail.lastName();
+        last = nameDetail.firstName();
+    }
+    if (!first.isEmpty()) {
+        group = first[0].toUpper();
+    } else if (!last.isEmpty()) {
+        group = last[0].toUpper();
+    } else {
+        QString displayLabel = (cacheItem->person)
+                ? cacheItem->person->displayLabel()
+                : SeasidePerson::generateDisplayLabel(cacheItem->contact);
+        if (!displayLabel.isEmpty())
+            group = displayLabel[0].toUpper();
+    }
+
+    // XXX temporary workaround for non-latin names: use non-name details to try to find a
+    // latin character group
+    if (!group.isNull() && group.toLatin1() != group) {
+        QString displayLabel = SeasidePerson::generateDisplayLabelFromNonNameDetails(cacheItem->contact);
+        if (!displayLabel.isEmpty())
+            group = displayLabel[0].toUpper();
+    }
+
+    if (group.isNull() || !allContactNameGroups.contains(group)) {
+        group = QLatin1Char('#');   // 'other' group
+    }
+    return group;
+}
+
+QList<QChar> SeasideCache::allNameGroups()
+{
+    return allContactNameGroups;
+}
+
 SeasideFilteredModel::DisplayLabelOrder SeasideCache::displayLabelOrder()
 {
     return instance->m_displayLabelOrder;
@@ -278,7 +376,6 @@ bool SeasideCache::savePerson(SeasidePerson *person)
 
     if (contact.localId()) {
         instance->m_contactsToSave[contact.localId()] = contact;
-        instance->m_people[contact.localId()] = contact;
 
         instance->updateContactData(contact.localId(), SeasideFilteredModel::FilterFavorites);
         instance->updateContactData(contact.localId(), SeasideFilteredModel::FilterOnline);
@@ -447,12 +544,17 @@ void SeasideCache::contactsAvailable()
     } else {
         // An update.
         const QList<QContact> contacts = m_fetchRequest.contacts();
+        QList<QChar> modifiedGroups;
 
         for (int i = m_resultsRead; i < contacts.count(); ++i) {
             QContact contact = contacts.at(i);
             SeasideCacheItem &item = m_people[contact.localId()];
             QContactName oldName = item.contact.detail<QContactName>();
             QContactName newName = contact.detail<QContactName>();
+            QChar oldNameGroup;
+
+            if (!m_nameGroupChangeListeners.isEmpty())
+                oldNameGroup = nameGroupForCacheItem(&item);
 
             if (newName.customLabel().isEmpty()) {
                 newName.setCustomLabel(oldName.customLabel());
@@ -474,6 +576,15 @@ void SeasideCache::contactsAvailable()
                  m_phoneNumberIds[phoneNumbers.at(j).number()] = contact.localId();
              }
 
+             if (!m_nameGroupChangeListeners.isEmpty()) {
+                 // do this even if !roleDataChanged as name groups are affected by other display label changes
+                 QChar newNameGroup = nameGroupForCacheItem(&item);
+                 if (newNameGroup != oldNameGroup) {
+                     addToContactNameGroup(newNameGroup, &modifiedGroups);
+                     removeFromContactNameGroup(oldNameGroup, &modifiedGroups);
+                 }
+             }
+
              if (roleDataChanged) {
                 instance->updateContactData(contact.localId(), SeasideFilteredModel::FilterFavorites);
                 instance->updateContactData(contact.localId(), SeasideFilteredModel::FilterOnline);
@@ -481,7 +592,39 @@ void SeasideCache::contactsAvailable()
              }
         }
         m_resultsRead = contacts.count();
+        notifyNameGroupsChanged(modifiedGroups);
     }
+}
+
+void SeasideCache::addToContactNameGroup(const QChar &group, QList<QChar> *modifiedGroups)
+{
+    if (!group.isNull()) {
+        m_contactNameGroups[group] += 1;
+        if (modifiedGroups)
+            modifiedGroups->append(group);
+    }
+}
+
+void SeasideCache::removeFromContactNameGroup(const QChar &group, QList<QChar> *modifiedGroups)
+{
+    if (!group.isNull() && m_contactNameGroups.contains(group)) {
+        m_contactNameGroups[group] -= 1;
+        if (modifiedGroups)
+            modifiedGroups->append(group);
+    }
+}
+
+void SeasideCache::notifyNameGroupsChanged(const QList<QChar> &groups)
+{
+    if (groups.isEmpty())
+        return;
+
+    QHash<QChar, int> updates;
+    for (int i = 0; i < groups.count(); ++i)
+        updates[groups[i]] = m_contactNameGroups[groups[i]];
+
+    for (int i = 0; i < m_nameGroupChangeListeners.count(); ++i)
+        m_nameGroupChangeListeners[i]->nameGroupsUpdated(updates);
 }
 
 void SeasideCache::contactIdsAvailable()
@@ -523,6 +666,7 @@ void SeasideCache::removeRange(
 {
     QVector<QContactLocalId> &cacheIds = m_contacts[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
+    QList<QChar> modifiedNameGroups;
 
     for (int i = 0; i < models.count(); ++i)
         models[i]->sourceAboutToRemoveItems(index, index + count - 1);
@@ -530,11 +674,17 @@ void SeasideCache::removeRange(
     for (int i = 0; i < count; ++i) {
         if (filter == SeasideFilteredModel::FilterAll)
             m_expiredContacts[cacheIds.at(index)] -= 1;
+
+        if (!m_nameGroupChangeListeners.isEmpty())
+            removeFromContactNameGroup(nameGroupForCacheItem(cacheItemById(cacheIds.at(index))), &modifiedNameGroups);
+
         cacheIds.remove(index);
     }
 
     for (int i = 0; i < models.count(); ++i)
         models[i]->sourceItemsRemoved();
+
+    notifyNameGroupsChanged(modifiedNameGroups);
 }
 
 int SeasideCache::insertRange(
@@ -546,6 +696,7 @@ int SeasideCache::insertRange(
 {
     QVector<QContactLocalId> &cacheIds = m_contacts[filter];
     QList<SeasideFilteredModel *> &models = m_models[filter];
+    QList<QChar> modifiedNameGroups;
 
     int end = index + count - 1;
 #ifndef SEASIDE_SPARQL_QUERIES
@@ -567,17 +718,24 @@ int SeasideCache::insertRange(
 
         if (filter == SeasideFilteredModel::FilterAll)
             m_expiredContacts[queryIds.at(queryIndex + i)] += 1;
+
+        if (!m_nameGroupChangeListeners.isEmpty())
+            addToContactNameGroup(nameGroupForCacheItem(cacheItemById(queryIds.at(queryIndex + i))), &modifiedNameGroups);
+
         cacheIds.insert(index + i, queryIds.at(queryIndex + i));
     }
 
     for (int i = 0; i < models.count(); ++i)
         models[i]->sourceItemsInserted(index, end);
 
+    notifyNameGroupsChanged(modifiedNameGroups);
+
     return end - index + 1;
 }
 
 void SeasideCache::appendContacts(const QList<QContact> &contacts)
 {
+
     QVector<QContactLocalId> &cacheIds = m_contacts[m_fetchFilter];
     QList<SeasideFilteredModel *> &models = m_models[m_fetchFilter];
 
@@ -612,6 +770,9 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
         cacheItem.contact = contact;
         cacheItem.filterKey = QStringList();
 
+        if (!m_nameGroupChangeListeners.isEmpty())
+            addToContactNameGroup(nameGroupForCacheItem(&cacheItem), 0);
+
         QList<QContactPhoneNumber> phoneNumbers = contact.details<QContactPhoneNumber>();
         for (int j = 0; j < phoneNumbers.count(); ++j)
             m_phoneNumberIds[phoneNumbers.at(j).number()] = contact.localId();
@@ -619,6 +780,9 @@ void SeasideCache::appendContacts(const QList<QContact> &contacts)
 
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->sourceItemsInserted(begin, end);
+
+    if (!m_nameGroupChangeListeners.isEmpty())
+        notifyNameGroupsChanged(m_contactNameGroups.keys());
 }
 
 void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)

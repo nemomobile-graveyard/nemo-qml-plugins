@@ -81,6 +81,7 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     , m_filterIndex(0)
     , m_referenceIndex(0)
     , m_filterType(FilterAll)
+    , m_searchByFirstNameCharacter(false)
 {
     QHash<int, QByteArray> roles;
     roles.insert(Qt::DisplayRole, "display");
@@ -171,6 +172,7 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
     if (m_filterPattern != pattern) {
         const bool wasEmpty = m_filterPattern.isEmpty();
         const bool subFilter = !wasEmpty && pattern.startsWith(m_filterPattern, Qt::CaseInsensitive);
+        const int prevCount = rowCount();
 
         m_filterPattern = pattern;
         m_filterParts = splitWords(m_filterPattern);
@@ -211,7 +213,22 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
                 m_filteredContactIds.clear();
             }
         }
+        if (rowCount() != prevCount)
+            emit countChanged();
         emit filterPatternChanged();
+    }
+}
+
+bool SeasideFilteredModel::searchByFirstNameCharacter() const
+{
+    return m_searchByFirstNameCharacter;
+}
+
+void SeasideFilteredModel::setSearchByFirstNameCharacter(bool searchByFirstNameCharacter)
+{
+    if (m_searchByFirstNameCharacter != searchByFirstNameCharacter) {
+        m_searchByFirstNameCharacter = searchByFirstNameCharacter;
+        emit searchByFirstNameCharacterChanged();
     }
 }
 
@@ -223,6 +240,9 @@ bool SeasideFilteredModel::filterId(QContactLocalId contactId) const
     SeasideCacheItem *item = SeasideCache::cacheItemById(contactId);
     if (!item)
         return false;
+
+    if (m_searchByFirstNameCharacter && !m_filterPattern.isEmpty())
+        return m_filterPattern[0].toUpper() == SeasideCache::nameGroupForCacheItem(item);
 
     // split the display label and filter into words.
     //
