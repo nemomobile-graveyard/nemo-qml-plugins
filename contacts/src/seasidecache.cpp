@@ -216,6 +216,19 @@ SeasideCache::~SeasideCache()
         instance = 0;
 }
 
+void SeasideCache::checkForExpiry()
+{
+    if (instance->m_users.isEmpty()) {
+        bool unused = true;
+        for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
+            unused &= instance->m_models[i].isEmpty();
+        }
+        if (unused) {
+            instance->m_expiryTimer.start(30000, instance);
+        }
+    }
+}
+
 void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type)
 {
     if (!instance) {
@@ -230,14 +243,27 @@ void SeasideCache::registerModel(SeasideFilteredModel *model, SeasideFilteredMod
 
 void SeasideCache::unregisterModel(SeasideFilteredModel *model)
 {
-    bool empty = true;
-    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i) {
+    for (int i = 0; i < SeasideFilteredModel::FilterTypesCount; ++i)
         instance->m_models[i].removeAll(model);
-        empty &= instance->m_models[i].isEmpty();
-    }
 
-    if (empty)
-        instance->m_expiryTimer.start(30000, instance);
+    checkForExpiry();
+}
+
+void SeasideCache::registerUser(QObject *user)
+{
+    if (!instance) {
+        new SeasideCache;
+    } else {
+        instance->m_expiryTimer.stop();
+    }
+    instance->m_users.insert(user);
+}
+
+void SeasideCache::unregisterUser(QObject *user)
+{
+    instance->m_users.remove(user);
+
+    checkForExpiry();
 }
 
 void SeasideCache::registerNameGroupChangeListener(SeasideNameGroupChangeListener *listener)
@@ -317,14 +343,9 @@ SeasidePerson *SeasideCache::personById(QContactLocalId id)
     } else {
         // Insert a new item into the cache if the one doesn't exist.
         SeasideCacheItem &cacheItem = instance->m_people[id];
-        if (id == instance->m_manager.selfContactId()) {
-            cacheItem.contact = instance->m_manager.contact(id);
-            cacheItem.hasCompleteContact = true;
-        } else {
-            QContactId contactId;
-            contactId.setLocalId(id);
-            cacheItem.contact.setId(contactId);
-        }
+        QContactId contactId;
+        contactId.setLocalId(id);
+        cacheItem.contact.setId(contactId);
         return person(&cacheItem);
     }
 }

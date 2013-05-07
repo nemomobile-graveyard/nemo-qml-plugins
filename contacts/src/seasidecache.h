@@ -83,6 +83,9 @@ public:
     static void registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type);
     static void unregisterModel(SeasideFilteredModel *model);
 
+    static void registerUser(QObject *user);
+    static void unregisterUser(QObject *user);
+
     static void registerNameGroupChangeListener(SeasideNameGroupChangeListener *listener);
     static void unregisterNameGroupChangeListener(SeasideNameGroupChangeListener *listener);
 
@@ -130,6 +133,8 @@ private:
     SeasideCache();
     ~SeasideCache();
 
+    static void checkForExpiry();
+
     void requestUpdate();
     void appendContacts(const QList<QContact> &contacts);
 
@@ -161,6 +166,7 @@ private:
     QList<SeasideNameGroupChangeListener*> m_nameGroupChangeListeners;
     QVector<QContactLocalId> m_contacts[SeasideFilteredModel::FilterTypesCount];
     QList<SeasideFilteredModel *> m_models[SeasideFilteredModel::FilterTypesCount];
+    QSet<QObject *> m_users;
     QHash<QContactLocalId,int> m_expiredContacts;
     QContactManager m_manager;
     QContactFetchRequest m_fetchRequest;

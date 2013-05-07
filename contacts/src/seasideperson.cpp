@@ -52,18 +52,22 @@
 #include <QVersitContactExporter>
 
 #include "seasideperson.h"
-#include "seasidepeoplemodel.h"
+#include "seasidecache.h"
 
 SeasidePersonAttached::SeasidePersonAttached(QObject *parent)
     : QObject(parent)
 {
-    connect(SeasidePeopleModel::instance(), SIGNAL(populatedChanged()),
-            this, SIGNAL(selfPersonChanged()));
+    SeasideCache::registerUser(this);
+}
+
+SeasidePersonAttached::~SeasidePersonAttached()
+{
+    SeasideCache::unregisterUser(this);
 }
 
 SeasidePerson *SeasidePersonAttached::selfPerson() const
 {
-    return SeasidePeopleModel::instance()->selfPerson();
+    return SeasideCache::selfPerson();
 }
 
 SeasidePerson::SeasidePerson(QObject *parent)

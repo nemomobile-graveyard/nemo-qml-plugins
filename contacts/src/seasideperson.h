@@ -57,10 +57,12 @@ class SeasidePersonAttached : public QObject
 
 public:
     SeasidePersonAttached(QObject *parent);
+    ~SeasidePersonAttached();
 
     SeasidePerson *selfPerson() const;
 
 signals:
+    // Not currently emitted:
     void selfPersonChanged();
 };
 
