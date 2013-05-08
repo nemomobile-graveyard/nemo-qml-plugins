@@ -94,6 +94,7 @@ public:
     static QContact contactById(QContactLocalId id);
     static QChar nameGroupForCacheItem(SeasideCacheItem *cacheItem);
     static QList<QChar> allNameGroups();
+    static QHash<QChar, int> nameGroupCounts();
 
     static SeasidePerson *person(SeasideCacheItem *item);
 

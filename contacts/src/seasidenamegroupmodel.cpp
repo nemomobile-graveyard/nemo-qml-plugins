@@ -41,6 +41,13 @@ SeasideNameGroupModel::SeasideNameGroupModel(QObject *parent)
     roles.insert(NameRole, "name");
     roles.insert(EntryCount, "entryCount");
     setRoleNames(roles);
+
+    QHash<QChar, int> existingGroups = SeasideCache::nameGroupCounts();
+    if (!existingGroups.isEmpty()) {
+        QList<QChar> allGroups = SeasideCache::allNameGroups();
+        for (int i=0; i<allGroups.count(); i++)
+            m_groups << SeasideNameGroup(allGroups[i], existingGroups.value(allGroups[i], 0));
+    }
 }
 
 SeasideNameGroupModel::~SeasideNameGroupModel()
@@ -88,6 +95,8 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QChar, int> &groups)
             emit dataChanged(createIndex(index, 0), createIndex(index, 0));
     }
 
-    if (wasEmpty)
+    if (wasEmpty) {
         endInsertRows();
+        emit countChanged();
+    }
 }
