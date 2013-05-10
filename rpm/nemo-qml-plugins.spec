@@ -19,26 +19,10 @@ Source100:  nemo-qml-plugins.yaml
 BuildRequires:  pkgconfig(QtCore) >= 4.7.0
 BuildRequires:  pkgconfig(QtDeclarative)
 BuildRequires:  pkgconfig(QtGui)
-BuildRequires:  pkgconfig(QtContacts)
 BuildRequires:  pkgconfig(mlite)
-BuildRequires:  pkgconfig(QtSparql)
 
 %description
 Do not install this, install the subpackaged plugins.
-
-%package contacts
-Summary:    QML contacts plugin
-Group:      System/Libraries
-
-%description contacts
-A more performant (and less problematic) QtContacts QML binding
-
-%package contacts-tests
-Summary:    QML contacts plugin tests
-Group:      System/Libraries
-
-%description contacts-tests
-Tests for QML contacts plugin
 
 %package messages
 Summary:    Plugin providing public messages API
@@ -73,19 +57,6 @@ rm -rf %{buildroot}
 # >> install post
 # << install post
 
-
-%files contacts
-%defattr(-,root,root,-)
-%{_libdir}/qt4/imports/org/nemomobile/contacts/libnemocontacts.so
-%{_libdir}/qt4/imports/org/nemomobile/contacts/qmldir
-# >> files contacts
-# << files contacts
-
-%files contacts-tests
-%defattr(-,root,root,-)
-/opt/tests/nemo-qml-plugins/contacts/*
-# >> files contacts-tests
-# << files contacts-tests
 
 %files messages
 %defattr(-,root,root,-)

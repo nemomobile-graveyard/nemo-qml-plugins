@@ -1,13 +1,5 @@
 this is a repository for shared C++-only QML plugins, offering access to
 subsystems inside the platform.
 
-if you want to add something, please ask the maintainer of this library first to
-make sure it's a good fit
-
-the current maintainer is: Robin Burchell (robin+mer@viroteck.net)
-
-current plugins:
-- contacts: offers an API similar to QtMobility.contacts, except without the
-  fail
-
-- notifications: provides QML/C++ APIs for publishing notifications
+it should not be used anymore; instead; dedicated per-plugin repositories are
+used.

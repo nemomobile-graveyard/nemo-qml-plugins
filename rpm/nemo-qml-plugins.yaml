@@ -16,25 +16,9 @@ PkgConfigBR:
     - QtCore >= 4.7.0
     - QtDeclarative
     - QtGui
-    - QtContacts
     - mlite
-    - QtSparql # contacts
 
 SubPackages:
-    - Name: contacts
-      Summary: QML contacts plugin
-      Group: System/Libraries
-      Description: A more performant (and less problematic) QtContacts QML binding
-      Files:
-          - "%{_libdir}/qt4/imports/org/nemomobile/contacts/libnemocontacts.so"
-          - "%{_libdir}/qt4/imports/org/nemomobile/contacts/qmldir"
-    - Name: contacts-tests
-      Summary: QML contacts plugin tests
-      Group: System/Libraries
-      Description: Tests for QML contacts plugin
-      Files:
-          - "/opt/tests/nemo-qml-plugins/contacts/*"
-
     - Name: messages
       Summary: Plugin providing public messages API
       Group: System/Libraries
