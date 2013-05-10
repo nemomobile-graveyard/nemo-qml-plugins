@@ -48,8 +48,6 @@ public:
     MGConfItem *displayLabelOrderConf;
     SeasideProxyModel::DisplayLabelOrder personDisplayLabelOrder;
 
-    static QString normalizePhoneNumber(const QString &msisdn);
-
     void addContacts(const QList<QContact> contactsList, int size);
     void fixIndexMap();
 

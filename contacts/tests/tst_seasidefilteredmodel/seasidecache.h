@@ -25,6 +25,9 @@ public:
     static void registerModel(SeasideFilteredModel *model, SeasideFilteredModel::FilterType type);
     static void unregisterModel(SeasideFilteredModel *model);
 
+    static void registerUser(QObject *user);
+    static void unregisterUser(QObject *user);
+
     static SeasideFilteredModel::DisplayLabelOrder displayLabelOrder();
 
     static SeasideCacheItem *cacheItemById(QContactLocalId);

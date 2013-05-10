@@ -185,6 +185,14 @@ void SeasideCache::unregisterModel(SeasideFilteredModel *)
         instance->m_models[i] = 0;
 }
 
+void SeasideCache::registerUser(QObject *)
+{
+}
+
+void SeasideCache::unregisterUser(QObject *)
+{
+}
+
 SeasideCacheItem *SeasideCache::cacheItemById(QContactLocalId id)
 {
     return &instance->m_cache[id];

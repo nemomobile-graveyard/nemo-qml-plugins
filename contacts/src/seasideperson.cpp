@@ -52,18 +52,22 @@
 #include <QVersitContactExporter>
 
 #include "seasideperson.h"
-#include "seasidepeoplemodel.h"
+#include "seasidecache.h"
 
 SeasidePersonAttached::SeasidePersonAttached(QObject *parent)
     : QObject(parent)
 {
-    connect(SeasidePeopleModel::instance(), SIGNAL(populatedChanged()),
-            this, SIGNAL(selfPersonChanged()));
+    SeasideCache::registerUser(this);
+}
+
+SeasidePersonAttached::~SeasidePersonAttached()
+{
+    SeasideCache::unregisterUser(this);
 }
 
 SeasidePerson *SeasidePersonAttached::selfPerson() const
 {
-    return SeasidePeopleModel::instance()->selfPerson();
+    return SeasideCache::selfPerson();
 }
 
 SeasidePerson::SeasidePerson(QObject *parent)
@@ -153,8 +157,12 @@ void SeasidePerson::setMiddleName(const QString &name)
 QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasideProxyModel::DisplayLabelOrder order)
 {
     //REVISIT: Move this or parts of this to localeutils.cpp
-    QString displayLabel;
     QContactName name = mContact.detail<QContactName>();
+
+    if (!name.customLabel().isNull())
+        return name.customLabel();
+
+    QString displayLabel;
 
     QString nameStr1;
     QString nameStr2;
@@ -183,11 +191,6 @@ QString SeasidePerson::generateDisplayLabel(const QContact &mContact, SeasidePro
     if (!displayLabel.isEmpty()) {
         return displayLabel;
     }
-
-    // This is last because the custom label is often source from this function, so we want to
-    // overwrite that value in many cases.
-    if (!name.customLabel().isNull())
-        return name.customLabel();
 
     return "(Unnamed)"; // TODO: localisation
 }
@@ -243,23 +246,17 @@ void SeasidePerson::recalculateDisplayLabel(SeasideProxyModel::DisplayLabelOrder
     QString newDisplayLabel = generateDisplayLabel(mContact, order);
 
     if (oldDisplayLabel != newDisplayLabel) {
-        // Save the display label as the custom label.
-        QContactName name = mContact.detail<QContactName>();
-        name.setCustomLabel(newDisplayLabel);
-        mContact.saveDetail(&name);
-
         mDisplayLabel = newDisplayLabel;
         emit displayLabelChanged();
+
+        // TODO: If required, store this to the contact backend to prevent later recalculation
     }
 }
 
 QString SeasidePerson::displayLabel()
 {
     if (mDisplayLabel.isEmpty()) {
-        QContactName name = mContact.detail<QContactName>();
-        mDisplayLabel = name.customLabel();
-        if (mDisplayLabel.isEmpty())
-            recalculateDisplayLabel();
+        recalculateDisplayLabel();
     }
 
     return mDisplayLabel;
@@ -875,7 +872,7 @@ QStringList SeasidePerson::accountIconPaths() const
     foreach (const QContactOnlineAccount &account, mContact.details<QContactOnlineAccount>()) {
         // Include the icon path value for each account returned by accountPaths
         if (account.hasValue("AccountPath")) {
-            rv.append(account.value("ServiceIconPath"));
+            rv.append(account.value("AccountIconPath"));
         }
     }
 
@@ -888,7 +885,7 @@ void SeasidePerson::addAccount(const QString &path, const QString &uri, const QS
     detail.setValue("AccountPath", path);
     detail.setAccountUri(uri);
     detail.setServiceProvider(provider);
-    detail.setValue("ServiceIconPath", iconPath);
+    detail.setValue("AccountIconPath", iconPath);
 
     mContact.saveDetail(&detail);
 
