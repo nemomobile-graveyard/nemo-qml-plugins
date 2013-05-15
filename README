@@ -1,5 +1,0 @@
-this is a repository for shared C++-only QML plugins, offering access to
-subsystems inside the platform.
-
-it should not be used anymore; instead; dedicated per-plugin repositories are
-used.
